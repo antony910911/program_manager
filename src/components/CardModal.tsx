@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { AppState, Board, Card } from '../types'
 import type { Action } from '../store'
 import { uid } from '../store'
+import { Archive, CheckSquare, Image, MessageSquare, Tag, Trash2, Users, X, AlignLeft, CalendarDays, Type } from 'lucide-react'
+import { COVER_COLORS } from '../theme'
 import { Avatar, InlineEdit } from './common'
 
 interface Props {
@@ -23,8 +25,9 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
-        <button className="modal-close ghost" onClick={onClose}>
-          ✕
+        {card.cover && <div className="modal-cover" style={{ background: card.cover }} />}
+        <button className="modal-close icon-btn" onClick={onClose}>
+          <X size={18} />
         </button>
         <div className="modal-head">
           <input type="checkbox" checked={card.completed} onChange={(e) => update({ completed: e.target.checked })} title="標記完成" />
@@ -48,7 +51,9 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
         <div className="modal-body">
           <div className="modal-main">
             <section>
-              <h4>標籤</h4>
+              <h4>
+                <Tag size={15} /> 標籤
+              </h4>
               <div className="chips">
                 {board.labels.map((l) => (
                   <button
@@ -64,7 +69,9 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
             </section>
 
             <section>
-              <h4>成員</h4>
+              <h4>
+                <Users size={15} /> 成員
+              </h4>
               <div className="chips">
                 {state.members.map((m) => (
                   <button
@@ -78,7 +85,8 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
               </div>
             </section>
 
-            <section className="row wrap">
+            <section className="row wrap dates">
+              <CalendarDays size={15} />
               <label>
                 開始日 <input type="date" value={card.startDate ?? ''} onChange={(e) => update({ startDate: e.target.value || null })} />
               </label>
@@ -88,7 +96,9 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
             </section>
 
             <section>
-              <h4>描述</h4>
+              <h4>
+                <AlignLeft size={15} /> 描述
+              </h4>
               <textarea
                 rows={4}
                 placeholder="新增更詳細的描述…"
@@ -100,7 +110,9 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
 
             {board.customFields.length > 0 && (
               <section>
-                <h4>自訂欄位</h4>
+                <h4>
+                  <Type size={15} /> 自訂欄位
+                </h4>
                 <div className="custom-fields">
                   {board.customFields.map((f) => {
                     const v = card.customFields[f.id] ?? ''
@@ -127,7 +139,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
 
             <section>
               <h4>
-                待辦清單{' '}
+                <CheckSquare size={15} /> 待辦清單{' '}
                 {card.checklist.length > 0 && (
                   <span className="muted">
                     ({done}/{card.checklist.length})
@@ -147,8 +159,8 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                     onChange={() => update({ checklist: card.checklist.map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)) })}
                   />
                   <span className={item.done ? 'strike' : ''}>{item.text}</span>
-                  <button className="ghost small" onClick={() => update({ checklist: card.checklist.filter((i) => i.id !== item.id) })}>
-                    ✕
+                  <button className="icon-btn" onClick={() => update({ checklist: card.checklist.filter((i) => i.id !== item.id) })}>
+                    <X size={14} />
                   </button>
                 </div>
               ))}
@@ -162,12 +174,14 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                 }}
               >
                 <input placeholder="新增項目…" value={newItem} onChange={(e) => setNewItem(e.target.value)} />
-                <button className="primary">新增</button>
+                <button className="btn primary">新增</button>
               </form>
             </section>
 
             <section>
-              <h4>留言</h4>
+              <h4>
+                <MessageSquare size={15} /> 留言
+              </h4>
               <form
                 className="row"
                 onSubmit={(e) => {
@@ -178,7 +192,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                 }}
               >
                 <input placeholder="撰寫留言…" value={comment} onChange={(e) => setComment(e.target.value)} />
-                <button className="primary">送出</button>
+                <button className="btn primary">送出</button>
               </form>
               {[...card.comments].reverse().map((c) => {
                 const m = state.members.find((x) => x.id === c.memberId)
@@ -198,9 +212,34 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
           </div>
 
           <aside className="modal-side">
-            <button onClick={() => update({ archived: true })}>封存</button>
+            <div className="side-title">
+              <Image size={14} /> 封面
+            </div>
+            <div className="cover-swatches">
+              <button className={'swatch none' + (card.cover ? '' : ' on')} title="無封面" onClick={() => update({ cover: null })}>
+                <X size={12} />
+              </button>
+              {COVER_COLORS.map((c) => (
+                <button
+                  key={c}
+                  className={'swatch' + (card.cover === c ? ' on' : '')}
+                  style={{ background: c }}
+                  onClick={() => update({ cover: c })}
+                />
+              ))}
+              <input
+                type="color"
+                title="自訂封面顏色"
+                value={card.cover ?? '#579dff'}
+                onChange={(e) => update({ cover: e.target.value })}
+              />
+            </div>
+            <div className="side-title">動作</div>
+            <button className="btn" onClick={() => update({ archived: true })}>
+              <Archive size={14} /> 封存
+            </button>
             <button
-              className="danger"
+              className="btn danger"
               onClick={() => {
                 if (confirm('確定刪除這張卡片？')) {
                   dispatch({ type: 'deleteCard', cardId: card.id })
@@ -208,7 +247,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                 }
               }}
             >
-              刪除
+              <Trash2 size={14} /> 刪除
             </button>
           </aside>
         </div>

@@ -19,6 +19,9 @@ npm run lint
 | 卡片詳情 | 標籤、成員、開始日／到期日、描述、待辦清單（含進度條）、留言、完成勾選、封存／還原、刪除 |
 | **Premium 檢視** | **表格**（可排序）、**行事曆**（拖曳改到期日）、**時間軸**（甘特圖，依清單分組）、**儀表板**（完成率、逾期、各清單／標籤／成員統計、活動紀錄） |
 | **Premium 功能** | **自訂欄位**（文字／數字／下拉選單）、進階篩選（關鍵字、標籤、成員、到期狀態，所有檢視共用） |
+| **外觀自訂** | 8 組主題預設；淺色／深色／跟隨系統；任意主色；4 種字型與文字大小；圓角、清單寬度、清單透明度、密度、毛玻璃；4 種卡片樣式；標籤顯示方式；成員顏色；主題 JSON 匯出／匯入 |
+| **看板背景** | 10 組漸層預設；純色、雙色漸層（可調角度）、圖片網址或上傳圖片 |
+| **卡片封面** | 10 種預設色或任意自訂顏色 |
 
 ## 程式結構
 
@@ -26,10 +29,14 @@ npm run lint
 src/
   types.ts              資料模型（Board / List / Card / Label / CustomField …）
   store.ts              reducer + actions + localStorage 持久化 + 篩選/日期工具
+  theme.ts              主題預設、背景預設、色彩工具、主題 → CSS 變數
   App.tsx               頂部列、看板首頁、檢視切換、篩選列、看板設定
   components/
     CardModal.tsx       卡片詳情視窗
     common.tsx          Avatar、標籤、InlineEdit、AddForm 等共用元件
+    controls.tsx        Segmented、Slider、ColorPicker、Toggle
+    AppearancePanel.tsx 外觀設定側欄
+    BackgroundEditor.tsx 看板背景編輯器
   views/
     BoardView.tsx       看板（原生 HTML5 拖放）
     TableView.tsx       表格
@@ -37,6 +44,8 @@ src/
     TimelineView.tsx    時間軸
     DashboardView.tsx   儀表板
 ```
+
+外觀設定會轉成 CSS 變數（`--accent`、`--radius`、`--list-w`…）寫在 `<html>` 上，`index.css` 只讀這些變數，所以要新增一個可調整的項目，只需要在 `Theme` 加欄位、在 `themeVars()` 輸出變數、在 CSS 使用它。
 
 所有資料變更都經過 `store.ts` 的 `Action`，之後接後端時只要把 dispatch 改成「呼叫 API + 樂觀更新」即可，UI 幾乎不用動。
 

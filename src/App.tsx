@@ -1,21 +1,43 @@
-import { useState } from 'react'
-import type { Board, Filter, ID, ViewKind } from './types'
-import { BOARD_COLORS, LABEL_COLORS, emptyFilter, useAppStore } from './store'
+import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
+import {
+  Archive,
+  ChartColumn,
+  ChartGantt,
+  CalendarDays,
+  House,
+  Image,
+  Palette,
+  Plus,
+  Search,
+  Settings,
+  SquareKanban,
+  Table2,
+  Tag,
+  Trash2,
+  Type,
+  X,
+} from 'lucide-react'
+import type { Board, BoardBackground, Filter, ID, ViewKind } from './types'
+import { LABEL_COLORS, emptyFilter, useAppStore } from './store'
 import type { Action } from './store'
+import { BACKGROUND_PRESETS, backgroundCss, defaultBackground, themeVars } from './theme'
 import { Avatar, InlineEdit } from './components/common'
 import { CardModal } from './components/CardModal'
+import { AppearancePanel } from './components/AppearancePanel'
+import { BackgroundEditor } from './components/BackgroundEditor'
 import { BoardView } from './views/BoardView'
 import { TableView } from './views/TableView'
 import { CalendarView } from './views/CalendarView'
 import { TimelineView } from './views/TimelineView'
 import { DashboardView } from './views/DashboardView'
 
-const VIEWS: { kind: ViewKind; name: string }[] = [
-  { kind: 'board', name: '看板' },
-  { kind: 'table', name: '表格' },
-  { kind: 'calendar', name: '行事曆' },
-  { kind: 'timeline', name: '時間軸' },
-  { kind: 'dashboard', name: '儀表板' },
+const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
+  { kind: 'board', name: '看板', icon: <SquareKanban size={15} /> },
+  { kind: 'table', name: '表格', icon: <Table2 size={15} /> },
+  { kind: 'calendar', name: '行事曆', icon: <CalendarDays size={15} /> },
+  { kind: 'timeline', name: '時間軸', icon: <ChartGantt size={15} /> },
+  { kind: 'dashboard', name: '儀表板', icon: <ChartColumn size={15} /> },
 ]
 
 export default function App() {
@@ -25,28 +47,61 @@ export default function App() {
   const [filter, setFilter] = useState<Filter>(emptyFilter)
   const [openCardId, setOpenCardId] = useState<ID | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
+  const [bgOpen, setBgOpen] = useState(false)
+  const bgRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!bgOpen) return
+    const close = (e: MouseEvent) => {
+      if (!bgRef.current?.contains(e.target as Node)) setBgOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [bgOpen])
+
+  // Theme mode lives on <html> so native controls and scrollbars follow it too.
+  useEffect(() => {
+    const root = document.documentElement
+    if (state.theme.mode === 'system') delete root.dataset.theme
+    else root.dataset.theme = state.theme.mode
+    for (const [k, v] of Object.entries(themeVars(state.theme))) root.style.setProperty(k, v)
+    root.dataset.cardStyle = state.theme.cardStyle
+    root.dataset.labelStyle = state.theme.labelStyle
+  }, [state.theme])
 
   const board = boardId ? state.boards[boardId] : undefined
   const openCard = openCardId ? state.cards[openCardId] : undefined
   const me = state.members.find((m) => m.id === state.currentMemberId)
 
   return (
-    <div className="app" style={{ '--board-color': board?.color ?? '#026aa7' } as React.CSSProperties}>
+    <div className={board ? 'app on-board' : 'app'} style={board ? { background: backgroundCss(board.background) } : undefined}>
       <header className="topbar">
-        <button className="brand ghost" onClick={() => setBoardId(null)}>
-          ▦ Program Manager
+        <button className="brand" onClick={() => setBoardId(null)}>
+          <span className="brand-mark">
+            <SquareKanban size={16} />
+          </span>
+          Program Manager
         </button>
         {board && (
-          <select value={board.id} onChange={(e) => setBoardId(e.target.value)}>
-            {state.boardOrder.map((id) => (
-              <option key={id} value={id}>
-                {state.boards[id].title}
-              </option>
-            ))}
-          </select>
+          <>
+            <button className="icon-btn" title="所有看板" onClick={() => setBoardId(null)}>
+              <House size={17} />
+            </button>
+            <select className="board-switch" value={board.id} onChange={(e) => setBoardId(e.target.value)}>
+              {state.boardOrder.map((id) => (
+                <option key={id} value={id}>
+                  {state.boards[id].title}
+                </option>
+              ))}
+            </select>
+          </>
         )}
         <span className="spacer" />
-        {me && <Avatar member={me} />}
+        <button className="top-btn" onClick={() => setAppearanceOpen(true)}>
+          <Palette size={16} /> 外觀
+        </button>
+        {me && <Avatar member={me} size={30} />}
       </header>
 
       {!board ? (
@@ -62,13 +117,33 @@ export default function App() {
             <nav className="tabs">
               {VIEWS.map((v) => (
                 <button key={v.kind} className={view === v.kind ? 'tab active' : 'tab'} onClick={() => setView(v.kind)}>
-                  {v.name}
+                  {v.icon}
+                  <span>{v.name}</span>
                 </button>
               ))}
             </nav>
             <span className="spacer" />
-            <button className="bar-btn" onClick={() => setSettingsOpen(true)}>
-              ⚙ 看板設定
+            <div className="popover-anchor" ref={bgRef}>
+              <button className="glass-btn" onClick={() => setBgOpen((o) => !o)}>
+                <Image size={15} /> 背景
+              </button>
+              {bgOpen && (
+                <div className="popover">
+                  <div className="popover-head">
+                    <strong>看板背景</strong>
+                    <button className="icon-btn" onClick={() => setBgOpen(false)}>
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <BackgroundEditor
+                    value={board.background}
+                    onChange={(patch) => dispatch({ type: 'setBoardBackground', boardId: board.id, patch })}
+                  />
+                </div>
+              )}
+            </div>
+            <button className="glass-btn" onClick={() => setSettingsOpen(true)}>
+              <Settings size={15} /> 設定
             </button>
           </div>
           <FilterBar board={board} members={state.members} filter={filter} setFilter={setFilter} />
@@ -96,6 +171,7 @@ export default function App() {
           }}
         />
       )}
+      {appearanceOpen && <AppearancePanel state={state} dispatch={dispatch} onClose={() => setAppearanceOpen(false)} />}
     </div>
   )
 }
@@ -110,19 +186,31 @@ function Home({
   onOpen: (id: ID) => void
 }) {
   const [title, setTitle] = useState('')
-  const [color, setColor] = useState(BOARD_COLORS[0])
+  const [bg, setBg] = useState<BoardBackground>({ ...defaultBackground('#000'), ...BACKGROUND_PRESETS[0].bg })
+  const [greeting] = useState(() => {
+    const hour = new Date().getHours()
+    return hour < 12 ? '早安' : hour < 18 ? '午安' : '晚安'
+  })
   return (
     <main className="home">
-      <h2>你的看板</h2>
+      <div className="home-hero">
+        <h1>{greeting} 👋</h1>
+        <p className="muted">選一個看板開始工作，或建立新的看板。右上角「外觀」可以自訂整個介面。</p>
+      </div>
+      <h2 className="section-title">你的看板</h2>
       <div className="board-grid">
         {state.boardOrder.map((id) => {
           const b = state.boards[id]
-          const count = b.listIds.reduce((n, l) => n + state.lists[l].cardIds.length, 0)
+          const cardIds = b.listIds.flatMap((l) => state.lists[l].cardIds)
+          const done = cardIds.filter((c) => state.cards[c].completed).length
           return (
-            <button key={id} className="board-tile" style={{ background: b.color }} onClick={() => onOpen(id)}>
+            <button key={id} className="board-tile" style={{ background: backgroundCss(b.background) }} onClick={() => onOpen(id)}>
               <strong>{b.title}</strong>
-              <span>
-                {b.listIds.length} 個清單 · {count} 張卡片
+              <span className="board-tile-meta">
+                {b.listIds.length} 個清單 · {cardIds.length} 張卡片
+              </span>
+              <span className="board-tile-progress">
+                <span style={{ width: `${cardIds.length ? (done / cardIds.length) * 100 : 0}%` }} />
               </span>
             </button>
           )
@@ -132,28 +220,35 @@ function Home({
           onSubmit={(e) => {
             e.preventDefault()
             if (!title.trim()) return
-            dispatch({ type: 'addBoard', title: title.trim(), color })
+            dispatch({ type: 'addBoard', title: title.trim(), background: bg })
             setTitle('')
           }}
         >
+          <span className="new-preview" style={{ background: backgroundCss(bg) }} />
           <input placeholder="新看板名稱" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <div className="swatches">
-            {BOARD_COLORS.map((c) => (
-              <button
-                type="button"
-                key={c}
-                className={c === color ? 'swatch on' : 'swatch'}
-                style={{ background: c }}
-                onClick={() => setColor(c)}
-              />
-            ))}
+          <div className="bg-presets small">
+            {BACKGROUND_PRESETS.map((p) => {
+              const next = { ...defaultBackground('#000'), ...p.bg }
+              return (
+                <button
+                  type="button"
+                  key={p.name}
+                  title={p.name}
+                  className={next.color === bg.color && next.color2 === bg.color2 ? 'bg-preset on' : 'bg-preset'}
+                  style={{ background: backgroundCss(next) }}
+                  onClick={() => setBg(next)}
+                />
+              )
+            })}
           </div>
-          <button className="primary">建立看板</button>
+          <button className="btn primary">
+            <Plus size={15} /> 建立看板
+          </button>
         </form>
       </div>
-      <p className="muted small">
+      <p className="muted small home-foot">
         資料目前存在瀏覽器的 localStorage。
-        <button className="ghost small" onClick={() => confirm('清除所有資料並還原範例？') && dispatch({ type: 'reset' })}>
+        <button className="link-btn" onClick={() => confirm('清除所有資料並還原範例？（外觀設定會保留）') && dispatch({ type: 'reset' })}>
           重設範例資料
         </button>
       </p>
@@ -176,7 +271,10 @@ function FilterBar({
   const active = filter.text || filter.labelIds.length || filter.memberIds.length || filter.due !== 'all'
   return (
     <div className="filter-bar">
-      <input placeholder="🔍 搜尋卡片…" value={filter.text} onChange={(e) => setFilter({ ...filter, text: e.target.value })} />
+      <label className="search">
+        <Search size={15} />
+        <input placeholder="搜尋卡片…" value={filter.text} onChange={(e) => setFilter({ ...filter, text: e.target.value })} />
+      </label>
       <div className="chips">
         {board.labels.map((l) => (
           <button
@@ -200,15 +298,15 @@ function FilterBar({
           </button>
         ))}
       </div>
-      <select value={filter.due} onChange={(e) => setFilter({ ...filter, due: e.target.value as Filter['due'] })}>
+      <select className="glass-select" value={filter.due} onChange={(e) => setFilter({ ...filter, due: e.target.value as Filter['due'] })}>
         <option value="all">所有日期</option>
         <option value="overdue">已逾期</option>
         <option value="week">7 天內到期</option>
         <option value="none">沒有到期日</option>
       </select>
       {active ? (
-        <button className="bar-btn" onClick={() => setFilter(emptyFilter)}>
-          清除篩選
+        <button className="glass-btn" onClick={() => setFilter(emptyFilter)}>
+          <X size={14} /> 清除篩選
         </button>
       ) : null}
     </div>
@@ -235,13 +333,25 @@ function BoardSettings({
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div className="modal narrow" onMouseDown={(e) => e.stopPropagation()}>
-        <button className="modal-close ghost" onClick={onClose}>
-          ✕
+        <button className="modal-close icon-btn" onClick={onClose}>
+          <X size={18} />
         </button>
         <h3>看板設定</h3>
 
         <section>
-          <h4>標籤</h4>
+          <h4>
+            <Image size={15} /> 背景
+          </h4>
+          <BackgroundEditor
+            value={board.background}
+            onChange={(patch) => dispatch({ type: 'setBoardBackground', boardId: board.id, patch })}
+          />
+        </section>
+
+        <section>
+          <h4>
+            <Tag size={15} /> 標籤
+          </h4>
           {board.labels.map((l) => (
             <div key={l.id} className="row">
               <input
@@ -254,12 +364,13 @@ function BoardSettings({
                 placeholder="標籤名稱"
                 onChange={(e) => dispatch({ type: 'upsertLabel', boardId: board.id, label: { ...l, name: e.target.value } })}
               />
-              <button className="ghost small" onClick={() => dispatch({ type: 'deleteLabel', boardId: board.id, labelId: l.id })}>
-                ✕
+              <button className="icon-btn" onClick={() => dispatch({ type: 'deleteLabel', boardId: board.id, labelId: l.id })}>
+                <Trash2 size={15} />
               </button>
             </div>
           ))}
           <button
+            className="btn"
             onClick={() =>
               dispatch({
                 type: 'upsertLabel',
@@ -268,12 +379,14 @@ function BoardSettings({
               })
             }
           >
-            + 新增標籤
+            <Plus size={14} /> 新增標籤
           </button>
         </section>
 
         <section>
-          <h4>自訂欄位</h4>
+          <h4>
+            <Type size={15} /> 自訂欄位
+          </h4>
           {board.customFields.map((f) => (
             <div key={f.id} className="row">
               <span>
@@ -284,8 +397,8 @@ function BoardSettings({
                 </span>
               </span>
               <span className="spacer" />
-              <button className="ghost small" onClick={() => dispatch({ type: 'deleteCustomField', boardId: board.id, fieldId: f.id })}>
-                ✕
+              <button className="icon-btn" onClick={() => dispatch({ type: 'deleteCustomField', boardId: board.id, fieldId: f.id })}>
+                <Trash2 size={15} />
               </button>
             </div>
           ))}
@@ -318,18 +431,20 @@ function BoardSettings({
             {fieldType === 'select' && (
               <input placeholder="選項，用逗號分隔" value={fieldOptions} onChange={(e) => setFieldOptions(e.target.value)} />
             )}
-            <button className="primary">新增欄位</button>
+            <button className="btn primary">新增欄位</button>
           </form>
         </section>
 
         <section>
-          <h4>已封存的卡片</h4>
+          <h4>
+            <Archive size={15} /> 已封存的卡片
+          </h4>
           {archived.length === 0 && <p className="muted small">沒有封存的卡片</p>}
           {archived.map((c) => (
             <div key={c.id} className="row">
               <span>{c.title}</span>
               <span className="spacer" />
-              <button className="small" onClick={() => dispatch({ type: 'updateCard', cardId: c.id, patch: { archived: false } })}>
+              <button className="btn small" onClick={() => dispatch({ type: 'updateCard', cardId: c.id, patch: { archived: false } })}>
                 還原
               </button>
             </div>
@@ -339,7 +454,7 @@ function BoardSettings({
         <section>
           <h4>危險區域</h4>
           <button
-            className="danger"
+            className="btn danger"
             onClick={() => {
               if (confirm(`確定刪除看板「${board.title}」？此動作無法復原。`)) {
                 dispatch({ type: 'deleteBoard', boardId: board.id })

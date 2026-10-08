@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'react'
-import type { AppState, Board, Card, Filter, ID, List } from './types'
+import type { AppState, Board, BoardBackground, Card, Filter, ID, List, Member, Theme } from './types'
+import { BACKGROUND_PRESETS, COVER_COLORS, defaultBackground, defaultTheme } from './theme'
 
 const STORAGE_KEY = 'program-manager:v1'
 
@@ -40,6 +41,7 @@ function newCard(listId: ID, title: string, extra: Partial<Card> = {}): Card {
     checklist: [],
     comments: [],
     customFields: {},
+    cover: null,
     archived: false,
     createdAt: new Date().toISOString(),
     ...extra,
@@ -66,7 +68,13 @@ function seed(): AppState {
     { id: uid(), title: '完成', cardIds: [] },
   ]
   const cards: Card[] = [
-    newCard(lists[0].id, '設計登入頁面', { labelIds: ['l2'], memberIds: ['m2'], startDate: t, dueDate: addDays(t, 5) }),
+    newCard(lists[0].id, '設計登入頁面', {
+      cover: COVER_COLORS[4],
+      labelIds: ['l2'],
+      memberIds: ['m2'],
+      startDate: t,
+      dueDate: addDays(t, 5),
+    }),
     newCard(lists[0].id, '撰寫 API 文件', { labelIds: ['l1'], startDate: addDays(t, 3), dueDate: addDays(t, 10) }),
     newCard(lists[1].id, '實作拖曳排序', {
       labelIds: ['l1', 'l4'],
@@ -80,7 +88,13 @@ function seed(): AppState {
         { id: uid(), text: '觸控裝置支援', done: false },
       ],
     }),
-    newCard(lists[1].id, '修正日期時區問題', { labelIds: ['l3'], memberIds: ['m3'], startDate: addDays(t, -6), dueDate: addDays(t, -1) }),
+    newCard(lists[1].id, '修正日期時區問題', {
+      cover: COVER_COLORS[3],
+      labelIds: ['l3'],
+      memberIds: ['m3'],
+      startDate: addDays(t, -6),
+      dueDate: addDays(t, -1),
+    }),
     newCard(lists[2].id, '行事曆檢視', { labelIds: ['l1'], memberIds: ['m1', 'm2'], startDate: addDays(t, -8), dueDate: t }),
     newCard(lists[3].id, '建立專案骨架', {
       labelIds: ['l1'],
@@ -96,6 +110,7 @@ function seed(): AppState {
     id: uid(),
     title: '產品開發',
     color: BOARD_COLORS[0],
+    background: { ...defaultBackground(BOARD_COLORS[0]), ...BACKGROUND_PRESETS[1].bg },
     listIds: lists.map((l) => l.id),
     labels,
     customFields: [
@@ -104,6 +119,7 @@ function seed(): AppState {
     ],
   }
   return {
+    theme: defaultTheme,
     boards: { [board.id]: board },
     boardOrder: [board.id],
     lists: Object.fromEntries(lists.map((l) => [l.id, l])),
@@ -115,7 +131,12 @@ function seed(): AppState {
 }
 
 export type Action =
-  | { type: 'addBoard'; title: string; color: string }
+  | { type: 'addBoard'; title: string; background: BoardBackground }
+  | { type: 'setBoardBackground'; boardId: ID; patch: Partial<BoardBackground> }
+  | { type: 'setTheme'; patch: Partial<Theme> }
+  | { type: 'addMember'; name: string; color: string }
+  | { type: 'updateMember'; memberId: ID; patch: Partial<Member> }
+  | { type: 'deleteMember'; memberId: ID }
   | { type: 'renameBoard'; boardId: ID; title: string }
   | { type: 'deleteBoard'; boardId: ID }
   | { type: 'addList'; boardId: ID; title: string }
@@ -151,7 +172,8 @@ export function reducer(s: AppState, a: Action): AppState {
       const board: Board = {
         id,
         title: a.title,
-        color: a.color,
+        color: a.background.color,
+        background: a.background,
         listIds: lists.map((l) => l.id),
         labels: LABEL_COLORS.slice(0, 4).map((color) => ({ id: uid(), name: '', color })),
         customFields: [],
@@ -162,6 +184,24 @@ export function reducer(s: AppState, a: Action): AppState {
         boardOrder: [...s.boardOrder, id],
         lists: { ...s.lists, ...Object.fromEntries(lists.map((l) => [l.id, l])) },
       }
+    }
+    case 'setBoardBackground': {
+      const board = s.boards[a.boardId]
+      const background = { ...board.background, ...a.patch }
+      return { ...s, boards: { ...s.boards, [a.boardId]: { ...board, background, color: background.color } } }
+    }
+    case 'setTheme':
+      return { ...s, theme: { ...s.theme, ...a.patch } }
+    case 'addMember':
+      return { ...s, members: [...s.members, { id: uid(), name: a.name, color: a.color }] }
+    case 'updateMember':
+      return { ...s, members: s.members.map((m) => (m.id === a.memberId ? { ...m, ...a.patch } : m)) }
+    case 'deleteMember': {
+      if (a.memberId === s.currentMemberId) return s
+      const cards = Object.fromEntries(
+        Object.entries(s.cards).map(([id, c]) => [id, { ...c, memberIds: c.memberIds.filter((m) => m !== a.memberId) }]),
+      )
+      return { ...s, cards, members: s.members.filter((m) => m.id !== a.memberId) }
     }
     case 'renameBoard':
       return { ...s, boards: { ...s.boards, [a.boardId]: { ...s.boards[a.boardId], title: a.title } } }
@@ -300,14 +340,23 @@ export function reducer(s: AppState, a: Action): AppState {
       }
     }
     case 'reset':
-      return seed()
+      return { ...seed(), theme: s.theme }
   }
+}
+
+/** Fill in fields added after data was first saved. */
+function migrate(s: AppState): AppState {
+  const boards = Object.fromEntries(
+    Object.entries(s.boards).map(([id, b]) => [id, { ...b, background: b.background ?? defaultBackground(b.color) }]),
+  )
+  const cards = Object.fromEntries(Object.entries(s.cards).map(([id, c]) => [id, { ...c, cover: c.cover ?? null }]))
+  return { ...s, boards, cards, theme: { ...defaultTheme, ...s.theme } }
 }
 
 function load(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as AppState
+    if (raw) return migrate(JSON.parse(raw) as AppState)
   } catch {
     // ignore corrupted or unavailable storage
   }

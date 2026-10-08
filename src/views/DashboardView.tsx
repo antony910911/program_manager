@@ -59,7 +59,7 @@ export function DashboardView({ state, board, filter }: Props) {
             rows={board.listIds.map((lid) => ({
               name: state.lists[lid].title,
               value: cards.filter((c) => c.listId === lid).length,
-              color: board.color,
+              color: 'var(--accent)',
             }))}
           />
         </div>

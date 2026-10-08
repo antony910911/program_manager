@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Clock, Plus, X } from 'lucide-react'
 import type { Card, Label, Member } from '../types'
 import { formatDate, isOverdue } from '../store'
 
@@ -13,7 +14,7 @@ export function Avatar({ member, size = 26 }: { member: Member; size?: number })
 export function LabelChip({ label, wide }: { label: Label; wide?: boolean }) {
   return (
     <span className={wide ? 'label-chip wide' : 'label-chip'} style={{ background: label.color }} title={label.name}>
-      {wide ? label.name : ''}
+      {label.name}
     </span>
   )
 }
@@ -21,7 +22,11 @@ export function LabelChip({ label, wide }: { label: Label; wide?: boolean }) {
 export function DueBadge({ card }: { card: Card }) {
   if (!card.dueDate) return null
   const cls = card.completed ? 'due done' : isOverdue(card) ? 'due overdue' : 'due'
-  return <span className={cls}>🕒 {formatDate(card.dueDate)}</span>
+  return (
+    <span className={'badge ' + cls}>
+      <Clock size={13} /> {formatDate(card.dueDate)}
+    </span>
+  )
 }
 
 /** Text that turns into an input on click; commits on blur/Enter. */
@@ -67,7 +72,7 @@ export function AddForm({ label, placeholder, onAdd }: { label: string; placehol
   if (!open)
     return (
       <button className="add-btn" onClick={() => setOpen(true)}>
-        + {label}
+        <Plus size={15} /> {label}
       </button>
     )
   const submit = () => {
@@ -91,11 +96,11 @@ export function AddForm({ label, placeholder, onAdd }: { label: string; placehol
         }}
       />
       <div className="row">
-        <button className="primary" onClick={submit}>
+        <button className="btn primary" onClick={submit}>
           {label}
         </button>
-        <button className="ghost" onClick={() => setOpen(false)}>
-          ✕
+        <button className="icon-btn" onClick={() => setOpen(false)}>
+          <X size={16} />
         </button>
       </div>
     </div>

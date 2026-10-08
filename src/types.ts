@@ -39,6 +39,8 @@ export interface Card {
   comments: Comment[]
   /** Custom field values keyed by CustomField id (Premium feature). */
   customFields: Record<ID, string>
+  /** Card cover color (Premium feature); null = no cover. */
+  cover: string | null
   archived: boolean
   createdAt: string
 }
@@ -56,10 +58,20 @@ export interface CustomField {
   options: string[]
 }
 
+export interface BoardBackground {
+  type: 'color' | 'gradient' | 'image'
+  color: string
+  color2: string
+  angle: number
+  image: string
+}
+
 export interface Board {
   id: ID
   title: string
+  /** Primary board color, used for tiles and charts. */
   color: string
+  background: BoardBackground
   listIds: ID[]
   labels: Label[]
   customFields: CustomField[]
@@ -72,7 +84,22 @@ export interface ActivityEntry {
   at: string
 }
 
+export interface Theme {
+  mode: 'light' | 'dark' | 'system'
+  accent: string
+  font: 'sans' | 'rounded' | 'serif' | 'mono'
+  fontScale: number // percent, 85–125
+  radius: number // px, 0–20
+  density: 'compact' | 'comfortable' | 'spacious'
+  cardStyle: 'shadow' | 'flat' | 'outline' | 'glass'
+  listWidth: number // px
+  listOpacity: number // percent, 0–100
+  labelStyle: 'bar' | 'pill'
+  blur: boolean
+}
+
 export interface AppState {
+  theme: Theme
   boards: Record<ID, Board>
   boardOrder: ID[]
   lists: Record<ID, List>

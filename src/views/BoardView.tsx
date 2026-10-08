@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { AppState, Board, Card, Filter, ID } from '../types'
 import type { Action } from '../store'
 import { matchesFilter } from '../store'
+import { AlignLeft, Ellipsis, MessageSquare, SquareCheck } from 'lucide-react'
 import { AddForm, Avatar, DueBadge, InlineEdit, LabelChip } from '../components/common'
 
 interface Props {
@@ -62,13 +63,13 @@ export function BoardView({ state, board, filter, dispatch, openCard }: Props) {
               <InlineEdit className="list-title" value={list.title} onSave={(title) => dispatch({ type: 'renameList', listId, title })} />
               <span className="muted small">{cards.length}</span>
               <button
-                className="ghost small"
+                className="icon-btn"
                 title="刪除清單"
                 onClick={() =>
                   confirm(`刪除清單「${list.title}」及其所有卡片？`) && dispatch({ type: 'deleteList', boardId: board.id, listId })
                 }
               >
-                ⋯
+                <Ellipsis size={16} />
               </button>
             </div>
             <div className="list-cards">
@@ -145,8 +146,9 @@ function CardTile({ state, board, card, dragging, onClick, onDragStart, onDragEn
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
     >
+      {card.cover && <div className="card-cover" style={{ background: card.cover }} />}
       {labels.length > 0 && (
-        <div className="chips">
+        <div className="chips card-labels">
           {labels.map((l) => (
             <LabelChip key={l.id} label={l} />
           ))}
@@ -155,11 +157,19 @@ function CardTile({ state, board, card, dragging, onClick, onDragStart, onDragEn
       <div className="card-title">{card.title}</div>
       <div className="card-badges">
         <DueBadge card={card} />
-        {card.description && <span title="有描述">≡</span>}
-        {card.comments.length > 0 && <span>💬 {card.comments.length}</span>}
+        {card.description && (
+          <span className="badge" title="有描述">
+            <AlignLeft size={13} />
+          </span>
+        )}
+        {card.comments.length > 0 && (
+          <span className="badge">
+            <MessageSquare size={13} /> {card.comments.length}
+          </span>
+        )}
         {card.checklist.length > 0 && (
-          <span className={done === card.checklist.length ? 'due done' : ''}>
-            ☑ {done}/{card.checklist.length}
+          <span className={done === card.checklist.length ? 'badge due done' : 'badge'}>
+            <SquareCheck size={13} /> {done}/{card.checklist.length}
           </span>
         )}
         <span className="spacer" />

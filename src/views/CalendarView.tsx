@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { AppState, Board, Filter, ID } from '../types'
 import type { Action } from '../store'
 import { boardCards, isOverdue, matchesFilter, today, ymd } from '../store'
@@ -35,12 +36,18 @@ export function CalendarView({ state, board, filter, dispatch, openCard }: Props
   return (
     <div className="view-panel">
       <div className="row cal-nav">
-        <button onClick={() => shift(-1)}>‹</button>
+        <button className="icon-btn" onClick={() => shift(-1)}>
+          <ChevronLeft size={18} />
+        </button>
         <strong>
           {cursor.getFullYear()} 年 {cursor.getMonth() + 1} 月
         </strong>
-        <button onClick={() => shift(1)}>›</button>
-        <button onClick={() => setCursor(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}>今天</button>
+        <button className="icon-btn" onClick={() => shift(1)}>
+          <ChevronRight size={18} />
+        </button>
+        <button className="btn small" onClick={() => setCursor(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}>
+          今天
+        </button>
         <span className="muted small">提示：把卡片拖到其他日期即可改到期日</span>
       </div>
       <div className="calendar">
