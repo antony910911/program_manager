@@ -452,7 +452,13 @@ function migrate(s: AppState): AppState {
       return [id, { ...c, cover: c.cover ?? null, homeBoardId, homeListId }]
     }),
   )
-  return { ...s, focusBoardId, boards, lists, cards, theme: { ...defaultTheme, ...s.theme } }
+  const theme = { ...defaultTheme, ...s.theme }
+  if (!s.theme?.rev) {
+    // Rounder corners became the default; bump themes still on the old default of 12px.
+    if (theme.radius === 12) theme.radius = 16
+    theme.rev = 2
+  }
+  return { ...s, focusBoardId, boards, lists, cards, theme }
 }
 
 function load(): AppState {

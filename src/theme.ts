@@ -5,13 +5,14 @@ export const defaultTheme: Theme = {
   accent: '#6366f1',
   font: 'sans',
   fontScale: 100,
-  radius: 12,
+  radius: 16,
   density: 'comfortable',
   cardStyle: 'shadow',
   listWidth: 280,
   listOpacity: 92,
   labelStyle: 'pill',
   blur: true,
+  rev: 2,
 }
 
 export const THEME_PRESETS: { name: string; theme: Partial<Theme> }[] = [
@@ -22,10 +23,10 @@ export const THEME_PRESETS: { name: string; theme: Partial<Theme> }[] = [
   { name: '日落', theme: { accent: '#f97316', radius: 18, cardStyle: 'shadow', listOpacity: 80, font: 'rounded' } },
   {
     name: '極簡',
-    theme: { mode: 'light', accent: '#18181b', radius: 4, cardStyle: 'outline', listOpacity: 100, blur: false, font: 'sans' },
+    theme: { mode: 'light', accent: '#18181b', radius: 10, cardStyle: 'outline', listOpacity: 100, blur: false, font: 'sans' },
   },
-  { name: '紙本', theme: { mode: 'light', accent: '#b45309', radius: 6, cardStyle: 'flat', listOpacity: 96, font: 'serif' } },
-  { name: '終端機', theme: { mode: 'dark', accent: '#22c55e', radius: 2, cardStyle: 'outline', listOpacity: 70, font: 'mono' } },
+  { name: '紙本', theme: { mode: 'light', accent: '#b45309', radius: 10, cardStyle: 'flat', listOpacity: 96, font: 'serif' } },
+  { name: '終端機', theme: { mode: 'dark', accent: '#22c55e', radius: 8, cardStyle: 'outline', listOpacity: 70, font: 'mono' } },
 ]
 
 export const ACCENT_SWATCHES = [
@@ -111,7 +112,7 @@ export function themeVars(t: Theme): Record<string, string> {
     '--font': FONTS[t.font],
     '--font-size': `${(14 * t.fontScale) / 100}px`,
     '--radius': `${t.radius}px`,
-    '--radius-sm': `${Math.max(2, Math.round(t.radius * 0.6))}px`,
+    '--radius-sm': `${Math.max(3, Math.round(t.radius * 0.75))}px`,
     '--pad': `${pad}px`,
     '--gap': `${gap}px`,
     '--list-w': `${t.listWidth}px`,

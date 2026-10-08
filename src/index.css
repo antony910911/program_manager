@@ -641,9 +641,14 @@ input.full {
   text-decoration: line-through;
   color: var(--muted);
 }
-.card-cover {
-  margin: calc(var(--pad) * -1) calc(var(--pad) * -1) 2px;
-  height: 34px;
+/* A colored card is one solid color; its text color is picked for contrast in ListColumn. */
+.card-tile.has-color,
+.card-tile.has-color:hover {
+  background: var(--card-color);
+}
+.card-tile.has-color .due.overdue,
+.card-tile.has-color .due.done {
+  background: rgba(255, 255, 255, 0.85);
 }
 .card-title {
   word-break: break-word;
@@ -1605,8 +1610,9 @@ input.full {
 
 /* ---------- list colors ---------- */
 .list.colored {
-  border-top: 3px solid var(--list-color);
-  background: color-mix(in srgb, var(--list-color) 13%, color-mix(in srgb, var(--list-bg) var(--list-alpha), transparent));
+  /* One color for the whole list, header included. */
+  background: color-mix(in srgb, var(--list-color) 26%, color-mix(in srgb, var(--list-bg) var(--list-alpha), transparent));
+  border-color: color-mix(in srgb, var(--list-color) 30%, transparent);
 }
 .list-dot {
   width: 10px;
@@ -1944,4 +1950,8 @@ input.full {
   to {
     transform: rotate(360deg);
   }
+}
+/* Keep a label readable when it matches its card's color. */
+.card-tile.has-color .label-chip {
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.75);
 }

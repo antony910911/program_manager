@@ -102,6 +102,8 @@ export interface Theme {
   listOpacity: number // percent, 0–100
   labelStyle: 'bar' | 'pill'
   blur: boolean
+  /** Appearance defaults revision, used to upgrade saved themes once. */
+  rev?: number
 }
 
 export interface AppState {

@@ -223,10 +223,10 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
 
           <aside className="modal-side">
             <div className="side-title">
-              <Image size={14} /> 封面
+              <Image size={14} /> 卡片顏色
             </div>
             <div className="cover-swatches">
-              <button className={'swatch none' + (card.cover ? '' : ' on')} title="無封面" onClick={() => update({ cover: null })}>
+              <button className={'swatch none' + (card.cover ? '' : ' on')} title="無顏色" onClick={() => update({ cover: null })}>
                 <X size={12} />
               </button>
               {COVER_COLORS.map((c) => (

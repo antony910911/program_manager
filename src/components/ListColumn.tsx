@@ -7,7 +7,7 @@ import type { Action } from '../store'
 import { cardBoard } from '../store'
 import { dropCard, visibleCards } from '../dnd'
 import type { Dnd } from '../dnd'
-import { LIST_COLORS } from '../theme'
+import { LIST_COLORS, readableOn } from '../theme'
 import { AddForm, Avatar, DueBadge, InlineEdit, LabelChip } from './common'
 import { ColorPicker, ConfirmButton } from './controls'
 
@@ -69,7 +69,6 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
         }}
         onDragEnd={endDrag}
       >
-        {list.color && <span className="list-dot" />}
         <InlineEdit
           className="list-title"
           value={list.title}
@@ -205,7 +204,8 @@ export function CardTile({ state, card, dragging, showProject, onClick, onDragSt
   const homeList = project && card.homeListId ? state.lists[card.homeListId] : undefined
   return (
     <div
-      className={'card-tile' + (dragging ? ' dragging' : '') + (card.completed ? ' completed' : '')}
+      className={'card-tile' + (dragging ? ' dragging' : '') + (card.completed ? ' completed' : '') + (card.cover ? ' has-color' : '')}
+      style={card.cover ? coloredCardStyle(card.cover) : undefined}
       draggable
       onClick={onClick}
       onDragStart={(e) => {
@@ -216,7 +216,6 @@ export function CardTile({ state, card, dragging, showProject, onClick, onDragSt
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
     >
-      {card.cover && <div className="card-cover" style={{ background: card.cover }} />}
       {project && (
         <span className="project-chip">
           <span style={{ background: project.color }} />
@@ -283,4 +282,10 @@ export function AddListColumn({
       <AddForm label="新增清單" placeholder="輸入清單名稱…" onAdd={onAdd} />
     </div>
   )
+}
+
+/** Fill a card with its color and switch its text to whichever of dark/light reads on it. */
+function coloredCardStyle(color: string): React.CSSProperties {
+  const fg = readableOn(color)
+  return { '--card-color': color, '--text': fg, '--muted': `color-mix(in srgb, ${fg} 72%, transparent)`, color: fg } as React.CSSProperties
 }
