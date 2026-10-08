@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Monitor, Moon, Plus, RotateCcw, Sun, Trash2, X } from 'lucide-react'
 import type { AppState, Theme } from '../types'
 import type { Action } from '../store'
@@ -18,13 +18,19 @@ export function AppearancePanel({ state, dispatch, onClose }: Props) {
   const [jsonError, setJsonError] = useState('')
   const [newMember, setNewMember] = useState('')
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   return (
     <div className="drawer-backdrop" onMouseDown={onClose}>
       <aside className="drawer" onMouseDown={(e) => e.stopPropagation()}>
         <header className="drawer-head">
           <h3>外觀設定</h3>
-          <button className="icon-btn" onClick={onClose} title="關閉">
-            <X size={18} />
+          <button className="btn close-btn" onClick={onClose}>
+            <X size={16} /> 關閉
           </button>
         </header>
         <div className="drawer-body">
@@ -245,6 +251,11 @@ export function AppearancePanel({ state, dispatch, onClose }: Props) {
             <RotateCcw size={14} /> 還原預設外觀
           </button>
         </div>
+        <footer className="drawer-foot">
+          <button className="btn primary wide" onClick={onClose}>
+            完成
+          </button>
+        </footer>
       </aside>
     </div>
   )

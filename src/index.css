@@ -755,7 +755,7 @@ input.full {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 48px 16px;
+  padding: calc(48px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
 }
 .modal {
@@ -929,7 +929,11 @@ input.full {
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(400px, 100vw);
+  /* Leave a strip of backdrop visible on phones so tapping outside also closes it. */
+  width: min(400px, calc(100vw - 40px));
+  /* Keep the header and footer clear of the phone's status bar and home indicator. */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-lg);
@@ -946,6 +950,13 @@ input.full {
 }
 .drawer-head h3 {
   margin: 0;
+}
+.close-btn {
+  padding: 6px 12px;
+}
+.drawer-foot {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
 }
 .drawer-body {
   flex: 1;
