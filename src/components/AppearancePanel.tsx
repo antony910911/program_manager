@@ -127,6 +127,15 @@ export function AppearancePanel({ state, dispatch, onClose }: Props) {
               onChange={(listWidth) => set({ listWidth })}
             />
             <Slider
+              label="清單與卡片顏色飽和度"
+              value={t.colorStrength}
+              min={20}
+              max={100}
+              step={5}
+              unit="%"
+              onChange={(colorStrength) => set({ colorStrength })}
+            />
+            <Slider
               label="清單不透明度"
               value={t.listOpacity}
               min={0}

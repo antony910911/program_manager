@@ -12,6 +12,7 @@ export const defaultTheme: Theme = {
   listOpacity: 92,
   labelStyle: 'pill',
   blur: true,
+  colorStrength: 80,
   rev: 3,
 }
 
@@ -62,7 +63,11 @@ export const BACKGROUND_PRESETS: { name: string; bg: Partial<BoardBackground> }[
  */
 export const SOFT_COLORS = ['#60a5fa', '#38bdf8', '#2dd4bf', '#4ade80', '#facc15', '#fb923c', '#f87171', '#f472b6', '#a78bfa', '#94a3b8']
 export const COVER_COLORS = SOFT_COLORS
-export const softPreview = (color: string, kind: 'list' | 'card') => shade(color, kind === 'list' ? 0.68 : 0.52)
+/** Share of the chosen color in a list or card, in light and dark mode (the rest is the surface). */
+export function tintPercents(strength: number) {
+  return { list: strength * 0.7, card: strength, listDark: strength * 0.4, cardDark: strength * 0.55 }
+}
+export const softPreview = (color: string, kind: 'list' | 'card', strength: number) => shade(color, 1 - tintPercents(strength)[kind] / 100)
 
 export function defaultBackground(color: string): BoardBackground {
   return { type: 'gradient', color, color2: shade(color, -0.35), angle: 135, image: '' }
@@ -125,6 +130,15 @@ export function themeVars(t: Theme): Record<string, string> {
     '--list-w': `${t.listWidth}px`,
     '--list-alpha': `${t.listOpacity}%`,
     '--blur': t.blur ? '14px' : '0px',
+    ...(() => {
+      const p = tintPercents(t.colorStrength)
+      return {
+        '--tint-list-light': `${p.list}%`,
+        '--tint-card-light': `${p.card}%`,
+        '--tint-list-dark': `${p.listDark}%`,
+        '--tint-card-dark': `${p.cardDark}%`,
+      }
+    })(),
   }
 }
 

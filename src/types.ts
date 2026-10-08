@@ -102,6 +102,8 @@ export interface Theme {
   listOpacity: number // percent, 0–100
   labelStyle: 'bar' | 'pill'
   blur: boolean
+  /** How saturated list and card colors look, percent 20–100. */
+  colorStrength: number
   /** Appearance defaults revision, used to upgrade saved themes once. */
   rev?: number
 }

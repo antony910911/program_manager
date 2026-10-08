@@ -31,7 +31,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
-        {card.cover && <div className="modal-cover" style={{ background: softPreview(card.cover, 'card') }} />}
+        {card.cover && <div className="modal-cover" style={{ background: softPreview(card.cover, 'card', state.theme.colorStrength) }} />}
         <button className="modal-close icon-btn" onClick={onClose}>
           <X size={18} />
         </button>
@@ -233,7 +233,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                 <button
                   key={c}
                   className={'swatch' + (card.cover === c ? ' on' : '')}
-                  style={{ background: softPreview(c, 'card') }}
+                  style={{ background: softPreview(c, 'card', state.theme.colorStrength) }}
                   onClick={() => update({ cover: c })}
                 />
               ))}

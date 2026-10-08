@@ -83,6 +83,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
             <ListMenu
               anchor={menuBtn}
               list={list}
+              colorStrength={state.theme.colorStrength}
               onClose={() => setMenuOpen(false)}
               onColor={(color) => dispatch({ type: 'setListColor', listId: list.id, color })}
               onDelete={() => dispatch({ type: 'deleteList', boardId, listId: list.id })}
@@ -126,12 +127,14 @@ const MENU_W = 260
 function ListMenu({
   anchor,
   list,
+  colorStrength,
   onClose,
   onColor,
   onDelete,
 }: {
   anchor: RefObject<HTMLButtonElement | null>
   list: List
+  colorStrength: number
   onClose: () => void
   onColor: (c: string | null) => void
   onDelete: () => void
@@ -171,7 +174,12 @@ function ListMenu({
         </button>
       </div>
       <div className="field-label">清單顏色</div>
-      <ColorPicker value={list.color ?? '#94a3b8'} swatches={LIST_COLORS} preview={(c) => softPreview(c, 'list')} onChange={onColor} />
+      <ColorPicker
+        value={list.color ?? '#94a3b8'}
+        swatches={LIST_COLORS}
+        preview={(c) => softPreview(c, 'list', colorStrength)}
+        onChange={onColor}
+      />
       <button className="btn wide small" onClick={() => onColor(null)} disabled={!list.color}>
         移除顏色
       </button>
