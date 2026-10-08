@@ -15,7 +15,9 @@ npm run lint
 
 已發布的版本：https://claude.ai/artifact/HbbDuWHfy3JdqJ8QMxMP9V （需要登入 claude.ai；預設只有擁有者能開，可從頁面的 Share 選單分享）。
 
-資料存在各自瀏覽器的 localStorage，換瀏覽器或裝置不會同步。要重新產生單一檔案版本：`npm run build:single`，輸出在 `dist-single/program-manager.html`。
+在 claude.ai 上開啟時，資料會同步到你的 claude.ai 帳號（artifact 的 `db`，存在你個人私有的 `data/users/<你的 id>/` 底下），手機、電腦、iPad 只要登入同一個帳號就會即時同步；右上角的雲朵圖示顯示同步狀態。在其他地方（`npm run dev`、靜態主機）則只存在該瀏覽器的 localStorage。
+
+手機與平板：長按卡片或清單標題約 0.25 秒即可拖曳（`src/touch.ts` 用 mobile-drag-drop 把觸控轉成拖放事件）。要重新產生單一檔案版本：`npm run build:single`，輸出在 `dist-single/program-manager.html`。
 
 ## 已完成功能
 
@@ -39,6 +41,8 @@ src/
   types.ts              資料模型（Board / List / Card / Label / CustomField …）
   store.ts              reducer + actions + localStorage 持久化 + 篩選/日期工具
   dnd.ts                共用的拖放狀態與放置邏輯
+  sync.ts               雲端同步（claude.ai artifact db，每個看板／清單一份文件，逐文件合併）
+  touch.ts              觸控拖曳（長按拖曳）
   theme.ts              主題預設、背景預設、色彩工具、主題 → CSS 變數
   App.tsx               頂部列、看板首頁、檢視切換、篩選列、看板設定
   components/

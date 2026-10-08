@@ -1879,3 +1879,58 @@ input.full {
     display: none;
   }
 }
+
+/* ---------- touch ---------- */
+/* Long press starts a drag on touch screens; keep iOS from opening its text/callout menu instead. */
+.card-tile,
+.list-header {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.dnd-poly-drag-image {
+  opacity: 0.9 !important;
+  transform-origin: center;
+  box-shadow: var(--shadow-lg) !important;
+  rotate: 2deg;
+}
+.dnd-poly-drag-image.dnd-poly-snapback {
+  transition: transform 0.2s ease-out !important;
+}
+
+/* ---------- sync badge ---------- */
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.86em;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.on-board .sync-badge {
+  color: rgba(255, 255, 255, 0.85);
+}
+.sync-badge.synced {
+  color: var(--success);
+}
+.on-board .sync-badge.synced {
+  color: #bbf7d0;
+}
+.sync-badge.error {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+}
+.on-board .sync-badge.error {
+  color: #fecaca;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

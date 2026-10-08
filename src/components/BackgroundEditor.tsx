@@ -5,8 +5,8 @@ import { BACKGROUND_PRESETS, backgroundCss, defaultBackground } from '../theme'
 import { BOARD_COLORS } from '../store'
 import { ColorPicker, Segmented, Slider } from './controls'
 
-/** Downscale an uploaded image so it fits comfortably in localStorage. */
-function fileToDataUrl(file: File, maxSize = 1600): Promise<string> {
+/** Downscale an uploaded image so it fits in browser storage and in one synced document (256 KiB). */
+function fileToDataUrl(file: File, maxSize = 1280): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
@@ -16,7 +16,7 @@ function fileToDataUrl(file: File, maxSize = 1600): Promise<string> {
       canvas.height = Math.round(img.height * scale)
       canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
       URL.revokeObjectURL(img.src)
-      resolve(canvas.toDataURL('image/jpeg', 0.82))
+      resolve(canvas.toDataURL('image/jpeg', 0.72))
     }
     img.onerror = reject
     img.src = URL.createObjectURL(file)

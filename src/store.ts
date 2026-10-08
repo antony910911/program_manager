@@ -198,6 +198,8 @@ export type Action =
   | { type: 'addCustomField'; boardId: ID; name: string; fieldType: 'text' | 'number' | 'select'; options: string[] }
   | { type: 'deleteCustomField'; boardId: ID; fieldId: ID }
   | { type: 'reset' }
+  /** Replace everything with state loaded from the cloud. */
+  | { type: 'hydrate'; state: AppState }
 
 export function boardOfList(s: AppState, listId: ID): ID | undefined {
   return Object.keys(s.boards).find((b) => s.boards[b].listIds.includes(listId))
@@ -416,6 +418,8 @@ export function reducer(s: AppState, a: Action): AppState {
     }
     case 'reset':
       return { ...seed(), theme: s.theme }
+    case 'hydrate':
+      return migrate(a.state)
   }
 }
 

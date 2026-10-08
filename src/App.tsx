@@ -5,7 +5,11 @@ import {
   ChartColumn,
   ChartGantt,
   CalendarDays,
+  Cloud,
+  CloudAlert,
+  CloudOff,
   House,
+  RefreshCw,
   Image,
   Palette,
   Plus,
@@ -34,6 +38,8 @@ import { CalendarView } from './views/CalendarView'
 import { TimelineView } from './views/TimelineView'
 import { DashboardView } from './views/DashboardView'
 import { SplitView } from './views/SplitView'
+import { useCloudSync } from './sync'
+import type { SyncStatus } from './sync'
 
 const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
   { kind: 'board', name: '看板', icon: <SquareKanban size={15} /> },
@@ -45,6 +51,7 @@ const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
 
 export default function App() {
   const [state, dispatch] = useAppStore()
+  const sync = useCloudSync(state, dispatch)
   const [boardId, setBoardIdRaw] = useState<ID | null>(null)
   const [view, setView] = useState<ViewKind>('board')
   const [filter, setFilter] = useState<Filter>(emptyFilter)
@@ -119,11 +126,12 @@ export default function App() {
         <button className="top-btn" onClick={() => setAppearanceOpen(true)}>
           <Palette size={16} /> <span className="btn-label">外觀</span>
         </button>
+        <SyncBadge status={sync.status} error={sync.error} />
         {me && <Avatar member={me} size={30} />}
       </header>
 
       {!board ? (
-        <Home state={state} dispatch={dispatch} onOpen={(id) => setBoardId(id)} />
+        <Home state={state} dispatch={dispatch} onOpen={(id) => setBoardId(id)} synced={sync.status !== 'local'} />
       ) : (
         <main className="board-page">
           <div className="board-bar">
@@ -224,10 +232,12 @@ function Home({
   state,
   dispatch,
   onOpen,
+  synced,
 }: {
   state: ReturnType<typeof useAppStore>[0]
   dispatch: (a: Action) => void
   onOpen: (id: ID) => void
+  synced: boolean
 }) {
   const [title, setTitle] = useState('')
   const [template, setTemplate] = useState(0)
@@ -318,7 +328,7 @@ function Home({
         </form>
       </div>
       <p className="muted small home-foot">
-        資料目前存在瀏覽器的 localStorage。
+        {synced ? '資料會同步到你的 claude.ai 帳號，登入同一個帳號的手機、電腦、iPad 都看得到。' : '資料只存在這個瀏覽器裡。'}
         <ConfirmButton
           className="link-btn"
           confirmText="再按一次：清除所有資料並還原範例（外觀會保留）"
@@ -548,5 +558,32 @@ function BoardSettings({
         )}
       </div>
     </div>
+  )
+}
+
+const SYNC_LABELS: Record<SyncStatus, string> = {
+  local: '只存在這台裝置',
+  connecting: '連線到雲端…',
+  synced: '已同步',
+  saving: '同步中…',
+  error: '同步發生問題',
+}
+
+function SyncBadge({ status, error }: { status: SyncStatus; error: string }) {
+  const icon =
+    status === 'synced' ? (
+      <Cloud size={16} />
+    ) : status === 'error' ? (
+      <CloudAlert size={16} />
+    ) : status === 'local' ? (
+      <CloudOff size={16} />
+    ) : (
+      <RefreshCw size={15} className="spin" />
+    )
+  return (
+    <span className={'sync-badge ' + status} title={error || SYNC_LABELS[status]} role="status">
+      {icon}
+      <span className="btn-label">{SYNC_LABELS[status]}</span>
+    </span>
   )
 }
