@@ -123,3 +123,5 @@ export function themeVars(t: Theme): Record<string, string> {
 export function isTheme(v: unknown): v is Partial<Theme> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
+
+export const LIST_COLORS = ['#64748b', '#0ea5e9', '#6366f1', '#a855f7', '#ec4899', '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6']

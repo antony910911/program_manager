@@ -27,10 +27,39 @@ export function daysBetween(a: string, b: string): number {
 export const LABEL_COLORS = ['#61bd4f', '#f2d600', '#ff9f1a', '#eb5a46', '#c377e0', '#0079bf', '#00c2e0', '#ff78cb']
 export const BOARD_COLORS = ['#0079bf', '#d29034', '#519839', '#b04632', '#89609e', '#cd5a91', '#4bbf6b', '#00aecc']
 
+export const FOCUS_LISTS: { title: string; color: string }[] = [
+  { title: '待辦', color: '#64748b' },
+  { title: '進行中', color: '#0ea5e9' },
+  { title: '急件', color: '#ef4444' },
+]
+
+function newList(title: string, color: string | null = null, fixed = false): List {
+  return fixed ? { id: uid(), title, cardIds: [], color, fixed } : { id: uid(), title, cardIds: [], color }
+}
+
+function newFocusBoard(): { board: Board; lists: List[] } {
+  const lists = FOCUS_LISTS.map((l) => newList(l.title, l.color, true))
+  const board: Board = {
+    id: uid(),
+    title: '雙層模式',
+    color: '#334155',
+    background: { ...defaultBackground('#334155'), ...BACKGROUND_PRESETS[7].bg },
+    listIds: lists.map((l) => l.id),
+    labels: [
+      { id: uid(), name: '重要', color: LABEL_COLORS[3] },
+      { id: uid(), name: '等待回覆', color: LABEL_COLORS[1] },
+      { id: uid(), name: '個人', color: LABEL_COLORS[5] },
+    ],
+    customFields: [],
+  }
+  return { board, lists }
+}
+
 function newCard(listId: ID, title: string, extra: Partial<Card> = {}): Card {
   return {
     id: uid(),
     listId,
+    homeBoardId: null,
     title,
     description: '',
     labelIds: [],
@@ -61,12 +90,7 @@ function seed(): AppState {
     { id: 'l3', name: 'Bug', color: LABEL_COLORS[3] },
     { id: 'l4', name: '高優先', color: LABEL_COLORS[2] },
   ]
-  const lists: List[] = [
-    { id: uid(), title: '待辦', cardIds: [] },
-    { id: uid(), title: '進行中', cardIds: [] },
-    { id: uid(), title: '審核中', cardIds: [] },
-    { id: uid(), title: '完成', cardIds: [] },
-  ]
+  const lists: List[] = [newList('待辦'), newList('進行中', '#0ea5e9'), newList('審核中', '#a855f7'), newList('完成', '#22c55e')]
   const cards: Card[] = [
     newCard(lists[0].id, '設計登入頁面', {
       cover: COVER_COLORS[4],
@@ -104,10 +128,22 @@ function seed(): AppState {
       completed: true,
     }),
   ]
-  for (const c of cards) lists.find((l) => l.id === c.listId)!.cardIds.push(c.id)
+  const boardId = uid()
+  const focus = newFocusBoard()
+  cards.push(
+    newCard(focus.lists[2].id, '客戶回報：無法登入', { labelIds: ['l3', 'l4'], memberIds: ['m1'], dueDate: t, cover: COVER_COLORS[3] }),
+    newCard(focus.lists[0].id, '整理本週會議記錄', { labelIds: [], dueDate: addDays(t, 1) }),
+  )
+  cards[cards.length - 2].homeBoardId = boardId
+  cards[cards.length - 1].labelIds = [focus.board.labels[2].id]
+  const allLists = [...lists, ...focus.lists]
+  for (const c of cards) {
+    allLists.find((l) => l.id === c.listId)!.cardIds.push(c.id)
+    if (lists.some((l) => l.id === c.listId)) c.homeBoardId = boardId
+  }
 
   const board: Board = {
-    id: uid(),
+    id: boardId,
     title: '產品開發',
     color: BOARD_COLORS[0],
     background: { ...defaultBackground(BOARD_COLORS[0]), ...BACKGROUND_PRESETS[1].bg },
@@ -120,9 +156,10 @@ function seed(): AppState {
   }
   return {
     theme: defaultTheme,
-    boards: { [board.id]: board },
+    focusBoardId: focus.board.id,
+    boards: { [board.id]: board, [focus.board.id]: focus.board },
     boardOrder: [board.id],
-    lists: Object.fromEntries(lists.map((l) => [l.id, l])),
+    lists: Object.fromEntries(allLists.map((l) => [l.id, l])),
     cards: Object.fromEntries(cards.map((c) => [c.id, c])),
     members,
     currentMemberId: 'm1',
@@ -141,8 +178,9 @@ export type Action =
   | { type: 'deleteBoard'; boardId: ID }
   | { type: 'addList'; boardId: ID; title: string }
   | { type: 'renameList'; listId: ID; title: string }
+  | { type: 'setListColor'; listId: ID; color: string | null }
   | { type: 'deleteList'; boardId: ID; listId: ID }
-  | { type: 'moveList'; boardId: ID; listId: ID; toIndex: number }
+  | { type: 'moveList'; listId: ID; toBoardId: ID; toIndex: number }
   | { type: 'addCard'; listId: ID; title: string }
   | { type: 'updateCard'; cardId: ID; patch: Partial<Card> }
   | { type: 'moveCard'; cardId: ID; toListId: ID; toIndex: number }
@@ -154,8 +192,19 @@ export type Action =
   | { type: 'deleteCustomField'; boardId: ID; fieldId: ID }
   | { type: 'reset' }
 
-function boardOfList(s: AppState, listId: ID): ID | undefined {
-  return s.boardOrder.find((b) => s.boards[b].listIds.includes(listId))
+export function boardOfList(s: AppState, listId: ID): ID | undefined {
+  return Object.keys(s.boards).find((b) => s.boards[b].listIds.includes(listId))
+}
+
+/** The project a card belongs to (null for cards created directly in a focus list). */
+function projectOf(s: AppState, listId: ID): ID | null {
+  const b = boardOfList(s, listId)
+  return b && b !== s.focusBoardId ? b : null
+}
+
+/** Board whose labels and custom fields apply to a card. */
+export function cardBoard(s: AppState, card: Card): Board {
+  return s.boards[card.homeBoardId ?? ''] ?? s.boards[boardOfList(s, card.listId) ?? ''] ?? s.boards[s.focusBoardId]
 }
 
 function log(s: AppState, boardId: ID | undefined, text: string): AppState {
@@ -168,7 +217,7 @@ export function reducer(s: AppState, a: Action): AppState {
   switch (a.type) {
     case 'addBoard': {
       const id = uid()
-      const lists: List[] = ['待辦', '進行中', '完成'].map((title) => ({ id: uid(), title, cardIds: [] }))
+      const lists: List[] = ['待辦', '進行中', '完成'].map((title) => newList(title))
       const board: Board = {
         id,
         title: a.title,
@@ -206,9 +255,12 @@ export function reducer(s: AppState, a: Action): AppState {
     case 'renameBoard':
       return { ...s, boards: { ...s.boards, [a.boardId]: { ...s.boards[a.boardId], title: a.title } } }
     case 'deleteBoard': {
+      if (a.boardId === s.focusBoardId) return s
       const board = s.boards[a.boardId]
       const lists = { ...s.lists }
       const cards = { ...s.cards }
+      // Cards of this project parked in the focus lists stay, detached from the project.
+      for (const [id, c] of Object.entries(cards)) if (c.homeBoardId === a.boardId) cards[id] = { ...c, homeBoardId: null }
       for (const lid of board.listIds) {
         for (const cid of lists[lid].cardIds) delete cards[cid]
         delete lists[lid]
@@ -225,7 +277,7 @@ export function reducer(s: AppState, a: Action): AppState {
       }
     }
     case 'addList': {
-      const list: List = { id: uid(), title: a.title, cardIds: [] }
+      const list = newList(a.title)
       const board = s.boards[a.boardId]
       return log(
         {
@@ -238,8 +290,12 @@ export function reducer(s: AppState, a: Action): AppState {
       )
     }
     case 'renameList':
+      if (s.lists[a.listId].fixed) return s
       return { ...s, lists: { ...s.lists, [a.listId]: { ...s.lists[a.listId], title: a.title } } }
+    case 'setListColor':
+      return { ...s, lists: { ...s.lists, [a.listId]: { ...s.lists[a.listId], color: a.color } } }
     case 'deleteList': {
+      if (s.lists[a.listId].fixed) return s
       const board = s.boards[a.boardId]
       const lists = { ...s.lists }
       const cards = { ...s.cards }
@@ -258,13 +314,21 @@ export function reducer(s: AppState, a: Action): AppState {
       )
     }
     case 'moveList': {
-      const board = s.boards[a.boardId]
-      const ids = board.listIds.filter((l) => l !== a.listId)
-      ids.splice(a.toIndex, 0, a.listId)
-      return { ...s, boards: { ...s.boards, [a.boardId]: { ...board, listIds: ids } } }
+      const list = s.lists[a.listId]
+      const fromId = boardOfList(s, a.listId)
+      if (!fromId || list.fixed || a.toBoardId === s.focusBoardId) return s
+      const boards = { ...s.boards, [fromId]: { ...s.boards[fromId], listIds: s.boards[fromId].listIds.filter((l) => l !== a.listId) } }
+      const to = boards[a.toBoardId]
+      const ids = [...to.listIds]
+      ids.splice(Math.min(a.toIndex, ids.length), 0, a.listId)
+      boards[a.toBoardId] = { ...to, listIds: ids }
+      if (fromId === a.toBoardId) return { ...s, boards }
+      const cards = { ...s.cards }
+      for (const cid of list.cardIds) cards[cid] = { ...cards[cid], homeBoardId: a.toBoardId }
+      return log({ ...s, boards, cards }, a.toBoardId, `將清單「${list.title}」從「${s.boards[fromId].title}」移入`)
     }
     case 'addCard': {
-      const card = newCard(a.listId, a.title)
+      const card = newCard(a.listId, a.title, { homeBoardId: projectOf(s, a.listId) })
       const list = s.lists[a.listId]
       return log(
         {
@@ -286,10 +350,11 @@ export function reducer(s: AppState, a: Action): AppState {
       const ids = [...to.cardIds]
       ids.splice(Math.min(a.toIndex, ids.length), 0, a.cardId)
       lists[a.toListId] = { ...to, cardIds: ids }
-      const next = { ...s, lists, cards: { ...s.cards, [a.cardId]: { ...card, listId: a.toListId } } }
+      const homeBoardId = projectOf(s, a.toListId) ?? card.homeBoardId
+      const next = { ...s, lists, cards: { ...s.cards, [a.cardId]: { ...card, listId: a.toListId, homeBoardId } } }
       return from.id === a.toListId
         ? next
-        : log(next, boardOfList(s, a.toListId), `將「${card.title}」從「${from.title}」移到「${to.title}」`)
+        : log(next, homeBoardId ?? s.focusBoardId, `將「${card.title}」從「${from.title}」移到「${to.title}」`)
     }
     case 'deleteCard': {
       const card = s.cards[a.cardId]
@@ -349,8 +414,24 @@ function migrate(s: AppState): AppState {
   const boards = Object.fromEntries(
     Object.entries(s.boards).map(([id, b]) => [id, { ...b, background: b.background ?? defaultBackground(b.color) }]),
   )
-  const cards = Object.fromEntries(Object.entries(s.cards).map(([id, c]) => [id, { ...c, cover: c.cover ?? null }]))
-  return { ...s, boards, cards, theme: { ...defaultTheme, ...s.theme } }
+  const lists = Object.fromEntries(Object.entries(s.lists).map(([id, l]) => [id, { ...l, color: l.color ?? null }]))
+  let focusBoardId = s.focusBoardId
+  if (!focusBoardId || !boards[focusBoardId]) {
+    const focus = newFocusBoard()
+    focusBoardId = focus.board.id
+    boards[focusBoardId] = focus.board
+    for (const l of focus.lists) lists[l.id] = l
+  }
+  const listBoard: Record<ID, ID> = {}
+  for (const b of Object.values(boards)) for (const l of b.listIds) listBoard[l] = b.id
+  const cards = Object.fromEntries(
+    Object.entries(s.cards).map(([id, c]) => {
+      const owner = listBoard[c.listId]
+      const homeBoardId = c.homeBoardId !== undefined ? c.homeBoardId : owner && owner !== focusBoardId ? owner : null
+      return [id, { ...c, cover: c.cover ?? null, homeBoardId }]
+    }),
+  )
+  return { ...s, focusBoardId, boards, lists, cards, theme: { ...defaultTheme, ...s.theme } }
 }
 
 function load(): AppState {
@@ -376,8 +457,16 @@ export function useAppStore() {
 }
 
 /** Cards of a board in list order, excluding archived ones. */
+/** Cards of a board in list order (plus its cards parked in the focus lists), excluding archived ones. */
 export function boardCards(s: AppState, boardId: ID): Card[] {
-  return s.boards[boardId].listIds.flatMap((lid) => s.lists[lid].cardIds.map((cid) => s.cards[cid])).filter((c) => !c.archived)
+  const own = s.boards[boardId].listIds.flatMap((lid) => s.lists[lid].cardIds.map((cid) => s.cards[cid]))
+  const parked =
+    boardId === s.focusBoardId
+      ? []
+      : s.boards[s.focusBoardId].listIds
+          .flatMap((lid) => s.lists[lid].cardIds.map((cid) => s.cards[cid]))
+          .filter((c) => c.homeBoardId === boardId)
+  return [...own, ...parked].filter((c) => !c.archived)
 }
 
 export function isOverdue(c: Card): boolean {

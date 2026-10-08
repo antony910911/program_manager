@@ -39,10 +39,14 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
             value={card.listId}
             onChange={(e) => dispatch({ type: 'moveCard', cardId: card.id, toListId: e.target.value, toIndex: Infinity })}
           >
-            {board.listIds.map((lid) => (
-              <option key={lid} value={lid}>
-                {state.lists[lid].title}
-              </option>
+            {[state.focusBoardId, ...(board.id === state.focusBoardId ? [] : [board.id])].map((bid) => (
+              <optgroup key={bid} label={bid === state.focusBoardId ? '雙層模式' : state.boards[bid].title}>
+                {state.boards[bid].listIds.map((lid) => (
+                  <option key={lid} value={lid}>
+                    {state.lists[lid].title}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           」中

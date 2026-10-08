@@ -9,6 +9,7 @@ import {
   Image,
   Palette,
   Plus,
+  Rows2,
   Search,
   Settings,
   SquareKanban,
@@ -19,7 +20,7 @@ import {
   X,
 } from 'lucide-react'
 import type { Board, BoardBackground, Filter, ID, ViewKind } from './types'
-import { LABEL_COLORS, emptyFilter, useAppStore } from './store'
+import { LABEL_COLORS, cardBoard, emptyFilter, useAppStore } from './store'
 import type { Action } from './store'
 import { BACKGROUND_PRESETS, backgroundCss, defaultBackground, themeVars } from './theme'
 import { Avatar, InlineEdit } from './components/common'
@@ -31,6 +32,7 @@ import { TableView } from './views/TableView'
 import { CalendarView } from './views/CalendarView'
 import { TimelineView } from './views/TimelineView'
 import { DashboardView } from './views/DashboardView'
+import { SplitView } from './views/SplitView'
 
 const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
   { kind: 'board', name: '看板', icon: <SquareKanban size={15} /> },
@@ -42,9 +44,14 @@ const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
 
 export default function App() {
   const [state, dispatch] = useAppStore()
-  const [boardId, setBoardId] = useState<ID | null>(null)
+  const [boardId, setBoardIdRaw] = useState<ID | null>(null)
   const [view, setView] = useState<ViewKind>('board')
   const [filter, setFilter] = useState<Filter>(emptyFilter)
+  // Label ids are per board, so a filter never carries over to another board.
+  const setBoardId = (id: ID | null) => {
+    setBoardIdRaw(id)
+    setFilter(emptyFilter)
+  }
   const [openCardId, setOpenCardId] = useState<ID | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [appearanceOpen, setAppearanceOpen] = useState(false)
@@ -71,11 +78,15 @@ export default function App() {
   }, [state.theme])
 
   const board = boardId ? state.boards[boardId] : undefined
+  const isSplit = !!board && board.id === state.focusBoardId
   const openCard = openCardId ? state.cards[openCardId] : undefined
   const me = state.members.find((m) => m.id === state.currentMemberId)
 
   return (
-    <div className={board ? 'app on-board' : 'app'} style={board ? { background: backgroundCss(board.background) } : undefined}>
+    <div
+      className={(board ? 'app on-board' : 'app') + (isSplit ? ' split-mode' : '')}
+      style={board ? { background: backgroundCss(board.background) } : undefined}
+    >
       <header className="topbar">
         <button className="brand" onClick={() => setBoardId(null)}>
           <span className="brand-mark">
@@ -89,6 +100,7 @@ export default function App() {
               <House size={17} />
             </button>
             <select className="board-switch" value={board.id} onChange={(e) => setBoardId(e.target.value)}>
+              <option value={state.focusBoardId}>⬒ 雙層模式</option>
               {state.boardOrder.map((id) => (
                 <option key={id} value={id}>
                   {state.boards[id].title}
@@ -98,6 +110,11 @@ export default function App() {
           </>
         )}
         <span className="spacer" />
+        {!isSplit && (
+          <button className="top-btn" onClick={() => setBoardId(state.focusBoardId)}>
+            <Rows2 size={16} /> 雙層模式
+          </button>
+        )}
         <button className="top-btn" onClick={() => setAppearanceOpen(true)}>
           <Palette size={16} /> 外觀
         </button>
@@ -109,19 +126,30 @@ export default function App() {
       ) : (
         <main className="board-page">
           <div className="board-bar">
-            <InlineEdit
-              className="board-title"
-              value={board.title}
-              onSave={(title) => dispatch({ type: 'renameBoard', boardId: board.id, title })}
-            />
-            <nav className="tabs">
-              {VIEWS.map((v) => (
-                <button key={v.kind} className={view === v.kind ? 'tab active' : 'tab'} onClick={() => setView(v.kind)}>
-                  {v.icon}
-                  <span>{v.name}</span>
-                </button>
-              ))}
-            </nav>
+            {isSplit ? (
+              <>
+                <span className="board-title static">
+                  <Rows2 size={18} /> 雙層模式
+                </span>
+                <span className="split-hint">上方：待辦 / 進行中 / 急件 · 下方：各專案清單 · 卡片與清單可上下互相拖曳</span>
+              </>
+            ) : (
+              <>
+                <InlineEdit
+                  className="board-title"
+                  value={board.title}
+                  onSave={(title) => dispatch({ type: 'renameBoard', boardId: board.id, title })}
+                />
+                <nav className="tabs">
+                  {VIEWS.map((v) => (
+                    <button key={v.kind} className={view === v.kind ? 'tab active' : 'tab'} onClick={() => setView(v.kind)}>
+                      {v.icon}
+                      <span>{v.name}</span>
+                    </button>
+                  ))}
+                </nav>
+              </>
+            )}
             <span className="spacer" />
             <div className="popover-anchor" ref={bgRef}>
               <button className="glass-btn" onClick={() => setBgOpen((o) => !o)}>
@@ -130,7 +158,7 @@ export default function App() {
               {bgOpen && (
                 <div className="popover">
                   <div className="popover-head">
-                    <strong>看板背景</strong>
+                    <strong>{isSplit ? '雙層模式背景' : '看板背景'}</strong>
                     <button className="icon-btn" onClick={() => setBgOpen(false)}>
                       <X size={16} />
                     </button>
@@ -146,18 +174,33 @@ export default function App() {
               <Settings size={15} /> 設定
             </button>
           </div>
-          <FilterBar board={board} members={state.members} filter={filter} setFilter={setFilter} />
+          <FilterBar board={isSplit ? undefined : board} members={state.members} filter={filter} setFilter={setFilter} />
 
-          {view === 'board' && <BoardView state={state} board={board} filter={filter} dispatch={dispatch} openCard={setOpenCardId} />}
-          {view === 'table' && <TableView state={state} board={board} filter={filter} openCard={setOpenCardId} />}
-          {view === 'calendar' && <CalendarView state={state} board={board} filter={filter} dispatch={dispatch} openCard={setOpenCardId} />}
-          {view === 'timeline' && <TimelineView state={state} board={board} filter={filter} openCard={setOpenCardId} />}
-          {view === 'dashboard' && <DashboardView state={state} board={board} filter={filter} />}
+          {isSplit ? (
+            <SplitView state={state} filter={filter} dispatch={dispatch} openCard={setOpenCardId} openBoard={(id) => setBoardId(id)} />
+          ) : (
+            <>
+              {view === 'board' && <BoardView state={state} board={board} filter={filter} dispatch={dispatch} openCard={setOpenCardId} />}
+              {view === 'table' && <TableView state={state} board={board} filter={filter} openCard={setOpenCardId} />}
+              {view === 'calendar' && (
+                <CalendarView state={state} board={board} filter={filter} dispatch={dispatch} openCard={setOpenCardId} />
+              )}
+              {view === 'timeline' && <TimelineView state={state} board={board} filter={filter} openCard={setOpenCardId} />}
+              {view === 'dashboard' && <DashboardView state={state} board={board} filter={filter} />}
+            </>
+          )}
         </main>
       )}
 
       {board && openCard && (
-        <CardModal key={openCard.id} state={state} board={board} card={openCard} dispatch={dispatch} onClose={() => setOpenCardId(null)} />
+        <CardModal
+          key={openCard.id}
+          state={state}
+          board={cardBoard(state, openCard)}
+          card={openCard}
+          dispatch={dispatch}
+          onClose={() => setOpenCardId(null)}
+        />
       )}
       {board && settingsOpen && (
         <BoardSettings
@@ -197,6 +240,22 @@ function Home({
         <h1>{greeting} 👋</h1>
         <p className="muted">選一個看板開始工作，或建立新的看板。右上角「外觀」可以自訂整個介面。</p>
       </div>
+      <button className="split-entry" onClick={() => onOpen(state.focusBoardId)}>
+        <span className="split-entry-icon">
+          <Rows2 size={22} />
+        </span>
+        <span>
+          <strong>雙層模式</strong>
+          <span className="muted">上方固定「待辦 / 進行中 / 急件」，下方列出所有專案的清單，卡片可以上下互相拖曳。</span>
+        </span>
+        <span className="split-entry-count">
+          {state.boards[state.focusBoardId].listIds.reduce(
+            (n, l) => n + state.lists[l].cardIds.filter((c) => !state.cards[c].archived).length,
+            0,
+          )}{' '}
+          張焦點卡片
+        </span>
+      </button>
       <h2 className="section-title">你的看板</h2>
       <div className="board-grid">
         {state.boardOrder.map((id) => {
@@ -262,7 +321,7 @@ function FilterBar({
   filter,
   setFilter,
 }: {
-  board: Board
+  board?: Board
   members: ReturnType<typeof useAppStore>[0]['members']
   filter: Filter
   setFilter: (f: Filter) => void
@@ -276,7 +335,7 @@ function FilterBar({
         <input placeholder="搜尋卡片…" value={filter.text} onChange={(e) => setFilter({ ...filter, text: e.target.value })} />
       </label>
       <div className="chips">
-        {board.labels.map((l) => (
+        {(board?.labels ?? []).map((l) => (
           <button
             key={l.id}
             className={'label-toggle small' + (filter.labelIds.includes(l.id) ? ' on' : '')}
@@ -329,14 +388,17 @@ function BoardSettings({
   const [fieldName, setFieldName] = useState('')
   const [fieldType, setFieldType] = useState<'text' | 'number' | 'select'>('text')
   const [fieldOptions, setFieldOptions] = useState('')
-  const archived = board.listIds.flatMap((lid) => state.lists[lid].cardIds.map((cid) => state.cards[cid])).filter((c) => c.archived)
+  const isFocus = board.id === state.focusBoardId
+  const archived = Object.values(state.cards).filter(
+    (c) => c.archived && (board.listIds.includes(c.listId) || (!isFocus && c.homeBoardId === board.id)),
+  )
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div className="modal narrow" onMouseDown={(e) => e.stopPropagation()}>
         <button className="modal-close icon-btn" onClick={onClose}>
           <X size={18} />
         </button>
-        <h3>看板設定</h3>
+        <h3>{isFocus ? '雙層模式設定' : '看板設定'}</h3>
 
         <section>
           <h4>
@@ -451,20 +513,24 @@ function BoardSettings({
           ))}
         </section>
 
-        <section>
-          <h4>危險區域</h4>
-          <button
-            className="btn danger"
-            onClick={() => {
-              if (confirm(`確定刪除看板「${board.title}」？此動作無法復原。`)) {
-                dispatch({ type: 'deleteBoard', boardId: board.id })
-                onDeleted()
-              }
-            }}
-          >
-            刪除看板
-          </button>
-        </section>
+        {isFocus ? (
+          <p className="muted small">上方三個固定清單的標籤與自訂欄位設定在這裡；從專案拖上來的卡片仍沿用原專案的標籤。</p>
+        ) : (
+          <section>
+            <h4>危險區域</h4>
+            <button
+              className="btn danger"
+              onClick={() => {
+                if (confirm(`確定刪除看板「${board.title}」？此動作無法復原。`)) {
+                  dispatch({ type: 'deleteBoard', boardId: board.id })
+                  onDeleted()
+                }
+              }}
+            >
+              刪除看板
+            </button>
+          </section>
+        )}
       </div>
     </div>
   )

@@ -50,12 +50,16 @@ export function TimelineView({ state, board, filter, openCard }: Props) {
             )
           })}
         </div>
-        {board.listIds.map((lid) => {
+        {[...board.listIds, ...(board.id === state.focusBoardId ? [] : state.boards[state.focusBoardId].listIds)].map((lid) => {
           const group = cards.filter((c) => c.listId === lid)
           if (!group.length) return null
           return (
             <div key={lid}>
-              <div className="tl-group">{state.lists[lid].title}</div>
+              <div className="tl-group">
+                {state.lists[lid].color && <span className="list-dot" style={{ background: state.lists[lid].color! }} />}
+                {state.lists[lid].title}
+                {state.lists[lid].fixed && <span className="muted small"> · 雙層模式</span>}
+              </div>
               {group.map((c) => {
                 const [s, e] = span(c)
                 const label = board.labels.find((l) => c.labelIds.includes(l.id))
