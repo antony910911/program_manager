@@ -43,6 +43,8 @@ export interface Card {
   cover: string | null
   /** Project (board) the card belongs to; kept while it sits in a focus list. */
   homeBoardId: ID | null
+  /** Project list the card last sat in, so it can be sent back from a focus list. */
+  homeListId: ID | null
   archived: boolean
   createdAt: string
 }
@@ -53,8 +55,6 @@ export interface List {
   cardIds: ID[]
   /** Custom list color; null = theme default. */
   color: string | null
-  /** Fixed lists (the split-mode focus lists) cannot be renamed, moved or deleted. */
-  fixed?: boolean
 }
 
 export interface CustomField {
@@ -106,7 +106,7 @@ export interface Theme {
 
 export interface AppState {
   theme: Theme
-  /** Hidden board holding the split mode's fixed top lists (待辦 / 進行中 / 急件). */
+  /** Hidden board holding split mode's top lists (待辦 / 進行中 / 急件 by default, fully editable). */
   focusBoardId: ID
   boards: Record<ID, Board>
   boardOrder: ID[]

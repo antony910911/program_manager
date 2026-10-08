@@ -2,9 +2,10 @@ import { useState } from 'react'
 import type { AppState, Board, Card } from '../types'
 import type { Action } from '../store'
 import { uid } from '../store'
-import { Archive, CheckSquare, Image, MessageSquare, Tag, Trash2, Users, X, AlignLeft, CalendarDays, Type } from 'lucide-react'
+import { Undo2, Archive, CheckSquare, Image, MessageSquare, Tag, Trash2, Users, X, AlignLeft, CalendarDays, Type } from 'lucide-react'
 import { COVER_COLORS } from '../theme'
 import { Avatar, InlineEdit } from './common'
+import { ConfirmButton } from './controls'
 
 interface Props {
   state: AppState
@@ -20,6 +21,11 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
   const [newItem, setNewItem] = useState('')
   const [comment, setComment] = useState('')
   const done = card.checklist.filter((i) => i.done).length
+  // The project list a card was pulled up from, if it still exists in a board.
+  const homeList =
+    card.homeListId && state.lists[card.homeListId] && card.homeBoardId && state.boards[card.homeBoardId]?.listIds.includes(card.homeListId)
+      ? state.lists[card.homeListId]
+      : undefined
   const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v])
 
   return (
@@ -239,20 +245,28 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
               />
             </div>
             <div className="side-title">動作</div>
+            {homeList && card.listId !== homeList.id && (
+              <button
+                className="btn primary"
+                title={`移回「${homeList.title}」`}
+                onClick={() => dispatch({ type: 'moveCard', cardId: card.id, toListId: homeList.id, toIndex: Infinity })}
+              >
+                <Undo2 size={14} /> 移回原清單
+              </button>
+            )}
             <button className="btn" onClick={() => update({ archived: true })}>
               <Archive size={14} /> 封存
             </button>
-            <button
+            <ConfirmButton
               className="btn danger"
-              onClick={() => {
-                if (confirm('確定刪除這張卡片？')) {
-                  dispatch({ type: 'deleteCard', cardId: card.id })
-                  onClose()
-                }
+              confirmText="再按一次刪除"
+              onConfirm={() => {
+                dispatch({ type: 'deleteCard', cardId: card.id })
+                onClose()
               }}
             >
               <Trash2 size={14} /> 刪除
-            </button>
+            </ConfirmButton>
           </aside>
         </div>
       </div>

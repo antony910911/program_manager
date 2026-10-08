@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { AlignLeft, Ellipsis, Lock, MessageSquare, SquareCheck, Trash2, X } from 'lucide-react'
+import { AlignLeft, Ellipsis, MessageSquare, SquareCheck, Trash2, X } from 'lucide-react'
 import type { AppState, Card, Filter, ID, List } from '../types'
 import type { Action } from '../store'
 import { cardBoard } from '../store'
@@ -9,7 +9,7 @@ import { dropCard, visibleCards } from '../dnd'
 import type { Dnd } from '../dnd'
 import { LIST_COLORS } from '../theme'
 import { AddForm, Avatar, DueBadge, InlineEdit, LabelChip } from './common'
-import { ColorPicker } from './controls'
+import { ColorPicker, ConfirmButton } from './controls'
 
 interface Props {
   state: AppState
@@ -48,7 +48,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
       style={list.color ? ({ '--list-color': list.color } as React.CSSProperties) : undefined}
       onDragOver={(e) => {
         if (!drag) return
-        if (drag.kind === 'list' && (!onDropList || list.fixed)) return
+        if (drag.kind === 'list' && !onDropList) return
         e.preventDefault()
         if (drag.kind === 'card' && (cards.length === 0 || dropTarget?.listId !== list.id))
           setDropTarget({ listId: list.id, index: cards.length })
@@ -62,7 +62,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
     >
       <div
         className="list-header"
-        draggable={!list.fixed}
+        draggable
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = 'move'
           setDrag({ kind: 'list', id: list.id })
@@ -70,17 +70,11 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
         onDragEnd={endDrag}
       >
         {list.color && <span className="list-dot" />}
-        {list.fixed ? (
-          <span className="list-title" title="固定清單">
-            {list.title}
-          </span>
-        ) : (
-          <InlineEdit
-            className="list-title"
-            value={list.title}
-            onSave={(title) => dispatch({ type: 'renameList', listId: list.id, title })}
-          />
-        )}
+        <InlineEdit
+          className="list-title"
+          value={list.title}
+          onSave={(title) => dispatch({ type: 'renameList', listId: list.id, title })}
+        />
         <span className="list-count">{cards.length}</span>
         <div>
           <button ref={menuBtn} className="icon-btn" title="清單選單" onClick={() => setMenuOpen((o) => !o)}>
@@ -92,9 +86,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
               list={list}
               onClose={() => setMenuOpen(false)}
               onColor={(color) => dispatch({ type: 'setListColor', listId: list.id, color })}
-              onDelete={() => {
-                if (confirm(`刪除清單「${list.title}」及其所有卡片？`)) dispatch({ type: 'deleteList', boardId, listId: list.id })
-              }}
+              onDelete={() => dispatch({ type: 'deleteList', boardId, listId: list.id })}
             />
           )}
         </div>
@@ -185,15 +177,9 @@ function ListMenu({
         移除顏色
       </button>
       <div className="menu-sep" />
-      {list.fixed ? (
-        <p className="muted small menu-note">
-          <Lock size={13} /> 固定清單無法改名、移動或刪除
-        </p>
-      ) : (
-        <button className="btn danger wide" onClick={onDelete}>
-          <Trash2 size={14} /> 刪除清單
-        </button>
-      )}
+      <ConfirmButton className="btn danger wide" confirmText={`再按一次刪除（含 ${list.cardIds.length} 張卡片）`} onConfirm={onDelete}>
+        <Trash2 size={14} /> 刪除清單
+      </ConfirmButton>
     </div>,
     document.body,
   )
@@ -216,6 +202,7 @@ export function CardTile({ state, card, dragging, showProject, onClick, onDragSt
   const members = state.members.filter((m) => card.memberIds.includes(m.id))
   const done = card.checklist.filter((i) => i.done).length
   const project = showProject && card.homeBoardId ? state.boards[card.homeBoardId] : undefined
+  const homeList = project && card.homeListId ? state.lists[card.homeListId] : undefined
   return (
     <div
       className={'card-tile' + (dragging ? ' dragging' : '') + (card.completed ? ' completed' : '')}
@@ -233,7 +220,7 @@ export function CardTile({ state, card, dragging, showProject, onClick, onDragSt
       {project && (
         <span className="project-chip">
           <span style={{ background: project.color }} />
-          {project.title}
+          {homeList ? `${project.title} · ${homeList.title}` : project.title}
         </span>
       )}
       {labels.length > 0 && (
@@ -271,11 +258,21 @@ export function CardTile({ state, card, dragging, showProject, onClick, onDragSt
 }
 
 /** The trailing "add list" column; also accepts a dragged list to append it to this board. */
-export function AddListColumn({ dnd, onAdd, onDropList }: { dnd: Dnd; onAdd: (title: string) => void; onDropList: (listId: ID) => void }) {
+export function AddListColumn({
+  dnd,
+  onAdd,
+  onDropList,
+  className,
+}: {
+  dnd: Dnd
+  onAdd: (title: string) => void
+  onDropList: (listId: ID) => void
+  className?: string
+}) {
   const { drag, endDrag } = dnd
   return (
     <div
-      className={'list add-list' + (drag?.kind === 'list' ? ' drop-active' : '')}
+      className={['list add-list', className, drag?.kind === 'list' && 'drop-active'].filter(Boolean).join(' ')}
       onDragOver={(e) => drag?.kind === 'list' && e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault()

@@ -27,18 +27,26 @@ export function daysBetween(a: string, b: string): number {
 export const LABEL_COLORS = ['#61bd4f', '#f2d600', '#ff9f1a', '#eb5a46', '#c377e0', '#0079bf', '#00c2e0', '#ff78cb']
 export const BOARD_COLORS = ['#0079bf', '#d29034', '#519839', '#b04632', '#89609e', '#cd5a91', '#4bbf6b', '#00aecc']
 
+/** Initial top lists of split mode; like every list they can be renamed, added or removed. */
 export const FOCUS_LISTS: { title: string; color: string }[] = [
   { title: '待辦', color: '#64748b' },
   { title: '進行中', color: '#0ea5e9' },
   { title: '急件', color: '#ef4444' },
 ]
 
-function newList(title: string, color: string | null = null, fixed = false): List {
-  return fixed ? { id: uid(), title, cardIds: [], color, fixed } : { id: uid(), title, cardIds: [], color }
+/** List templates offered when creating a board. */
+export const BOARD_TEMPLATES: { name: string; lists: string[] }[] = [
+  { name: '空白（自己新增清單）', lists: [] },
+  { name: '年度專案（每個專案一個清單）', lists: ['專案 A', '專案 B', '專案 C'] },
+  { name: '待辦／進行中／完成', lists: ['待辦', '進行中', '完成'] },
+]
+
+function newList(title: string, color: string | null = null): List {
+  return { id: uid(), title, cardIds: [], color }
 }
 
 function newFocusBoard(): { board: Board; lists: List[] } {
-  const lists = FOCUS_LISTS.map((l) => newList(l.title, l.color, true))
+  const lists = FOCUS_LISTS.map((l) => newList(l.title, l.color))
   const board: Board = {
     id: uid(),
     title: '雙層模式',
@@ -60,6 +68,7 @@ function newCard(listId: ID, title: string, extra: Partial<Card> = {}): Card {
     id: uid(),
     listId,
     homeBoardId: null,
+    homeListId: null,
     title,
     description: '',
     labelIds: [],
@@ -79,78 +88,76 @@ function newCard(listId: ID, title: string, extra: Partial<Card> = {}): Card {
 
 function seed(): AppState {
   const t = today()
+  const year = new Date().getFullYear()
   const members = [
     { id: 'm1', name: '我', color: '#0079bf' },
     { id: 'm2', name: 'Alice', color: '#eb5a46' },
     { id: 'm3', name: 'Bob', color: '#61bd4f' },
   ]
   const labels = [
-    { id: 'l1', name: '功能', color: LABEL_COLORS[0] },
-    { id: 'l2', name: '設計', color: LABEL_COLORS[4] },
-    { id: 'l3', name: 'Bug', color: LABEL_COLORS[3] },
-    { id: 'l4', name: '高優先', color: LABEL_COLORS[2] },
+    { id: 'l1', name: '設計', color: LABEL_COLORS[4] },
+    { id: 'l2', name: '開發', color: LABEL_COLORS[0] },
+    { id: 'l3', name: '待確認', color: LABEL_COLORS[1] },
+    { id: 'l4', name: '高優先', color: LABEL_COLORS[3] },
   ]
-  const lists: List[] = [newList('待辦'), newList('進行中', '#0ea5e9'), newList('審核中', '#a855f7'), newList('完成', '#22c55e')]
+  // A yearly board: one list per project.
+  const lists: List[] = [
+    newList('官網改版', '#6366f1'),
+    newList('行動 App', '#0ea5e9'),
+    newList('年度行銷活動', '#f97316'),
+    newList('內部系統升級', '#22c55e'),
+  ]
+  const [web, app, mkt, sys] = lists.map((l) => l.id)
+  const focus = newFocusBoard()
+  const [todo, doing, urgent] = focus.lists.map((l) => l.id)
   const cards: Card[] = [
-    newCard(lists[0].id, '設計登入頁面', {
-      cover: COVER_COLORS[4],
-      labelIds: ['l2'],
-      memberIds: ['m2'],
-      startDate: t,
-      dueDate: addDays(t, 5),
-    }),
-    newCard(lists[0].id, '撰寫 API 文件', { labelIds: ['l1'], startDate: addDays(t, 3), dueDate: addDays(t, 10) }),
-    newCard(lists[1].id, '實作拖曳排序', {
-      labelIds: ['l1', 'l4'],
+    newCard(web, '首頁視覺提案', { cover: COVER_COLORS[4], labelIds: ['l1'], memberIds: ['m2'], startDate: t, dueDate: addDays(t, 5) }),
+    newCard(web, '產品頁文案', { labelIds: ['l3'], startDate: addDays(t, 3), dueDate: addDays(t, 10) }),
+    newCard(app, '登入流程重做', {
+      labelIds: ['l2', 'l4'],
       memberIds: ['m1'],
       startDate: addDays(t, -4),
       dueDate: addDays(t, 2),
-      description: '支援卡片在清單之間拖曳，以及清單本身的排序。',
+      description: '改成手機號碼 + 簡訊驗證碼登入。',
       checklist: [
-        { id: uid(), text: '卡片拖曳', done: true },
-        { id: uid(), text: '清單拖曳', done: false },
-        { id: uid(), text: '觸控裝置支援', done: false },
+        { id: uid(), text: '流程圖', done: true },
+        { id: uid(), text: 'API 串接', done: false },
+        { id: uid(), text: '測試', done: false },
       ],
     }),
-    newCard(lists[1].id, '修正日期時區問題', {
-      cover: COVER_COLORS[3],
-      labelIds: ['l3'],
+    newCard(app, '推播通知設定頁', { labelIds: ['l1'], memberIds: ['m3'], startDate: addDays(t, 6), dueDate: addDays(t, 14) }),
+    newCard(mkt, '春季活動企劃', { labelIds: ['l3'], memberIds: ['m1', 'm2'], startDate: addDays(t, -8), dueDate: addDays(t, 20) }),
+    newCard(sys, '資料庫備份機制', {
+      labelIds: ['l2'],
       memberIds: ['m3'],
-      startDate: addDays(t, -6),
-      dueDate: addDays(t, -1),
-    }),
-    newCard(lists[2].id, '行事曆檢視', { labelIds: ['l1'], memberIds: ['m1', 'm2'], startDate: addDays(t, -8), dueDate: t }),
-    newCard(lists[3].id, '建立專案骨架', {
-      labelIds: ['l1'],
-      memberIds: ['m1'],
       startDate: addDays(t, -14),
       dueDate: addDays(t, -9),
       completed: true,
     }),
+    // Already pulled up into the split-mode lists.
+    newCard(urgent, '客戶回報：App 無法登入', { cover: COVER_COLORS[3], labelIds: ['l4'], memberIds: ['m1'], dueDate: t }),
+    newCard(doing, '活動主視覺確認', { labelIds: ['l1'], memberIds: ['m2'], dueDate: addDays(t, 2) }),
+    newCard(todo, '整理本週會議記錄', { dueDate: addDays(t, 1) }),
   ]
   const boardId = uid()
-  const focus = newFocusBoard()
-  cards.push(
-    newCard(focus.lists[2].id, '客戶回報：無法登入', { labelIds: ['l3', 'l4'], memberIds: ['m1'], dueDate: t, cover: COVER_COLORS[3] }),
-    newCard(focus.lists[0].id, '整理本週會議記錄', { labelIds: [], dueDate: addDays(t, 1) }),
-  )
-  cards[cards.length - 2].homeBoardId = boardId
-  cards[cards.length - 1].labelIds = [focus.board.labels[2].id]
+  // The two pulled-up cards came from these projects; the meeting notes belong to none.
+  const pulledFrom: (ID | undefined)[] = [app, mkt]
   const allLists = [...lists, ...focus.lists]
-  for (const c of cards) {
+  cards.forEach((c, i) => {
     allLists.find((l) => l.id === c.listId)!.cardIds.push(c.id)
-    if (lists.some((l) => l.id === c.listId)) c.homeBoardId = boardId
-  }
+    const homeListId = lists.some((l) => l.id === c.listId) ? c.listId : pulledFrom[i - 6]
+    if (homeListId) Object.assign(c, { homeBoardId: boardId, homeListId })
+  })
 
   const board: Board = {
     id: boardId,
-    title: '產品開發',
+    title: `${year} 年度專案`,
     color: BOARD_COLORS[0],
     background: { ...defaultBackground(BOARD_COLORS[0]), ...BACKGROUND_PRESETS[1].bg },
     listIds: lists.map((l) => l.id),
     labels,
     customFields: [
-      { id: 'cf1', name: '估計點數', type: 'number', options: [] },
+      { id: 'cf1', name: '預算（萬）', type: 'number', options: [] },
       { id: 'cf2', name: '優先級', type: 'select', options: ['P0', 'P1', 'P2'] },
     ],
   }
@@ -168,7 +175,7 @@ function seed(): AppState {
 }
 
 export type Action =
-  | { type: 'addBoard'; title: string; background: BoardBackground }
+  | { type: 'addBoard'; title: string; background: BoardBackground; lists: string[] }
   | { type: 'setBoardBackground'; boardId: ID; patch: Partial<BoardBackground> }
   | { type: 'setTheme'; patch: Partial<Theme> }
   | { type: 'addMember'; name: string; color: string }
@@ -217,7 +224,7 @@ export function reducer(s: AppState, a: Action): AppState {
   switch (a.type) {
     case 'addBoard': {
       const id = uid()
-      const lists: List[] = ['待辦', '進行中', '完成'].map((title) => newList(title))
+      const lists: List[] = a.lists.map((title) => newList(title))
       const board: Board = {
         id,
         title: a.title,
@@ -290,12 +297,10 @@ export function reducer(s: AppState, a: Action): AppState {
       )
     }
     case 'renameList':
-      if (s.lists[a.listId].fixed) return s
       return { ...s, lists: { ...s.lists, [a.listId]: { ...s.lists[a.listId], title: a.title } } }
     case 'setListColor':
       return { ...s, lists: { ...s.lists, [a.listId]: { ...s.lists[a.listId], color: a.color } } }
     case 'deleteList': {
-      if (s.lists[a.listId].fixed) return s
       const board = s.boards[a.boardId]
       const lists = { ...s.lists }
       const cards = { ...s.cards }
@@ -316,19 +321,22 @@ export function reducer(s: AppState, a: Action): AppState {
     case 'moveList': {
       const list = s.lists[a.listId]
       const fromId = boardOfList(s, a.listId)
-      if (!fromId || list.fixed || a.toBoardId === s.focusBoardId) return s
+      if (!fromId) return s
       const boards = { ...s.boards, [fromId]: { ...s.boards[fromId], listIds: s.boards[fromId].listIds.filter((l) => l !== a.listId) } }
       const to = boards[a.toBoardId]
       const ids = [...to.listIds]
       ids.splice(Math.min(a.toIndex, ids.length), 0, a.listId)
       boards[a.toBoardId] = { ...to, listIds: ids }
       if (fromId === a.toBoardId) return { ...s, boards }
+      // Lists moved into a project make their cards part of it; lists moved up keep their cards' projects.
       const cards = { ...s.cards }
-      for (const cid of list.cardIds) cards[cid] = { ...cards[cid], homeBoardId: a.toBoardId }
+      if (a.toBoardId !== s.focusBoardId)
+        for (const cid of list.cardIds) cards[cid] = { ...cards[cid], homeBoardId: a.toBoardId, homeListId: a.listId }
       return log({ ...s, boards, cards }, a.toBoardId, `將清單「${list.title}」從「${s.boards[fromId].title}」移入`)
     }
     case 'addCard': {
-      const card = newCard(a.listId, a.title, { homeBoardId: projectOf(s, a.listId) })
+      const project = projectOf(s, a.listId)
+      const card = newCard(a.listId, a.title, { homeBoardId: project, homeListId: project ? a.listId : null })
       const list = s.lists[a.listId]
       return log(
         {
@@ -350,8 +358,10 @@ export function reducer(s: AppState, a: Action): AppState {
       const ids = [...to.cardIds]
       ids.splice(Math.min(a.toIndex, ids.length), 0, a.cardId)
       lists[a.toListId] = { ...to, cardIds: ids }
-      const homeBoardId = projectOf(s, a.toListId) ?? card.homeBoardId
-      const next = { ...s, lists, cards: { ...s.cards, [a.cardId]: { ...card, listId: a.toListId, homeBoardId } } }
+      const project = projectOf(s, a.toListId)
+      const homeBoardId = project ?? card.homeBoardId
+      const homeListId = project ? a.toListId : card.homeListId
+      const next = { ...s, lists, cards: { ...s.cards, [a.cardId]: { ...card, listId: a.toListId, homeBoardId, homeListId } } }
       return from.id === a.toListId
         ? next
         : log(next, homeBoardId ?? s.focusBoardId, `將「${card.title}」從「${from.title}」移到「${to.title}」`)
@@ -414,7 +424,13 @@ function migrate(s: AppState): AppState {
   const boards = Object.fromEntries(
     Object.entries(s.boards).map(([id, b]) => [id, { ...b, background: b.background ?? defaultBackground(b.color) }]),
   )
-  const lists = Object.fromEntries(Object.entries(s.lists).map(([id, l]) => [id, { ...l, color: l.color ?? null }]))
+  // `fixed` came from an earlier version where the split-mode lists could not be edited.
+  const lists = Object.fromEntries(
+    Object.entries(s.lists).map(([id, l]) => {
+      const { fixed: _fixed, ...rest } = l as List & { fixed?: boolean }
+      return [id, { ...rest, color: l.color ?? null }]
+    }),
+  )
   let focusBoardId = s.focusBoardId
   if (!focusBoardId || !boards[focusBoardId]) {
     const focus = newFocusBoard()
@@ -428,7 +444,8 @@ function migrate(s: AppState): AppState {
     Object.entries(s.cards).map(([id, c]) => {
       const owner = listBoard[c.listId]
       const homeBoardId = c.homeBoardId !== undefined ? c.homeBoardId : owner && owner !== focusBoardId ? owner : null
-      return [id, { ...c, cover: c.cover ?? null, homeBoardId }]
+      const homeListId = c.homeListId !== undefined ? c.homeListId : homeBoardId && owner === homeBoardId ? c.listId : null
+      return [id, { ...c, cover: c.cover ?? null, homeBoardId, homeListId }]
     }),
   )
   return { ...s, focusBoardId, boards, lists, cards, theme: { ...defaultTheme, ...s.theme } }

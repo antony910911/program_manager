@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:single": "vite build --base ./ --outDir dist-single --emptyOutDir && python3 scripts/pack-single.py dist-single dist-single/program-manager.html"
   },
   "dependencies": {
     "lucide-react": "^1.53.0",

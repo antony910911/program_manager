@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
 export function Segmented<T extends string>({
@@ -88,5 +89,35 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span className="toggle-track" />
     </label>
+  )
+}
+
+/** Destructive button that asks for a second click instead of a browser confirm() dialog. */
+export function ConfirmButton({
+  className,
+  confirmText,
+  onConfirm,
+  children,
+}: {
+  className?: string
+  confirmText: string
+  onConfirm: () => void
+  children: ReactNode
+}) {
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (!armed) return
+    const t = setTimeout(() => setArmed(false), 4000)
+    return () => clearTimeout(t)
+  }, [armed])
+  return (
+    <button
+      type="button"
+      className={(className ?? '') + (armed ? ' armed' : '')}
+      onClick={() => (armed ? onConfirm() : setArmed(true))}
+      onBlur={() => setArmed(false)}
+    >
+      {armed ? confirmText : children}
+    </button>
   )
 }

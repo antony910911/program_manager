@@ -1853,3 +1853,29 @@ input.full {
     flex-wrap: wrap;
   }
 }
+.list.add-list.focus-add {
+  flex: 0 0 200px;
+  width: 200px;
+  align-self: flex-start;
+}
+.btn.danger.armed {
+  background: var(--danger);
+  color: #fff;
+}
+.link-btn.armed {
+  color: var(--danger);
+}
+.board-switch {
+  min-width: 0;
+  max-width: 40vw;
+}
+@media (max-width: 720px) {
+  .topbar {
+    gap: 6px;
+    padding-inline: 12px;
+  }
+  .brand-text,
+  .btn-label {
+    display: none;
+  }
+}

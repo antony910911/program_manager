@@ -20,13 +20,14 @@ import {
   X,
 } from 'lucide-react'
 import type { Board, BoardBackground, Filter, ID, ViewKind } from './types'
-import { LABEL_COLORS, cardBoard, emptyFilter, useAppStore } from './store'
+import { BOARD_TEMPLATES, LABEL_COLORS, cardBoard, emptyFilter, useAppStore } from './store'
 import type { Action } from './store'
 import { BACKGROUND_PRESETS, backgroundCss, defaultBackground, themeVars } from './theme'
 import { Avatar, InlineEdit } from './components/common'
 import { CardModal } from './components/CardModal'
 import { AppearancePanel } from './components/AppearancePanel'
 import { BackgroundEditor } from './components/BackgroundEditor'
+import { ConfirmButton } from './components/controls'
 import { BoardView } from './views/BoardView'
 import { TableView } from './views/TableView'
 import { CalendarView } from './views/CalendarView'
@@ -92,7 +93,7 @@ export default function App() {
           <span className="brand-mark">
             <SquareKanban size={16} />
           </span>
-          Program Manager
+          <span className="brand-text">Program Manager</span>
         </button>
         {board && (
           <>
@@ -112,11 +113,11 @@ export default function App() {
         <span className="spacer" />
         {!isSplit && (
           <button className="top-btn" onClick={() => setBoardId(state.focusBoardId)}>
-            <Rows2 size={16} /> 雙層模式
+            <Rows2 size={16} /> <span className="btn-label">雙層模式</span>
           </button>
         )}
         <button className="top-btn" onClick={() => setAppearanceOpen(true)}>
-          <Palette size={16} /> 外觀
+          <Palette size={16} /> <span className="btn-label">外觀</span>
         </button>
         {me && <Avatar member={me} size={30} />}
       </header>
@@ -131,7 +132,7 @@ export default function App() {
                 <span className="board-title static">
                   <Rows2 size={18} /> 雙層模式
                 </span>
-                <span className="split-hint">上方：待辦 / 進行中 / 急件 · 下方：各專案清單 · 卡片與清單可上下互相拖曳</span>
+                <span className="split-hint">上方與下方的清單都能改名、新增、刪除，卡片與清單可上下互相拖曳</span>
               </>
             ) : (
               <>
@@ -229,6 +230,8 @@ function Home({
   onOpen: (id: ID) => void
 }) {
   const [title, setTitle] = useState('')
+  const [template, setTemplate] = useState(0)
+  const [nextYear] = useState(() => new Date().getFullYear() + 1)
   const [bg, setBg] = useState<BoardBackground>({ ...defaultBackground('#000'), ...BACKGROUND_PRESETS[0].bg })
   const [greeting] = useState(() => {
     const hour = new Date().getHours()
@@ -246,7 +249,9 @@ function Home({
         </span>
         <span>
           <strong>雙層模式</strong>
-          <span className="muted">上方固定「待辦 / 進行中 / 急件」，下方列出所有專案的清單，卡片可以上下互相拖曳。</span>
+          <span className="muted">
+            上方放你最常看的清單（預設待辦 / 進行中 / 急件），下方列出每個看板的所有清單，卡片可以上下互相拖曳。
+          </span>
         </span>
         <span className="split-entry-count">
           {state.boards[state.focusBoardId].listIds.reduce(
@@ -279,12 +284,19 @@ function Home({
           onSubmit={(e) => {
             e.preventDefault()
             if (!title.trim()) return
-            dispatch({ type: 'addBoard', title: title.trim(), background: bg })
+            dispatch({ type: 'addBoard', title: title.trim(), background: bg, lists: BOARD_TEMPLATES[template].lists })
             setTitle('')
           }}
         >
           <span className="new-preview" style={{ background: backgroundCss(bg) }} />
-          <input placeholder="新看板名稱" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input placeholder={`新看板名稱，例：${nextYear} 年度專案`} value={title} onChange={(e) => setTitle(e.target.value)} />
+          <select value={template} onChange={(e) => setTemplate(Number(e.target.value))} title="初始清單">
+            {BOARD_TEMPLATES.map((t, i) => (
+              <option key={t.name} value={i}>
+                {t.name}
+              </option>
+            ))}
+          </select>
           <div className="bg-presets small">
             {BACKGROUND_PRESETS.map((p) => {
               const next = { ...defaultBackground('#000'), ...p.bg }
@@ -307,9 +319,13 @@ function Home({
       </div>
       <p className="muted small home-foot">
         資料目前存在瀏覽器的 localStorage。
-        <button className="link-btn" onClick={() => confirm('清除所有資料並還原範例？（外觀設定會保留）') && dispatch({ type: 'reset' })}>
+        <ConfirmButton
+          className="link-btn"
+          confirmText="再按一次：清除所有資料並還原範例（外觀會保留）"
+          onConfirm={() => dispatch({ type: 'reset' })}
+        >
           重設範例資料
-        </button>
+        </ConfirmButton>
       </p>
     </main>
   )
@@ -514,21 +530,20 @@ function BoardSettings({
         </section>
 
         {isFocus ? (
-          <p className="muted small">上方三個固定清單的標籤與自訂欄位設定在這裡；從專案拖上來的卡片仍沿用原專案的標籤。</p>
+          <p className="muted small">上方清單用的標籤與自訂欄位設定在這裡；從下方看板拖上來的卡片仍沿用原看板的標籤。</p>
         ) : (
           <section>
             <h4>危險區域</h4>
-            <button
+            <ConfirmButton
               className="btn danger"
-              onClick={() => {
-                if (confirm(`確定刪除看板「${board.title}」？此動作無法復原。`)) {
-                  dispatch({ type: 'deleteBoard', boardId: board.id })
-                  onDeleted()
-                }
+              confirmText={`再按一次刪除「${board.title}」（無法復原）`}
+              onConfirm={() => {
+                dispatch({ type: 'deleteBoard', boardId: board.id })
+                onDeleted()
               }}
             >
               刪除看板
-            </button>
+            </ConfirmButton>
           </section>
         )}
       </div>

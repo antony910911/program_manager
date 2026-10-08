@@ -34,7 +34,7 @@ function writeStored(key: string, value: unknown) {
 }
 
 /**
- * Split mode: the fixed focus lists (待辦 / 進行中 / 急件) on top, every project's lists below.
+ * Split mode: the focus lists on top (待辦 / 進行中 / 急件 by default, all editable), every board's lists below.
  * One shared drag context, so cards and lists move freely between the two halves.
  */
 export function SplitView({ state, filter, dispatch, openCard, openBoard }: Props) {
@@ -70,7 +70,7 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
     <div className={'split' + (resizing ? ' resizing' : '')} ref={containerRef}>
       <section className="split-top" style={{ height: `${ratio}%` }}>
         <div className="split-top-lists">
-          {focus.listIds.map((lid) => (
+          {focus.listIds.map((lid, index) => (
             <ListColumn
               key={lid}
               className="focus-list"
@@ -81,9 +81,16 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
               dnd={dnd}
               dispatch={dispatch}
               openCard={openCard}
+              onDropList={(id) => dispatch({ type: 'moveList', listId: id, toBoardId: focus.id, toIndex: index })}
               showProject
             />
           ))}
+          <AddListColumn
+            dnd={dnd}
+            className="focus-add"
+            onAdd={(title) => dispatch({ type: 'addList', boardId: focus.id, title })}
+            onDropList={(id) => dispatch({ type: 'moveList', listId: id, toBoardId: focus.id, toIndex: Infinity })}
+          />
         </div>
       </section>
 
@@ -100,7 +107,9 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
           else if (e.clientY > rect.bottom - 50) e.currentTarget.scrollBy(0, 14)
         }}
       >
-        {state.boardOrder.length === 0 && <p className="empty-note">還沒有專案。回到首頁建立一個看板，它就會出現在這裡。</p>}
+        {state.boardOrder.length === 0 && (
+          <p className="empty-note">還沒有看板。回到首頁建立一個看板（例如「年度專案」），它就會出現在這裡。</p>
+        )}
         {state.boardOrder.map((bid) => {
           const board = state.boards[bid]
           const isCollapsed = collapsed.includes(bid)
