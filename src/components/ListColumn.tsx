@@ -7,7 +7,7 @@ import type { Action } from '../store'
 import { cardBoard } from '../store'
 import { dropCard, visibleCards } from '../dnd'
 import type { Dnd } from '../dnd'
-import { LIST_COLORS, readableOn } from '../theme'
+import { LIST_COLORS, softPreview } from '../theme'
 import { AddForm, Avatar, DueBadge, InlineEdit, LabelChip } from './common'
 import { ColorPicker, ConfirmButton } from './controls'
 
@@ -171,7 +171,7 @@ function ListMenu({
         </button>
       </div>
       <div className="field-label">清單顏色</div>
-      <ColorPicker value={list.color ?? '#64748b'} swatches={LIST_COLORS} onChange={onColor} />
+      <ColorPicker value={list.color ?? '#94a3b8'} swatches={LIST_COLORS} preview={(c) => softPreview(c, 'list')} onChange={onColor} />
       <button className="btn wide small" onClick={() => onColor(null)} disabled={!list.color}>
         移除顏色
       </button>
@@ -284,8 +284,7 @@ export function AddListColumn({
   )
 }
 
-/** Fill a card with its color and switch its text to whichever of dark/light reads on it. */
+/** Pass the card's color to CSS, which softens it for the current light/dark theme. */
 function coloredCardStyle(color: string): React.CSSProperties {
-  const fg = readableOn(color)
-  return { '--card-color': color, '--text': fg, '--muted': `color-mix(in srgb, ${fg} 72%, transparent)`, color: fg } as React.CSSProperties
+  return { '--card-color': color } as React.CSSProperties
 }

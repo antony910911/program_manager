@@ -3,7 +3,7 @@ import type { AppState, Board, Card } from '../types'
 import type { Action } from '../store'
 import { uid } from '../store'
 import { Undo2, Archive, CheckSquare, Image, MessageSquare, Tag, Trash2, Users, X, AlignLeft, CalendarDays, Type } from 'lucide-react'
-import { COVER_COLORS } from '../theme'
+import { COVER_COLORS, softPreview } from '../theme'
 import { Avatar, InlineEdit } from './common'
 import { ConfirmButton } from './controls'
 
@@ -31,7 +31,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
-        {card.cover && <div className="modal-cover" style={{ background: card.cover }} />}
+        {card.cover && <div className="modal-cover" style={{ background: softPreview(card.cover, 'card') }} />}
         <button className="modal-close icon-btn" onClick={onClose}>
           <X size={18} />
         </button>
@@ -233,7 +233,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                 <button
                   key={c}
                   className={'swatch' + (card.cover === c ? ' on' : '')}
-                  style={{ background: c }}
+                  style={{ background: softPreview(c, 'card') }}
                   onClick={() => update({ cover: c })}
                 />
               ))}

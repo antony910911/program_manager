@@ -5,28 +5,28 @@ export const defaultTheme: Theme = {
   accent: '#6366f1',
   font: 'sans',
   fontScale: 100,
-  radius: 16,
+  radius: 18,
   density: 'comfortable',
   cardStyle: 'shadow',
   listWidth: 280,
   listOpacity: 92,
   labelStyle: 'pill',
   blur: true,
-  rev: 2,
+  rev: 3,
 }
 
 export const THEME_PRESETS: { name: string; theme: Partial<Theme> }[] = [
   { name: '靛藍（預設）', theme: { ...defaultTheme } },
-  { name: 'Trello 經典', theme: { accent: '#0c66e4', radius: 8, cardStyle: 'shadow', labelStyle: 'bar', listOpacity: 100, font: 'sans' } },
+  { name: 'Trello 經典', theme: { accent: '#0c66e4', radius: 12, cardStyle: 'shadow', labelStyle: 'bar', listOpacity: 100, font: 'sans' } },
   { name: '午夜', theme: { mode: 'dark', accent: '#a78bfa', radius: 14, cardStyle: 'glass', listOpacity: 55, blur: true } },
   { name: '森林', theme: { accent: '#16a34a', radius: 10, cardStyle: 'outline', listOpacity: 88, font: 'rounded' } },
   { name: '日落', theme: { accent: '#f97316', radius: 18, cardStyle: 'shadow', listOpacity: 80, font: 'rounded' } },
   {
     name: '極簡',
-    theme: { mode: 'light', accent: '#18181b', radius: 10, cardStyle: 'outline', listOpacity: 100, blur: false, font: 'sans' },
+    theme: { mode: 'light', accent: '#18181b', radius: 12, cardStyle: 'outline', listOpacity: 100, blur: false, font: 'sans' },
   },
-  { name: '紙本', theme: { mode: 'light', accent: '#b45309', radius: 10, cardStyle: 'flat', listOpacity: 96, font: 'serif' } },
-  { name: '終端機', theme: { mode: 'dark', accent: '#22c55e', radius: 8, cardStyle: 'outline', listOpacity: 70, font: 'mono' } },
+  { name: '紙本', theme: { mode: 'light', accent: '#b45309', radius: 12, cardStyle: 'flat', listOpacity: 96, font: 'serif' } },
+  { name: '終端機', theme: { mode: 'dark', accent: '#22c55e', radius: 12, cardStyle: 'outline', listOpacity: 70, font: 'mono' } },
 ]
 
 export const ACCENT_SWATCHES = [
@@ -55,7 +55,14 @@ export const BACKGROUND_PRESETS: { name: string; bg: Partial<BoardBackground> }[
   { name: '櫻花', bg: { type: 'gradient', color: '#fbcfe8', color2: '#f472b6', angle: 135 } },
 ]
 
-export const COVER_COLORS = ['#4bce97', '#f5cd47', '#fea362', '#f87168', '#9f8fef', '#579dff', '#6cc3e0', '#94c748', '#e774bb', '#8c9bab']
+/**
+ * Palette for list and card colors. Lists and cards never show these at full strength: CSS mixes
+ * them with white (or the dark surface in dark mode), so every color, custom ones included,
+ * comes out as a soft pastel with readable text. `softPreview` shows the light-mode result.
+ */
+export const SOFT_COLORS = ['#60a5fa', '#38bdf8', '#2dd4bf', '#4ade80', '#facc15', '#fb923c', '#f87171', '#f472b6', '#a78bfa', '#94a3b8']
+export const COVER_COLORS = SOFT_COLORS
+export const softPreview = (color: string, kind: 'list' | 'card') => shade(color, kind === 'list' ? 0.68 : 0.52)
 
 export function defaultBackground(color: string): BoardBackground {
   return { type: 'gradient', color, color2: shade(color, -0.35), angle: 135, image: '' }
@@ -125,4 +132,4 @@ export function isTheme(v: unknown): v is Partial<Theme> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
-export const LIST_COLORS = ['#64748b', '#0ea5e9', '#6366f1', '#a855f7', '#ec4899', '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6']
+export const LIST_COLORS = SOFT_COLORS

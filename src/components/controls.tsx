@@ -53,7 +53,18 @@ export function Slider({
 }
 
 /** Swatch row plus a free color picker and hex field. */
-export function ColorPicker({ value, swatches, onChange }: { value: string; swatches: string[]; onChange: (v: string) => void }) {
+export function ColorPicker({
+  value,
+  swatches,
+  onChange,
+  preview,
+}: {
+  value: string
+  swatches: string[]
+  onChange: (v: string) => void
+  /** How a swatch color will actually look once applied (e.g. softened list colors). */
+  preview?: (c: string) => string
+}) {
   return (
     <div className="color-picker">
       <div className="swatches">
@@ -62,7 +73,7 @@ export function ColorPicker({ value, swatches, onChange }: { value: string; swat
             key={c}
             type="button"
             className={c.toLowerCase() === value.toLowerCase() ? 'swatch on' : 'swatch'}
-            style={{ background: c }}
+            style={{ background: preview ? preview(c) : c }}
             onClick={() => onChange(c)}
             title={c}
           />

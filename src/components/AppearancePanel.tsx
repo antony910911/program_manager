@@ -116,7 +116,7 @@ export function AppearancePanel({ state, dispatch, onClose }: Props) {
 
           <section>
             <h4>版面</h4>
-            <Slider label="圓角" value={t.radius} min={0} max={20} unit="px" onChange={(radius) => set({ radius })} />
+            <Slider label="圓角" value={t.radius} min={10} max={28} unit="px" onChange={(radius) => set({ radius })} />
             <Slider
               label="清單寬度"
               value={t.listWidth}

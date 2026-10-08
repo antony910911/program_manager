@@ -17,6 +17,11 @@
   --list-w: 280px;
   --list-alpha: 92%;
   --blur: 14px;
+  /* How strongly list and card colors show over their base. */
+  --tint-list: 32%;
+  --tint-list-base: #ffffff;
+  --tint-card: 48%;
+  --tint-card-base: #ffffff;
 
   --bg: #f4f6fb;
   --surface: #ffffff;
@@ -48,6 +53,10 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
     --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45);
     --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.6);
+    --tint-list: 22%;
+    --tint-list-base: #151821;
+    --tint-card: 30%;
+    --tint-card-base: #1a1d27;
     color-scheme: dark;
   }
 }
@@ -63,6 +72,10 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --tint-list: 22%;
+  --tint-list-base: #151821;
+  --tint-card: 30%;
+  --tint-card-base: #1a1d27;
   color-scheme: dark;
 }
 
@@ -641,14 +654,10 @@ input.full {
   text-decoration: line-through;
   color: var(--muted);
 }
-/* A colored card is one solid color; its text color is picked for contrast in ListColumn. */
+/* A colored card is one soft, solid color (the chosen color mixed with the card surface). */
 .card-tile.has-color,
 .card-tile.has-color:hover {
-  background: var(--card-color);
-}
-.card-tile.has-color .due.overdue,
-.card-tile.has-color .due.done {
-  background: rgba(255, 255, 255, 0.85);
+  background: color-mix(in srgb, var(--card-color) var(--tint-card), var(--tint-card-base));
 }
 .card-title {
   word-break: break-word;
@@ -1610,9 +1619,9 @@ input.full {
 
 /* ---------- list colors ---------- */
 .list.colored {
-  /* One color for the whole list, header included. */
-  background: color-mix(in srgb, var(--list-color) 26%, color-mix(in srgb, var(--list-bg) var(--list-alpha), transparent));
-  border-color: color-mix(in srgb, var(--list-color) 30%, transparent);
+  /* One soft, opaque color for the whole list, header included. */
+  background: color-mix(in srgb, var(--list-color) var(--tint-list), var(--tint-list-base));
+  border-color: transparent;
 }
 .list-dot {
   width: 10px;
@@ -1634,7 +1643,7 @@ input.full {
   color: var(--muted);
 }
 .list.colored .list-count {
-  background: color-mix(in srgb, var(--list-color) 22%, transparent);
+  background: color-mix(in srgb, var(--tint-list-base) 60%, transparent);
   color: var(--text);
 }
 .list.drop-active {
@@ -1951,7 +1960,4 @@ input.full {
     transform: rotate(360deg);
   }
 }
-/* Keep a label readable when it matches its card's color. */
-.card-tile.has-color .label-chip {
-  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.75);
-}
+

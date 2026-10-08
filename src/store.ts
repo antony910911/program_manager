@@ -29,9 +29,9 @@ export const BOARD_COLORS = ['#0079bf', '#d29034', '#519839', '#b04632', '#89609
 
 /** Initial top lists of split mode; like every list they can be renamed, added or removed. */
 export const FOCUS_LISTS: { title: string; color: string }[] = [
-  { title: '待辦', color: '#64748b' },
-  { title: '進行中', color: '#0ea5e9' },
-  { title: '急件', color: '#ef4444' },
+  { title: '待辦', color: '#94a3b8' },
+  { title: '進行中', color: '#60a5fa' },
+  { title: '急件', color: '#f87171' },
 ]
 
 /** List templates offered when creating a board. */
@@ -102,10 +102,10 @@ function seed(): AppState {
   ]
   // A yearly board: one list per project.
   const lists: List[] = [
-    newList('官網改版', '#6366f1'),
-    newList('行動 App', '#0ea5e9'),
-    newList('年度行銷活動', '#f97316'),
-    newList('內部系統升級', '#22c55e'),
+    newList('官網改版', '#a78bfa'),
+    newList('行動 App', '#60a5fa'),
+    newList('年度行銷活動', '#fb923c'),
+    newList('內部系統升級', '#4ade80'),
   ]
   const [web, app, mkt, sys] = lists.map((l) => l.id)
   const focus = newFocusBoard()
@@ -453,10 +453,10 @@ function migrate(s: AppState): AppState {
     }),
   )
   const theme = { ...defaultTheme, ...s.theme }
-  if (!s.theme?.rev) {
-    // Rounder corners became the default; bump themes still on the old default of 12px.
-    if (theme.radius === 12) theme.radius = 16
-    theme.rev = 2
+  if ((s.theme?.rev ?? 0) < 3) {
+    // Cards and lists are always rounded rectangles now; lift saved themes to the new minimum.
+    theme.radius = Math.max(theme.radius, 18)
+    theme.rev = 3
   }
   return { ...s, focusBoardId, boards, lists, cards, theme }
 }
