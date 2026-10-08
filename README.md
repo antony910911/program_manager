@@ -22,6 +22,8 @@ npm run lint
 | **外觀自訂** | 8 組主題預設；淺色／深色／跟隨系統；任意主色；4 種字型與文字大小；圓角、清單寬度、清單透明度、密度、毛玻璃；4 種卡片樣式；標籤顯示方式；成員顏色；主題 JSON 匯出／匯入 |
 | **看板背景** | 10 組漸層預設；純色、雙色漸層（可調角度）、圖片網址或上傳圖片 |
 | **卡片封面** | 10 種預設色或任意自訂顏色 |
+| **清單顏色** | 每個清單可選預設色或任意顏色（清單選單 ⋯） |
+| **雙層模式**（原創） | 上方固定「待辦／進行中／急件」，下方依專案分列各專案的清單（可追加、收合）；卡片與清單可上下互相拖曳，清單可跨專案移動；卡片會記住所屬專案並沿用其標籤；上下比例可拖曳調整 |
 
 ## 程式結構
 
@@ -29,6 +31,7 @@ npm run lint
 src/
   types.ts              資料模型（Board / List / Card / Label / CustomField …）
   store.ts              reducer + actions + localStorage 持久化 + 篩選/日期工具
+  dnd.ts                共用的拖放狀態與放置邏輯
   theme.ts              主題預設、背景預設、色彩工具、主題 → CSS 變數
   App.tsx               頂部列、看板首頁、檢視切換、篩選列、看板設定
   components/
@@ -37,15 +40,19 @@ src/
     controls.tsx        Segmented、Slider、ColorPicker、Toggle
     AppearancePanel.tsx 外觀設定側欄
     BackgroundEditor.tsx 看板背景編輯器
+    ListColumn.tsx      清單欄、卡片方塊、清單選單（看板與雙層模式共用）
   views/
     BoardView.tsx       看板（原生 HTML5 拖放）
     TableView.tsx       表格
     CalendarView.tsx    行事曆
     TimelineView.tsx    時間軸
     DashboardView.tsx   儀表板
+    SplitView.tsx       雙層模式
 ```
 
 外觀設定會轉成 CSS 變數（`--accent`、`--radius`、`--list-w`…）寫在 `<html>` 上，`index.css` 只讀這些變數，所以要新增一個可調整的項目，只需要在 `Theme` 加欄位、在 `themeVars()` 輸出變數、在 CSS 使用它。
+
+雙層模式的上方清單存放在一個隱藏的「焦點看板」（`focusBoardId`）裡；卡片用 `homeBoardId` 記住所屬專案，所以拖到上方後，專案的表格、時間軸、行事曆仍看得到它。
 
 所有資料變更都經過 `store.ts` 的 `Action`，之後接後端時只要把 dispatch 改成「呼叫 API + 樂觀更新」即可，UI 幾乎不用動。
 
