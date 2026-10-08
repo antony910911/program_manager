@@ -1,0 +1,218 @@
+import { useState } from 'react'
+import type { AppState, Board, Card } from '../types'
+import type { Action } from '../store'
+import { uid } from '../store'
+import { Avatar, InlineEdit } from './common'
+
+interface Props {
+  state: AppState
+  board: Board
+  card: Card
+  dispatch: (a: Action) => void
+  onClose: () => void
+}
+
+export function CardModal({ state, board, card, dispatch, onClose }: Props) {
+  const update = (patch: Partial<Card>) => dispatch({ type: 'updateCard', cardId: card.id, patch })
+  const [desc, setDesc] = useState(card.description)
+  const [newItem, setNewItem] = useState('')
+  const [comment, setComment] = useState('')
+  const done = card.checklist.filter((i) => i.done).length
+  const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v])
+
+  return (
+    <div className="modal-backdrop" onMouseDown={onClose}>
+      <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+        <button className="modal-close ghost" onClick={onClose}>
+          ✕
+        </button>
+        <div className="modal-head">
+          <input type="checkbox" checked={card.completed} onChange={(e) => update({ completed: e.target.checked })} title="標記完成" />
+          <InlineEdit className="modal-title" value={card.title} onSave={(title) => update({ title })} />
+        </div>
+        <div className="muted">
+          在清單「
+          <select
+            value={card.listId}
+            onChange={(e) => dispatch({ type: 'moveCard', cardId: card.id, toListId: e.target.value, toIndex: Infinity })}
+          >
+            {board.listIds.map((lid) => (
+              <option key={lid} value={lid}>
+                {state.lists[lid].title}
+              </option>
+            ))}
+          </select>
+          」中
+        </div>
+
+        <div className="modal-body">
+          <div className="modal-main">
+            <section>
+              <h4>標籤</h4>
+              <div className="chips">
+                {board.labels.map((l) => (
+                  <button
+                    key={l.id}
+                    className={'label-toggle' + (card.labelIds.includes(l.id) ? ' on' : '')}
+                    style={{ background: l.color }}
+                    onClick={() => update({ labelIds: toggle(card.labelIds, l.id) })}
+                  >
+                    {l.name || ' '}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h4>成員</h4>
+              <div className="chips">
+                {state.members.map((m) => (
+                  <button
+                    key={m.id}
+                    className={'member-toggle' + (card.memberIds.includes(m.id) ? ' on' : '')}
+                    onClick={() => update({ memberIds: toggle(card.memberIds, m.id) })}
+                  >
+                    <Avatar member={m} size={22} /> {m.name}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="row wrap">
+              <label>
+                開始日 <input type="date" value={card.startDate ?? ''} onChange={(e) => update({ startDate: e.target.value || null })} />
+              </label>
+              <label>
+                到期日 <input type="date" value={card.dueDate ?? ''} onChange={(e) => update({ dueDate: e.target.value || null })} />
+              </label>
+            </section>
+
+            <section>
+              <h4>描述</h4>
+              <textarea
+                rows={4}
+                placeholder="新增更詳細的描述…"
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                onBlur={() => desc !== card.description && update({ description: desc })}
+              />
+            </section>
+
+            {board.customFields.length > 0 && (
+              <section>
+                <h4>自訂欄位</h4>
+                <div className="custom-fields">
+                  {board.customFields.map((f) => {
+                    const v = card.customFields[f.id] ?? ''
+                    const set = (val: string) => update({ customFields: { ...card.customFields, [f.id]: val } })
+                    return (
+                      <label key={f.id}>
+                        {f.name}
+                        {f.type === 'select' ? (
+                          <select value={v} onChange={(e) => set(e.target.value)}>
+                            <option value="">—</option>
+                            {f.options.map((o) => (
+                              <option key={o}>{o}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input type={f.type} value={v} onChange={(e) => set(e.target.value)} />
+                        )}
+                      </label>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <h4>
+                待辦清單{' '}
+                {card.checklist.length > 0 && (
+                  <span className="muted">
+                    ({done}/{card.checklist.length})
+                  </span>
+                )}
+              </h4>
+              {card.checklist.length > 0 && (
+                <div className="progress">
+                  <div style={{ width: `${(done / card.checklist.length) * 100}%` }} />
+                </div>
+              )}
+              {card.checklist.map((item) => (
+                <div key={item.id} className="check-item">
+                  <input
+                    type="checkbox"
+                    checked={item.done}
+                    onChange={() => update({ checklist: card.checklist.map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)) })}
+                  />
+                  <span className={item.done ? 'strike' : ''}>{item.text}</span>
+                  <button className="ghost small" onClick={() => update({ checklist: card.checklist.filter((i) => i.id !== item.id) })}>
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <form
+                className="row"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (!newItem.trim()) return
+                  update({ checklist: [...card.checklist, { id: uid(), text: newItem.trim(), done: false }] })
+                  setNewItem('')
+                }}
+              >
+                <input placeholder="新增項目…" value={newItem} onChange={(e) => setNewItem(e.target.value)} />
+                <button className="primary">新增</button>
+              </form>
+            </section>
+
+            <section>
+              <h4>留言</h4>
+              <form
+                className="row"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (!comment.trim()) return
+                  dispatch({ type: 'addComment', cardId: card.id, text: comment.trim() })
+                  setComment('')
+                }}
+              >
+                <input placeholder="撰寫留言…" value={comment} onChange={(e) => setComment(e.target.value)} />
+                <button className="primary">送出</button>
+              </form>
+              {[...card.comments].reverse().map((c) => {
+                const m = state.members.find((x) => x.id === c.memberId)
+                return (
+                  <div key={c.id} className="comment">
+                    {m && <Avatar member={m} size={24} />}
+                    <div>
+                      <div className="muted small">
+                        {m?.name} · {new Date(c.createdAt).toLocaleString()}
+                      </div>
+                      <div>{c.text}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </section>
+          </div>
+
+          <aside className="modal-side">
+            <button onClick={() => update({ archived: true })}>封存</button>
+            <button
+              className="danger"
+              onClick={() => {
+                if (confirm('確定刪除這張卡片？')) {
+                  dispatch({ type: 'deleteCard', cardId: card.id })
+                  onClose()
+                }
+              }}
+            >
+              刪除
+            </button>
+          </aside>
+        </div>
+      </div>
+    </div>
+  )
+}
