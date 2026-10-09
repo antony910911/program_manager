@@ -331,9 +331,9 @@ input.full {
   width: 30px;
   height: 30px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #4f46e5, #9333ea);
+  background: linear-gradient(135deg, #6b7280, #374151);
   color: #fff;
-  box-shadow: 0 4px 12px -4px rgba(79, 70, 229, 0.7);
+  box-shadow: 0 4px 12px -4px rgba(55, 65, 81, 0.7);
 }
 .on-board .brand-mark {
   box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.35);
