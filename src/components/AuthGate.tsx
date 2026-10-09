@@ -87,7 +87,7 @@ function LoginScreen() {
           <span className="brand-mark">
             <SquareKanban size={18} />
           </span>
-          Program Manager
+          Project Manager
         </div>
         <p className="muted">登入後，你的看板會在手機、電腦、平板之間同步。</p>
         <Segmented

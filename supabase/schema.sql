@@ -1,4 +1,5 @@
--- Program Manager: run this once in Supabase → SQL Editor → New query → Run.
+-- Project Manager: run this once in Supabase → SQL Editor → New query → Run.
+-- To receive todos from Beamup, also run inbox.sql.
 --
 -- Every user's data is a set of JSON documents (one per board, one per list with its cards, plus
 -- "meta" for theme, members and the alien). Row level security keeps each user to their own rows,

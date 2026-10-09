@@ -1,6 +1,6 @@
 {
-  "name": "Program Manager",
-  "short_name": "看板",
+  "name": "Project Manager",
+  "short_name": "Projects",
   "description": "看板、雙層模式與外星人夥伴的專案管理工具",
   "start_url": "./",
   "scope": "./",

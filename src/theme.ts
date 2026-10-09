@@ -13,7 +13,7 @@ export const defaultTheme: Theme = {
   labelStyle: 'pill',
   blur: true,
   colorStrength: 80,
-  rev: 3,
+  rev: 4,
 }
 
 export const THEME_PRESETS: { name: string; theme: Partial<Theme> }[] = [

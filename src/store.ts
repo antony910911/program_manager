@@ -30,7 +30,7 @@ export const BOARD_COLORS = ['#0079bf', '#d29034', '#519839', '#b04632', '#89609
 
 /** Initial top lists of split mode; like every list they can be renamed, added or removed. */
 export const FOCUS_LISTS: { title: string; color: string }[] = [
-  { title: '待辦', color: '#94a3b8' },
+  { title: '待辦', color: '#fbbf24' },
   { title: '進行中', color: '#60a5fa' },
   { title: '急件', color: '#f87171' },
 ]
@@ -220,6 +220,8 @@ export type Action =
   | { type: 'petVisit' }
   | { type: 'setAlien'; alien: string }
   | { type: 'equip'; accessory: string | null }
+  /** Todos sent over from Beamup (see inbox.ts). */
+  | { type: 'ingestInbox'; items: InboxTodo[] }
   /** Replace everything with state loaded from the cloud. */
   | { type: 'hydrate'; state: AppState }
 
@@ -450,9 +452,62 @@ function baseReducer(s: AppState, a: Action): AppState {
       return { ...s, pet: { ...s.pet, alien: a.alien } }
     case 'equip':
       return { ...s, pet: { ...s.pet, equipped: a.accessory } }
+    case 'ingestInbox':
+      return a.items.reduce(ingestTodo, s)
     case 'hydrate':
       return migrate(a.state)
   }
+}
+
+/** A todo as Beamup sends it (see thought_task_entry js/sync/todo.js). */
+export interface InboxTodo {
+  type: 'todo.created' | 'todo.updated' | 'todo.deleted'
+  id: string
+  title: string
+  note?: string
+  due?: string | null
+  priority?: 'low' | 'normal' | 'high'
+  tags?: string[]
+  done?: boolean
+}
+
+/** The split-mode list a Beamup todo lands in: 急件 for high priority, otherwise 待辦 (or the first top list). */
+function inboxList(s: AppState, priority: InboxTodo['priority']): ID {
+  const ids = s.boards[s.focusBoardId].listIds
+  const named = (t: string) => ids.find((id) => s.lists[id].title.trim() === t)
+  return (priority === 'high' ? named('急件') : undefined) ?? named('待辦') ?? ids[0]
+}
+
+function ingestTodo(s: AppState, t: InboxTodo): AppState {
+  if (!t || typeof t.id !== 'string' || typeof t.title !== 'string') return s
+  const existing = Object.values(s.cards).find((c) => c.sourceId === t.id)
+  const description = [t.note?.trim(), t.tags?.length ? t.tags.map((x) => '#' + x).join(' ') : '']
+    .filter(Boolean)
+    .join('\n\n')
+  const due = typeof t.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.due) ? t.due : null
+  if (existing) {
+    // Deleting in Beamup archives the card rather than removing it: it may have been worked on here.
+    const patch: Partial<Card> =
+      t.type === 'todo.deleted'
+        ? { archived: true }
+        : { title: t.title, description, dueDate: due, completed: !!t.done, archived: false }
+    return { ...s, cards: { ...s.cards, [existing.id]: { ...existing, ...patch } } }
+  }
+  if (t.type === 'todo.deleted') return s
+  let next = s
+  if (!s.boards[s.focusBoardId].listIds.length) next = baseReducer(s, { type: 'addList', boardId: s.focusBoardId, title: '待辦' })
+  const listId = inboxList(next, t.priority)
+  const list = next.lists[listId]
+  const card = newCard(listId, t.title, { description, dueDate: due, completed: !!t.done, sourceId: t.id })
+  return log(
+    {
+      ...next,
+      cards: { ...next.cards, [card.id]: card },
+      lists: { ...next.lists, [listId]: { ...list, cardIds: [...list.cardIds, card.id] } },
+    },
+    next.focusBoardId,
+    `從 Beamup 收到「${t.title}」`,
+  )
 }
 
 /** Fill in fields added after data was first saved. */
@@ -465,6 +520,10 @@ function rewardFor(prev: AppState, next: AppState, a: Action): { kind: PetKind; 
       return { kind: 'todo.add', text: `收到新卡片「${a.title}」` }
     case 'addComment':
       return { kind: 'note.add', text: '謝謝你的留言～' }
+    case 'ingestInbox': {
+      const n = a.items.filter((t) => t?.type === 'todo.created').length
+      return n ? { kind: 'todo.add', text: n > 1 ? `Beamup 送來 ${n} 件待辦！` : '收到 Beamup 的待辦！' } : null
+    }
     case 'updateCard': {
       const before = prev.cards[a.cardId]
       const after = next.cards[a.cardId]
@@ -528,6 +587,12 @@ function migrate(s: AppState): AppState {
     // Cards and lists are always rounded rectangles now; lift saved themes to the new minimum.
     theme.radius = Math.max(theme.radius, 18)
     theme.rev = 3
+  }
+  if ((s.theme?.rev ?? 0) < 4) {
+    // The top 待辦 list used to default to gray; give it the livelier amber unless it was recolored.
+    for (const id of boards[focusBoardId].listIds)
+      if (lists[id].color === '#94a3b8' && lists[id].title === '待辦') lists[id] = { ...lists[id], color: '#fbbf24' }
+    theme.rev = 4
   }
   return { ...s, focusBoardId, boards, lists, cards, theme, pet: { ...newPet(), ...s.pet } }
 }

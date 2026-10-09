@@ -1,4 +1,4 @@
-# Program Manager
+# Project Manager
 
 一個類似 Trello Premium 的專案管理工具。目前是**前端 MVP**（資料存在瀏覽器 localStorage），架構設計成之後可以直接接上後端。
 
@@ -21,7 +21,7 @@ npm run lint
 
 在 claude.ai 上開啟時，資料會同步到你的 claude.ai 帳號（artifact 的 `db`，存在你個人私有的 `data/users/<你的 id>/` 底下），手機、電腦、iPad 只要登入同一個帳號就會即時同步；右上角的雲朵圖示顯示同步狀態。在其他地方（`npm run dev`、靜態主機）則只存在該瀏覽器的 localStorage。
 
-手機與平板：長按卡片或清單標題約 0.25 秒即可拖曳（`src/touch.ts` 用 mobile-drag-drop 把觸控轉成拖放事件）。要重新產生單一檔案版本：`npm run build:single`，輸出在 `dist-single/program-manager.html`。
+手機與平板：長按卡片或清單標題約 0.25 秒即可拖曳（`src/touch.ts` 用 mobile-drag-drop 把觸控轉成拖放事件）。要重新產生單一檔案版本：`npm run build:single`，輸出在 `dist-single/project-manager.html`。
 
 ## 已完成功能
 
@@ -37,6 +37,7 @@ npm run lint
 | **清單顏色** | 每個清單可選預設色或任意顏色（清單選單 ⋯） |
 | **雙層模式**（原創） | 上方清單（預設待辦／進行中／急件）與下方各看板的清單都可改名、新增、刪除、排序；卡片與清單可上下互相拖曳，清單可跨看板移動；卡片會記住原本的看板與清單，可一鍵「移回原清單」；上下比例可拖曳調整 |
 | **外星人夥伴**（來自 Beamup） | 首頁的像素外星人（Blip、Zorp、Pom、Glim、Bolt）：戳他、連戳會頭暈、長按摸頭、點空地叫他走過去；會自己散步、跳舞、接星星、開飛碟；完成卡片／待辦清單、新增卡片、設到期日、留言都會餵他星星，累積經驗升級、連續天數、解鎖配件；狀態跟資料一起同步 |
+| **連接 Beamup** | 在 Beamup（thought-task-entry）新增的待辦，自動變成雙層模式上方「待辦」清單的卡片（高優先進「急件」），修改、完成也會同步；設定方式見 [DEPLOY.md](DEPLOY.md#連接-beamup在-beamup-打待辦直接進上方待辦清單) |
 | **看板範本** | 新增看板時可選空白、年度專案（每個專案一個清單）或待辦／進行中／完成 |
 
 ## 程式結構
@@ -48,6 +49,7 @@ src/
   dnd.ts                共用的拖放狀態與放置邏輯
   sync.ts               雲端同步（每個看板／清單一份文件，逐文件合併；後端是 claude.ai artifact db 或 Supabase）
   supabase.ts           Supabase 連線與資料表介面（自架網站用）
+  inbox.ts              接收 Beamup 送來的待辦（supabase/inbox.sql 的 inbox 資料表）
   touch.ts              觸控拖曳（長按拖曳）
   alien/                Beamup 的外星人系統（aliens 角色圖鑑、mascot 動畫與互動、pet 養成），index.ts 是型別化的入口
   theme.ts              主題預設、背景預設、色彩工具、主題 → CSS 變數
@@ -61,6 +63,7 @@ src/
     AlienHero.tsx       首頁的外星人舞台、養成狀態與換角色／配件
     AuthGate.tsx        自架網站的登入畫面（Email＋密碼、Email 連結）
     DataTransfer.tsx    備份與搬家（複製全部資料／貼上匯入）
+    BeamupConnect.tsx   產生 Beamup 連接碼
     ListColumn.tsx      清單欄、卡片方塊、清單選單（看板與雙層模式共用）
   views/
     BoardView.tsx       看板（原生 HTML5 拖放）

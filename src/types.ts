@@ -47,6 +47,8 @@ export interface Card {
   homeListId: ID | null
   archived: boolean
   createdAt: string
+  /** Id of the todo this card came from in Beamup (thought-task-entry), so later edits update it. */
+  sourceId?: string
 }
 
 export interface List {

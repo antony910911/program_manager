@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { AlignLeft, Ellipsis, MessageSquare, SquareCheck, Trash2, X } from 'lucide-react'
+import { AlignLeft, Ellipsis, MessageSquare, Sparkles, SquareCheck, Trash2, X } from 'lucide-react'
 import type { AppState, Card, Filter, ID, List } from '../types'
 import type { Action } from '../store'
 import { cardBoard } from '../store'
@@ -115,6 +115,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
           </div>
         ))}
         {isTarget && dropTarget.index >= cards.length && <div className="drop-placeholder" />}
+        {!cards.length && !isTarget && <div className="list-empty">拖曳卡片到這裡</div>}
       </div>
       <AddForm label="新增卡片" placeholder="輸入卡片標題…" onAdd={(title) => dispatch({ type: 'addCard', listId: list.id, title })} />
     </div>
@@ -228,6 +229,11 @@ export function CardTile({ state, card, dragging, showProject, onClick, onDragSt
         <span className="project-chip">
           <span style={{ background: project.color }} />
           {homeList ? `${project.title} · ${homeList.title}` : project.title}
+        </span>
+      )}
+      {card.sourceId && (
+        <span className="source-chip" title="從 Beamup 送來的待辦">
+          <Sparkles size={11} /> Beamup
         </span>
       )}
       {labels.length > 0 && (

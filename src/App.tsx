@@ -42,6 +42,7 @@ import { TimelineView } from './views/TimelineView'
 import { DashboardView } from './views/DashboardView'
 import { SplitView } from './views/SplitView'
 import { useCloudSync } from './sync'
+import { useInbox } from './inbox'
 import type { SyncStatus } from './sync'
 
 const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
@@ -61,6 +62,7 @@ export interface Account {
 export default function App({ account }: { account: Account | null }) {
   const [state, dispatch] = useAppStore(account?.id)
   const sync = useCloudSync(state, dispatch)
+  useInbox(account?.id, sync.status, dispatch)
 
   // Daily visit for the alien, and a celebration for each new reward earned in this session.
   const [startedAt] = useState(() => Date.now())
@@ -119,7 +121,7 @@ export default function App({ account }: { account: Account | null }) {
           <span className="brand-mark">
             <SquareKanban size={16} />
           </span>
-          <span className="brand-text">Program Manager</span>
+          <span className="brand-text">Project Manager</span>
         </button>
         {board && (
           <>
@@ -247,7 +249,7 @@ export default function App({ account }: { account: Account | null }) {
           }}
         />
       )}
-      {appearanceOpen && <AppearancePanel state={state} dispatch={dispatch} onClose={() => setAppearanceOpen(false)} />}
+      {appearanceOpen && <AppearancePanel state={state} dispatch={dispatch} onClose={() => setAppearanceOpen(false)} userId={account?.id} />}
     </div>
   )
 }
@@ -292,7 +294,9 @@ function Home({
           張焦點卡片
         </span>
       </button>
-      <h2 className="section-title">你的看板</h2>
+      <h2 className="section-title">
+        你的看板 <span className="section-count">{state.boardOrder.length}</span>
+      </h2>
       <div className="board-grid">
         {state.boardOrder.map((id) => {
           const b = state.boards[id]
@@ -300,6 +304,11 @@ function Home({
           const done = cardIds.filter((c) => state.cards[c].completed).length
           return (
             <button key={id} className="board-tile" style={{ background: backgroundCss(b.background) }} onClick={() => onOpen(id)}>
+              <span className="board-tile-lists">
+                {b.listIds.slice(0, 12).map((l) => (
+                  <i key={l} style={{ background: state.lists[l].color ?? 'rgba(255,255,255,.75)' }} />
+                ))}
+              </span>
               <strong>{b.title}</strong>
               <span className="board-tile-meta">
                 {b.listIds.length} 個清單 · {cardIds.length} 張卡片

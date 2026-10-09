@@ -5,14 +5,17 @@ import type { Action } from '../store'
 import { ACCENT_SWATCHES, FONT_NAMES, THEME_PRESETS, defaultTheme, isTheme } from '../theme'
 import { ColorPicker, Segmented, Slider, Toggle } from './controls'
 import { DataTransfer } from './DataTransfer'
+import { BeamupConnect } from './BeamupConnect'
 
 interface Props {
   state: AppState
   dispatch: (a: Action) => void
   onClose: () => void
+  /** Signed-in Supabase user; enables the Beamup connection. */
+  userId?: string
 }
 
-export function AppearancePanel({ state, dispatch, onClose }: Props) {
+export function AppearancePanel({ state, dispatch, onClose, userId }: Props) {
   const t = state.theme
   const set = (patch: Partial<Theme>) => dispatch({ type: 'setTheme', patch })
   const [json, setJson] = useState('')
@@ -35,6 +38,8 @@ export function AppearancePanel({ state, dispatch, onClose }: Props) {
           </button>
         </header>
         <div className="drawer-body">
+          {userId && <BeamupConnect userId={userId} />}
+
           <section>
             <h4>主題預設</h4>
             <div className="preset-grid">
