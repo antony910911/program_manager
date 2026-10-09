@@ -117,8 +117,9 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
             />
           </div>
         ))}
-        {isTarget && dropTarget.index >= cards.length && <div className="drop-placeholder" />}
-        {!cards.length && !isTarget && <div className="list-empty">拖曳卡片到這裡</div>}
+        {isTarget && cards.length > 0 && dropTarget.index >= cards.length && <div className="drop-placeholder" />}
+        {/* Stays put while a card hovers, so the list doesn't shrink out from under the pointer. */}
+        {!cards.length && <div className={'list-empty' + (isTarget ? ' active' : '')}>{isTarget ? '放開即可加入' : '拖曳卡片到這裡'}</div>}
       </div>
       <AddForm label="新增卡片" placeholder="輸入卡片標題…" onAdd={(title) => dispatch({ type: 'addCard', listId: list.id, title })} />
       {done.length > 0 && (

@@ -1902,6 +1902,11 @@ input.full {
     color: #4ade80;
   }
 }
+.list-empty.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
 .list-empty {
   margin: 2px 0;
   padding: 14px 10px;
