@@ -43,18 +43,28 @@
 
 > 這兩個是「公開」資訊，本來就會放進網站裡。**不要**複製 `service_role` 或 `secret` key。
 
-## 第 5 步：設定 GitHub
+## 第 5 步：把連線資訊交給程式
 
-1. **把程式合併到 main 分支**：目前的程式在 `claude/trello-premium-project-tool-4qoyji` 分支。在 GitHub 開一個 Pull Request 合併到 `main`，或請 Claude 幫你開。
-2. repo 的 **Settings** → **Pages** → **Build and deployment** → **Source** 選 **GitHub Actions**。
-3. repo 的 **Settings** → **Secrets and variables** → **Actions** → 切到 **Variables** 分頁 → **New repository variable**，新增兩個：
-   - `VITE_SUPABASE_URL` = 第 4 步的 Project URL
-   - `VITE_SUPABASE_ANON_KEY` = 第 4 步的 anon（或 publishable）key
-4. **Actions** 分頁 → 左邊選 **Deploy to GitHub Pages** → **Run workflow**。等 1～2 分鐘，出現綠色勾勾就上線了。
+把第 4 步的兩個值填進 repo 裡的 [`.env.production`](.env.production)：
 
-之後每次有新程式合併到 `main`，網站都會自動更新。
+```
+VITE_SUPABASE_URL=https://abcdefgh.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+```
 
-## 第 6 步：開始使用
+也可以直接把這兩個值貼給 Claude，請它幫你填好並推上去。
+
+## 第 6 步：打開 GitHub Pages（只要做一次）
+
+1. 打開 <https://github.com/antony910911/program_manager/settings/pages>（就是 repo 的 **Settings** → 左側 **Pages**）。
+   - 手機上 Settings 分頁可能藏在 repo 頁面上方分頁列的最右邊，或「⋯」選單裡。直接打開上面的連結最快。
+2. 找到 **Build and deployment** → **Source**，下拉選單選 **GitHub Actions**。選了就會自動儲存，不用按其他按鈕。
+3. 之後只要有新程式推上去，網站就會自動部署。第一次可以到 **Actions** 分頁 → 左邊 **Deploy to GitHub Pages** → 右邊 **Run workflow** → 綠色 **Run workflow** 手動跑一次，或請 Claude 幫你觸發。
+4. 1～2 分鐘後出現綠色勾勾，網站就上線了。
+
+> 這個 repo 目前的預設分支就是 `claude/trello-premium-project-tool-4qoyji`，推到這個分支或 `main` 都會自動部署。
+
+## 第 7 步：開始使用
 
 1. 打開 `https://antony910911.github.io/program_manager/`，在「註冊」分頁用你的 Email 和密碼（至少 6 個字元）建立帳號。
 2. 其他裝置打開同一個網址，用「登入」分頁輸入同一組 Email／密碼。
@@ -78,7 +88,7 @@
 如果想要更短的網址（`xxx.vercel.app`），或之後 repo 改成私人：
 
 1. 到 <https://vercel.com> 用 GitHub 登入 → **Add New → Project** → 選 `program_manager`。
-2. **Environment Variables** 加上同樣兩個變數：`VITE_SUPABASE_URL` 和 `VITE_SUPABASE_ANON_KEY`。
+2. 不用另外設定變數，Vercel 也會讀 `.env.production`。
 3. 按 **Deploy**。完成後，把 Vercel 給的網址填回 Supabase 的 Site URL 和 Redirect URLs（第 3 步）。
 
 ## 在自己電腦上開發（可選）
@@ -94,7 +104,7 @@ npm run dev
 | 狀況 | 解法 |
 |---|---|
 | 打開網站是空白頁 | 到 Actions 看部署有沒有成功；確認 Pages 的 Source 是 GitHub Actions |
-| 網站沒有登入畫面，右上角顯示「只存在這台裝置」 | 兩個 `VITE_SUPABASE_…` 變數沒設好。設定後到 Actions 重新 Run workflow |
+| 網站沒有登入畫面，右上角顯示「只存在這台裝置」 | `.env.production` 的兩個值沒填好。填好推上去後會自動重新部署 |
 | 註冊後一直說帳號還沒確認 | 去信箱點確認信，或照第 3 步把 Confirm email 關掉 |
 | 確認信的連結打開是錯的網址 | 第 3 步的 Site URL／Redirect URLs 要填你的網站網址 |
 | 右上角出現同步警告 | 確認第 2 步的 SQL 有跑成功（Table Editor 裡要看得到 `user_docs`） |

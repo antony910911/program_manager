@@ -1,11 +1,12 @@
-# Builds the site and publishes it to GitHub Pages on every push to main.
-# One-time setup (see DEPLOY.md): Settings → Pages → Source: GitHub Actions, and the repository
-# variables VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY under Settings → Secrets and variables → Actions → Variables.
+# Builds the site and publishes it to GitHub Pages on every push to the default branch.
+# One-time setup (see DEPLOY.md): Settings → Pages → Source: GitHub Actions.
+# Supabase settings come from .env.production (public values); repository variables of the same
+# name, if set, take precedence.
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, claude/trello-premium-project-tool-4qoyji]
   workflow_dispatch:
 
 permissions:
@@ -27,10 +28,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Use repository variables when set
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          URL: ${{ vars.VITE_SUPABASE_URL }}
+          KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -n "$URL" ]; then echo "VITE_SUPABASE_URL=$URL" >> .env.production.local; fi
+          if [ -n "$KEY" ]; then echo "VITE_SUPABASE_ANON_KEY=$KEY" >> .env.production.local; fi
+      - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
