@@ -35,6 +35,8 @@ export interface Card {
   startDate: string | null // YYYY-MM-DD
   dueDate: string | null // YYYY-MM-DD
   completed: boolean
+  /** Day the card was marked done (YYYY-MM-DD); missing for cards completed before this was recorded. */
+  completedAt?: string | null
   checklist: ChecklistItem[]
   comments: Comment[]
   /** Custom field values keyed by CustomField id (Premium feature). */
@@ -141,7 +143,7 @@ export interface AppState {
   activity: ActivityEntry[]
 }
 
-export type ViewKind = 'board' | 'table' | 'calendar' | 'timeline' | 'dashboard'
+export type ViewKind = 'board' | 'table' | 'calendar' | 'timeline' | 'dashboard' | 'review'
 
 export interface Filter {
   text: string

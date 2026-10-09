@@ -21,8 +21,17 @@ export function useDnd() {
 }
 export type Dnd = ReturnType<typeof useDnd>
 
+/** Open cards shown in a list; done cards move to the list's collapsed 已完成 section. */
 export function visibleCards(state: AppState, listId: ID, filter: Filter): Card[] {
-  return state.lists[listId].cardIds.map((id) => state.cards[id]).filter((c) => !c.archived && matchesFilter(c, filter))
+  return state.lists[listId].cardIds
+    .map((id) => state.cards[id])
+    .filter((c) => !c.archived && !c.completed && matchesFilter(c, filter))
+}
+
+export function doneCards(state: AppState, listId: ID, filter: Filter): Card[] {
+  return state.lists[listId].cardIds
+    .map((id) => state.cards[id])
+    .filter((c) => !c.archived && c.completed && matchesFilter(c, filter))
 }
 
 /** Drop the dragged card at the current drop target, mapping the visible index back to the full list. */

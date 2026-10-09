@@ -8,7 +8,9 @@ import {
   Cloud,
   CloudAlert,
   CloudOff,
+  History,
   House,
+  ArrowLeft,
   LogOut,
   RefreshCw,
   Image,
@@ -25,7 +27,7 @@ import {
   X,
 } from 'lucide-react'
 import type { Board, BoardBackground, Filter, ID, ViewKind } from './types'
-import { BOARD_TEMPLATES, LABEL_COLORS, cardBoard, emptyFilter, useAppStore } from './store'
+import { BOARD_TEMPLATES, LABEL_COLORS, cardBoard, doneDate, emptyFilter, useAppStore } from './store'
 import type { Action } from './store'
 import { BACKGROUND_PRESETS, backgroundCss, defaultBackground, themeVars } from './theme'
 import { Avatar, BrandMark, InlineEdit } from './components/common'
@@ -40,6 +42,7 @@ import { TableView } from './views/TableView'
 import { CalendarView } from './views/CalendarView'
 import { TimelineView } from './views/TimelineView'
 import { DashboardView } from './views/DashboardView'
+import { ReviewView } from './views/ReviewView'
 import { SplitView } from './views/SplitView'
 import { useCloudSync } from './sync'
 import { useInbox } from './inbox'
@@ -51,6 +54,7 @@ const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
   { kind: 'calendar', name: '行事曆', icon: <CalendarDays size={15} /> },
   { kind: 'timeline', name: '時間軸', icon: <ChartGantt size={15} /> },
   { kind: 'dashboard', name: '儀表板', icon: <ChartColumn size={15} /> },
+  { kind: 'review', name: '回顧', icon: <History size={15} /> },
 ]
 
 export interface Account {
@@ -80,7 +84,10 @@ export default function App({ account }: { account: Account | null }) {
   const setBoardId = (id: ID | null) => {
     setBoardIdRaw(id)
     setFilter(emptyFilter)
+    setReviewAll(false)
   }
+  /** The all-boards year review, opened from the home page. */
+  const [reviewAll, setReviewAll] = useState(false)
   const [openCardId, setOpenCardId] = useState<ID | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [appearanceOpen, setAppearanceOpen] = useState(false)
@@ -156,8 +163,21 @@ export default function App({ account }: { account: Account | null }) {
         {me && <Avatar member={me} size={30} />}
       </header>
 
-      {!board ? (
-        <Home state={state} dispatch={dispatch} onOpen={(id) => setBoardId(id)} synced={sync.status !== 'local'} />
+      {!board && reviewAll ? (
+        <main className="home review-page">
+          <button className="btn" onClick={() => setReviewAll(false)}>
+            <ArrowLeft size={15} /> 回首頁
+          </button>
+          <ReviewView state={state} initialScope="all" openCard={setOpenCardId} />
+        </main>
+      ) : !board ? (
+        <Home
+          state={state}
+          dispatch={dispatch}
+          onOpen={(id) => setBoardId(id)}
+          onReview={() => setReviewAll(true)}
+          synced={sync.status !== 'local'}
+        />
       ) : (
         <main className="board-page">
           <div className="board-bar">
@@ -222,12 +242,13 @@ export default function App({ account }: { account: Account | null }) {
               )}
               {view === 'timeline' && <TimelineView state={state} board={board} filter={filter} openCard={setOpenCardId} />}
               {view === 'dashboard' && <DashboardView state={state} board={board} filter={filter} />}
+              {view === 'review' && <ReviewView key={board.id} state={state} initialScope={board.id} openCard={setOpenCardId} />}
             </>
           )}
         </main>
       )}
 
-      {board && openCard && (
+      {openCard && (
         <CardModal
           key={openCard.id}
           state={state}
@@ -258,11 +279,13 @@ function Home({
   state,
   dispatch,
   onOpen,
+  onReview,
   synced,
 }: {
   state: ReturnType<typeof useAppStore>[0]
   dispatch: (a: Action) => void
   onOpen: (id: ID) => void
+  onReview: () => void
   synced: boolean
 }) {
   const [title, setTitle] = useState('')
@@ -292,6 +315,18 @@ function Home({
             0,
           )}{' '}
           張焦點卡片
+        </span>
+      </button>
+      <button className="split-entry review-entry" onClick={onReview}>
+        <span className="split-entry-icon">
+          <History size={22} />
+        </span>
+        <span>
+          <strong>年度回顧</strong>
+          <span className="muted">每個月完成了哪些卡片、時間花在哪些專案。完成的卡片離開清單後，紀錄都留在這裡。</span>
+        </span>
+        <span className="split-entry-count">
+          今年完成 {Object.values(state.cards).filter((c) => c.completed && doneDate(c).date.startsWith(String(nextYear - 1))).length} 張
         </span>
       </button>
       <h2 className="section-title">

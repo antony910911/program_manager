@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { AlignLeft, Ellipsis, MessageSquare, Sparkles, SquareCheck, Trash2, X } from 'lucide-react'
+import { AlignLeft, Check, ChevronDown, ChevronRight, Ellipsis, MessageSquare, Sparkles, SquareCheck, Trash2, X } from 'lucide-react'
 import type { AppState, Card, Filter, ID, List } from '../types'
 import type { Action } from '../store'
 import { cardBoard } from '../store'
-import { dropCard, visibleCards } from '../dnd'
+import { doneCards, dropCard, visibleCards } from '../dnd'
 import type { Dnd } from '../dnd'
 import { LIST_COLORS, softPreview } from '../theme'
 import { AddForm, Avatar, DueBadge, InlineEdit, LabelChip } from './common'
@@ -29,6 +29,8 @@ interface Props {
 export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCard, onDropList, showProject, className }: Props) {
   const { drag, setDrag, dropTarget, setDropTarget, endDrag } = dnd
   const cards = visibleCards(state, list.id, filter)
+  const done = doneCards(state, list.id, filter)
+  const [showDone, setShowDone] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuBtn = useRef<HTMLButtonElement>(null)
   const isTarget = drag?.kind === 'card' && dropTarget?.listId === list.id
@@ -101,6 +103,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
               showProject={showProject}
               dragging={drag?.kind === 'card' && drag.id === card.id}
               onClick={() => openCard(card.id)}
+              onComplete={() => dispatch({ type: 'updateCard', cardId: card.id, patch: { completed: true } })}
               onDragStart={() => setDrag({ kind: 'card', id: card.id })}
               onDragEnd={endDrag}
               onDragOver={(e) => {
@@ -118,6 +121,32 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
         {!cards.length && !isTarget && <div className="list-empty">拖曳卡片到這裡</div>}
       </div>
       <AddForm label="新增卡片" placeholder="輸入卡片標題…" onAdd={(title) => dispatch({ type: 'addCard', listId: list.id, title })} />
+      {done.length > 0 && (
+        <div className="list-done">
+          <button className="list-done-toggle" onClick={() => setShowDone((v) => !v)}>
+            {showDone ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            <Check size={13} /> 已完成 {done.length} 張
+          </button>
+          {showDone && (
+            <div className="list-done-cards">
+              {done.map((card) => (
+                <CardTile
+                  key={card.id}
+                  state={state}
+                  card={card}
+                  showProject={showProject}
+                  dragging={drag?.kind === 'card' && drag.id === card.id}
+                  onClick={() => openCard(card.id)}
+                  onComplete={() => dispatch({ type: 'updateCard', cardId: card.id, patch: { completed: false } })}
+                  onDragStart={() => setDrag({ kind: 'card', id: card.id })}
+                  onDragEnd={endDrag}
+                  onDragOver={() => {}}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -199,12 +228,14 @@ interface TileProps {
   dragging: boolean
   showProject?: boolean
   onClick: () => void
+  /** Round check button: marks an open card done, or a done card open again. */
+  onComplete?: () => void
   onDragStart: () => void
   onDragEnd: () => void
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void
 }
 
-export function CardTile({ state, card, dragging, showProject, onClick, onDragStart, onDragEnd, onDragOver }: TileProps) {
+export function CardTile({ state, card, dragging, showProject, onClick, onComplete, onDragStart, onDragEnd, onDragOver }: TileProps) {
   const board = cardBoard(state, card)
   const labels = board.labels.filter((l) => card.labelIds.includes(l.id))
   const members = state.members.filter((m) => card.memberIds.includes(m.id))
@@ -243,7 +274,22 @@ export function CardTile({ state, card, dragging, showProject, onClick, onDragSt
           ))}
         </div>
       )}
-      <div className="card-title">{card.title}</div>
+      <div className="card-title">
+        {onComplete && (
+          <button
+            className={'card-check' + (card.completed ? ' on' : '')}
+            title={card.completed ? '改回未完成' : '標記完成'}
+            aria-label={card.completed ? '改回未完成' : '標記完成'}
+            onClick={(e) => {
+              e.stopPropagation()
+              onComplete()
+            }}
+          >
+            <Check size={11} strokeWidth={3} />
+          </button>
+        )}
+        {card.title}
+      </div>
       <div className="card-badges">
         <DueBadge card={card} />
         {card.description && (

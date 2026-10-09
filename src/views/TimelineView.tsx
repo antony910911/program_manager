@@ -1,5 +1,7 @@
-import type { AppState, Board, Filter, ID } from '../types'
-import { addDays, boardCards, daysBetween, isOverdue, matchesFilter, parseYmd, today } from '../store'
+import { useState } from 'react'
+import type { AppState, Board, Card, Filter, ID } from '../types'
+import { addDays, boardCards, dayOf, daysBetween, doneDate, isOverdue, matchesFilter, parseYmd, today } from '../store'
+import { Segmented } from '../components/controls'
 
 interface Props {
   state: AppState
@@ -10,13 +12,26 @@ interface Props {
 
 const DAY_W = 32
 
-/** Gantt-style timeline, grouped by list. Cards need a start or due date to appear. */
+/**
+ * Gantt-style timeline, grouped by list.
+ * 計畫 draws start → due date (cards need one of them); 實際 draws created → completed (or today if still open),
+ * so every card shows up and the year can be looked back on as it really went.
+ */
 export function TimelineView({ state, board, filter, openCard }: Props) {
-  const cards = boardCards(state, board.id).filter((c) => (c.startDate || c.dueDate) && matchesFilter(c, filter))
+  const [mode, setMode] = useState<'plan' | 'actual'>('plan')
   const t = today()
-  const span = (c: (typeof cards)[number]) => {
-    const s = c.startDate ?? c.dueDate!
-    const e = c.dueDate ?? c.startDate!
+  const cards = boardCards(state, board.id).filter(
+    (c) => (mode === 'actual' || c.startDate || c.dueDate) && matchesFilter(c, filter),
+  )
+  const span = (c: Card) => {
+    let s: string, e: string
+    if (mode === 'actual') {
+      s = dayOf(c.createdAt)
+      e = c.completed ? doneDate(c).date : t
+    } else {
+      s = c.startDate ?? c.dueDate!
+      e = c.dueDate ?? c.startDate!
+    }
     return s <= e ? [s, e] : [e, s]
   }
   const allDates = cards.flatMap(span).concat(t)
@@ -33,6 +48,16 @@ export function TimelineView({ state, board, filter, openCard }: Props) {
 
   return (
     <div className="view-panel timeline-wrap">
+      <div className="timeline-mode">
+        <Segmented
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'plan', label: '計畫（開始日 → 到期日）' },
+            { value: 'actual', label: '實際（建立 → 完成）' },
+          ]}
+        />
+      </div>
       <div className="timeline" style={{ width: 180 + total * DAY_W }}>
         <div className="tl-row tl-header">
           <div className="tl-name" />
@@ -80,7 +105,11 @@ export function TimelineView({ state, board, filter, openCard }: Props) {
                           background: label?.color ?? '#5e6c84',
                         }}
                         onClick={() => openCard(c.id)}
-                        title={`${c.title}：${s} → ${e}`}
+                        title={
+                          mode === 'actual'
+                            ? `${c.title}：${s} 建立 → ${c.completed ? e + ' 完成' : '進行中'}`
+                            : `${c.title}：${s} → ${e}`
+                        }
                       >
                         {c.title}
                       </div>
@@ -91,7 +120,11 @@ export function TimelineView({ state, board, filter, openCard }: Props) {
             </div>
           )
         })}
-        {cards.length === 0 && <p className="muted center">為卡片設定開始日或到期日後，就會出現在時間軸上</p>}
+        {cards.length === 0 && (
+          <p className="muted center">
+            {mode === 'plan' ? '為卡片設定開始日或到期日後，就會出現在時間軸上；或切到「實際」看建立到完成的時間' : '這個看板還沒有卡片'}
+          </p>
+        )}
       </div>
     </div>
   )

@@ -374,8 +374,10 @@ function baseReducer(s: AppState, a: Action): AppState {
         `新增卡片「${a.title}」到「${list.title}」`,
       )
     }
-    case 'updateCard':
-      return { ...s, cards: { ...s.cards, [a.cardId]: { ...s.cards[a.cardId], ...a.patch } } }
+    case 'updateCard': {
+      const card = s.cards[a.cardId]
+      return { ...s, cards: { ...s.cards, [a.cardId]: { ...card, ...a.patch, ...completion(card, a.patch.completed) } } }
+    }
     case 'moveCard': {
       const card = s.cards[a.cardId]
       const from = s.lists[card.listId]
@@ -459,6 +461,12 @@ function baseReducer(s: AppState, a: Action): AppState {
   }
 }
 
+/** Records the day a card is checked off, and forgets it when unchecked. */
+function completion(card: Card, completed: boolean | undefined): Partial<Card> {
+  if (completed === undefined || completed === card.completed) return {}
+  return { completedAt: completed ? today() : null }
+}
+
 /** A todo as Beamup sends it (see thought_task_entry js/sync/todo.js). */
 export interface InboxTodo {
   type: 'todo.created' | 'todo.updated' | 'todo.deleted'
@@ -490,7 +498,7 @@ function ingestTodo(s: AppState, t: InboxTodo): AppState {
     const patch: Partial<Card> =
       t.type === 'todo.deleted'
         ? { archived: true }
-        : { title: t.title, description, dueDate: due, completed: !!t.done, archived: false }
+        : { title: t.title, description, dueDate: due, completed: !!t.done, archived: false, ...completion(existing, !!t.done) }
     return { ...s, cards: { ...s.cards, [existing.id]: { ...existing, ...patch } } }
   }
   if (t.type === 'todo.deleted') return s
@@ -498,7 +506,7 @@ function ingestTodo(s: AppState, t: InboxTodo): AppState {
   if (!s.boards[s.focusBoardId].listIds.length) next = baseReducer(s, { type: 'addList', boardId: s.focusBoardId, title: '待辦' })
   const listId = inboxList(next, t.priority)
   const list = next.lists[listId]
-  const card = newCard(listId, t.title, { description, dueDate: due, completed: !!t.done, sourceId: t.id })
+  const card = newCard(listId, t.title, { description, dueDate: due, completed: !!t.done, completedAt: t.done ? today() : null, sourceId: t.id })
   return log(
     {
       ...next,
@@ -657,4 +665,25 @@ export const emptyFilter: Filter = { text: '', labelIds: [], memberIds: [], due:
 export function formatDate(d: string): string {
   const date = parseYmd(d)
   return `${date.getMonth() + 1}月${date.getDate()}日`
+}
+
+/** Local calendar day of an ISO timestamp. */
+export const dayOf = (iso: string) => ymd(new Date(iso))
+
+/**
+ * When a done card was finished. Cards checked off before completion dates were recorded fall back to
+ * their due date, then their creation day; `exact` says whether the date is the recorded one.
+ */
+export function doneDate(c: Card): { date: string; exact: boolean } {
+  if (c.completedAt) return { date: c.completedAt, exact: true }
+  return { date: c.dueDate ?? dayOf(c.createdAt), exact: false }
+}
+
+/** Every card that belongs to a board (its own lists, plus its cards parked in the focus lists), archived ones included. */
+export function allBoardCards(s: AppState, boardId: ID): Card[] {
+  return Object.values(s.cards).filter((c) =>
+    boardId === s.focusBoardId
+      ? s.boards[boardId].listIds.includes(c.listId) && !c.homeBoardId
+      : s.boards[boardId].listIds.includes(c.listId) || c.homeBoardId === boardId,
+  )
 }

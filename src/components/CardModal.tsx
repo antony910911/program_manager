@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { AppState, Board, Card } from '../types'
 import type { Action } from '../store'
-import { uid } from '../store'
+import { doneDate, formatDate, uid } from '../store'
 import { Undo2, Archive, CheckSquare, Image, MessageSquare, Tag, Trash2, Users, X, AlignLeft, CalendarDays, Type } from 'lucide-react'
 import { COVER_COLORS, softPreview } from '../theme'
 import { Avatar, InlineEdit } from './common'
@@ -39,6 +39,13 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
           <input type="checkbox" checked={card.completed} onChange={(e) => update({ completed: e.target.checked })} title="標記完成" />
           <InlineEdit className="modal-title" value={card.title} onSave={(title) => update({ title })} />
         </div>
+        {card.completed && (
+          <div className="done-note">
+            {doneDate(card).exact
+              ? `✓ ${formatDate(doneDate(card).date)}完成，已移到清單底部的「已完成」`
+              : '✓ 已完成（完成日沒有記錄，年度回顧會用到期日估計），已移到清單底部的「已完成」'}
+          </div>
+        )}
         <div className="muted">
           在清單「
           <select

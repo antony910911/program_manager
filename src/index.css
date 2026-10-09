@@ -2345,3 +2345,305 @@ input.full {
   color: var(--success);
   font-size: 0.93em;
 }
+
+/* ---------- completing cards ---------- */
+/* Round check before the title: shows on hover, always on touch screens. */
+.card-check {
+  display: none;
+  vertical-align: -3px;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  margin-right: 6px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, currentColor 45%, transparent);
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+.card-tile:hover .card-check,
+.card-check.on {
+  display: inline-flex;
+}
+@media (hover: none) {
+  .card-check {
+    display: inline-flex;
+  }
+}
+.card-check:hover {
+  border-color: var(--success);
+  color: var(--success);
+}
+.card-check.on {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.list-done {
+  margin-top: 4px;
+}
+.list-done-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82em;
+  font-weight: 600;
+  color: color-mix(in srgb, currentColor 65%, transparent);
+}
+.list-done-toggle:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.list-done-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  margin-top: 6px;
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+.list-done-cards .card-tile {
+  opacity: 0.75;
+}
+.done-note {
+  margin: -4px 0 10px 30px;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--success);
+}
+.timeline-mode {
+  position: sticky;
+  left: 0;
+  margin-bottom: 12px;
+  max-width: 420px;
+}
+
+/* ---------- year review ---------- */
+.review-page {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.review-page .view-panel.review {
+  margin: 0;
+  width: 100%;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.review-head h2 {
+  margin: 0 8px 0 0;
+  font-size: 1.4em;
+  letter-spacing: -0.01em;
+}
+.review-head select {
+  width: auto;
+}
+.review-empty {
+  padding: 24px 0;
+}
+.review-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.review-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.review-stats strong {
+  font-size: 1.7em;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.review-card {
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.review-card h3 {
+  margin: 0 0 12px;
+  font-size: 1em;
+}
+.review-months {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+  height: 160px;
+}
+.review-month {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.review-month.empty {
+  cursor: default;
+}
+.review-month:not(.empty):hover {
+  background: var(--accent-soft);
+}
+.review-month-value {
+  height: 16px;
+  font-size: 0.75em;
+  font-weight: 600;
+  color: var(--muted);
+}
+.review-month-track {
+  flex: 1;
+  width: min(28px, 70%);
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border);
+}
+.review-month-track span {
+  display: block;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent);
+  min-height: 0;
+}
+.review-month-label {
+  font-size: 0.72em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.review-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.review-group {
+  display: grid;
+  grid-template-columns: minmax(90px, 200px) 1fr 32px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9em;
+}
+.review-group-name,
+.review-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-group-name i,
+.review-chip i {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.review-group-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.review-group-track span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+.review-group-count {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.review-log-month {
+  scroll-margin-top: 80px;
+}
+.review-log-month + .review-log-month {
+  margin-top: 14px;
+}
+.review-log-month h4 {
+  margin: 0 0 6px;
+  font-size: 0.95em;
+}
+.review-log-month ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.review-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  color: inherit;
+}
+.review-item:hover {
+  background: var(--surface-2);
+}
+.review-date {
+  font-size: 0.82em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.review-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-chip {
+  max-width: 220px;
+  font-size: 0.78em;
+  color: var(--muted);
+}
+.review-archived {
+  color: var(--muted);
+  display: inline-flex;
+}
+@media (max-width: 720px) {
+  .review-months {
+    gap: 2px;
+    height: 130px;
+  }
+  .review-item {
+    grid-template-columns: 50px 1fr auto;
+  }
+  .review-chip {
+    grid-column: 2;
+    max-width: none;
+  }
+  .review-group {
+    grid-template-columns: minmax(70px, 120px) 1fr 28px;
+  }
+}
