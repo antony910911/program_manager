@@ -157,3 +157,32 @@ test('Outlook: all-day and timed events, refresh token rotation', async () => {
   assert.equal(ev.start, '2026-10-11')
   assert.equal(p.latestRefreshToken(), 'rt2')
 })
+
+test('iCloud: follows redirects to the account host and sends the login again', async () => {
+  const calls = mockFetch((url, init) => {
+    const u = new URL(url)
+    const authed = !!(init.headers as Record<string, string>).Authorization
+    if (!authed) return new Response('', { status: 401 })
+    if (u.host === 'caldav.icloud.com') return new Response('', { status: 301, headers: { Location: 'https://p52-caldav.icloud.com' + u.pathname } })
+    if (init.method === 'PROPFIND' && u.pathname === '/')
+      return new Response('<multistatus xmlns="DAV:"><response><propstat><prop><current-user-principal><href>/9/principal/</href></current-user-principal></prop></propstat></response></multistatus>', { status: 207 })
+    if (init.method === 'PROPFIND' && u.pathname === '/9/principal/')
+      return new Response('<multistatus xmlns="DAV:"><response><propstat><prop><calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav"><href xmlns="DAV:">/9/calendars/</href></calendar-home-set></prop></propstat></response></multistatus>', { status: 207 })
+    return new Response('<multistatus xmlns="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><response><href>/9/calendars/work/</href><propstat><prop><displayname>工作</displayname><resourcetype><collection/><c:calendar/></resourcetype><c:supported-calendar-component-set><c:comp name="VEVENT"/></c:supported-calendar-component-set></prop></propstat></response></multistatus>', { status: 207 })
+  })
+  const p = icloudProvider('me@gmail.com', 'aaaa-bbbb-cccc-dddd')
+  assert.deepEqual(await p.calendars(), [{ id: 'https://p52-caldav.icloud.com/9/calendars/work/', name: '工作' }])
+  assert.equal(calls[0].init.redirect, 'manual')
+  assert.ok(calls.some((c) => c.url.startsWith('https://p52-caldav.icloud.com/')))
+  assert.ok(calls.every((c) => (c.init.headers as Record<string, string>).Authorization))
+})
+
+test('iCloud: a refused login names the step', async () => {
+  mockFetch(() => new Response('', { status: 401 }))
+  await assert.rejects(icloudProvider('me@gmail.com', 'x').calendars(), /iCloud 拒絕登入（401，caldav\.icloud\.com PROPFIND）/)
+})
+
+test('iCloud: never sends the login to other hosts', async () => {
+  mockFetch(() => new Response('', { status: 302, headers: { Location: 'https://evil.example.com/' } }))
+  await assert.rejects(icloudProvider('me@gmail.com', 'x').calendars(), /不明的位置/)
+})

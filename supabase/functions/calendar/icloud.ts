@@ -134,30 +134,59 @@ export function icloudProvider(username: string, password: string): Provider & {
   calendars(): Promise<{ id: string; name: string }[]>
 } {
   const auth = 'Basic ' + btoa(unescape(encodeURIComponent(`${username}:${password}`)))
+  // iCloud answers from per-account hosts (pNN-caldav.icloud.com) and redirects there. fetch drops the
+  // Authorization header when a redirect changes host, so redirects are followed by hand and the login is
+  // sent again, only ever to icloud.com hosts.
+  // Where each response actually came from after redirects; relative hrefs in it resolve against this.
+  const finalUrl = new WeakMap<Response, string>()
+  const urlOf = (res: Response) => finalUrl.get(res) ?? ROOT + '/'
   const dav = async (url: string, method: string, body?: string, headers: Record<string, string> = {}) => {
-    const res = await fetch(url.startsWith('http') ? url : ROOT + url, {
-      method,
-      headers: { Authorization: auth, 'Content-Type': 'application/xml; charset=utf-8', ...headers },
-      body,
-    })
-    if (res.status === 401) throw new Error('iCloud 拒絕登入：請確認 Apple ID 與 App 專用密碼')
-    return res
+    let target = url.startsWith('http') ? url : ROOT + url
+    for (let hop = 0; hop < 5; hop++) {
+      const res = await fetch(target, {
+        method,
+        redirect: 'manual',
+        headers: {
+          Authorization: auth,
+          'Content-Type': 'application/xml; charset=utf-8',
+          'User-Agent': 'Mothership/1.0 (CalDAV)',
+          ...headers,
+        },
+        body,
+      })
+      const next = res.headers.get('location')
+      if (res.status >= 300 && res.status < 400 && next) {
+        const to = new URL(next, target)
+        if (to.protocol !== 'https:' || !/(^|\.)icloud\.com$/.test(to.hostname)) throw new Error('iCloud 轉址到不明的位置：' + to.host)
+        target = to.toString()
+        continue
+      }
+      if (res.status === 401 || res.status === 403) {
+        const host = new URL(target).host
+        throw new Error(
+          `iCloud 拒絕登入（${res.status}，${host} ${method}）。請確認：Apple ID 是 account.apple.com 最上方顯示的那個 Email、App 專用密碼是剛產生且沒有撤銷的`,
+        )
+      }
+      finalUrl.set(res, target)
+      return res
+    }
+    throw new Error('iCloud 轉址太多次')
   }
   const absolute = (base: string, href: string) => new URL(href, base).toString()
 
   const home = (async () => {
     const r1 = await dav(ROOT + '/', 'PROPFIND', '<d:propfind xmlns:d="DAV:"><d:prop><d:current-user-principal/></d:prop></d:propfind>', { Depth: '0' })
-    const principal = tags(tags(await r1.text(), 'current-user-principal')[0] ?? '', 'href')[0]
+    const principal = decodeXml(tags(tags(await r1.text(), 'current-user-principal')[0] ?? '', 'href')[0] ?? '')
     if (!principal) throw new Error('找不到 iCloud 行事曆帳號')
     const r2 = await dav(
-      absolute(ROOT, principal),
+      absolute(urlOf(r1), principal),
       'PROPFIND',
       '<d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><c:calendar-home-set/></d:prop></d:propfind>',
       { Depth: '0' },
     )
     const homeHref = tags(tags(await r2.text(), 'calendar-home-set')[0] ?? '', 'href')[0]
     if (!homeHref) throw new Error('找不到 iCloud 行事曆')
-    return absolute(r2.url || ROOT, decodeXml(homeHref))
+    return absolute(urlOf(r2), decodeXml(homeHref))
   })()
   // Keep an unawaited rejection from surfacing before anyone asks for it.
   home.catch(() => {})

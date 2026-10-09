@@ -95,7 +95,7 @@ export function CalendarConnect({ accounts, error, syncNow }: Props) {
                 onChange={(e) => setApplePw(e.target.value)}
               />
               <p className="muted small">
-                不是你的 Apple ID 密碼：到 <a href="https://account.apple.com/account/manage" target="_blank" rel="noreferrer">account.apple.com</a> → 登入與安全性 → App 專用密碼，產生一組給 Mothership。之後可以隨時在那裡撤銷。
+                Apple ID 要填登入 account.apple.com 時用的那個 Email（有些人是 @icloud.com，不一定是 Gmail）。密碼不是你的 Apple ID 密碼：到 <a href="https://account.apple.com/account/manage" target="_blank" rel="noreferrer">account.apple.com</a> → 登入與安全性 → App 專用密碼，產生一組給 Mothership。之後可以隨時在那裡撤銷。
               </p>
               <button className="btn primary" disabled={busy || !appleId || !applePw}>
                 連接
