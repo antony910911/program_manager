@@ -229,7 +229,7 @@ export type Action =
   /** Delete one trashed card for good, or empty the trash when cardId is omitted. */
   | { type: 'purgeTrash'; cardId?: ID }
   /** Todos sent over from Beamup (see inbox.ts). */
-  | { type: 'ingestInbox'; items: InboxTodo[] }
+  | { type: 'ingestInbox'; items: (InboxTodo | InboxEvent)[] }
   /** Replace everything with state loaded from the cloud. */
   | { type: 'hydrate'; state: AppState }
 
@@ -511,7 +511,7 @@ function baseReducer(s: AppState, a: Action): AppState {
     case 'purgeTrash':
       return { ...s, trash: a.cardId ? s.trash.filter((t) => t.card.id !== a.cardId) : [] }
     case 'ingestInbox':
-      return a.items.reduce(ingestTodo, s)
+      return a.items.reduce((acc: AppState, item) => (String(item?.type).startsWith('event.') ? ingestEvent(acc, item as InboxEvent) : ingestTodo(acc, item as InboxTodo)), s)
     case 'hydrate':
       return migrate(a.state)
   }
@@ -537,7 +537,8 @@ export type CalendarChange =
 /** What a card puts on the calendar; when this changes the card is written again. */
 export function calendarHash(c: Card): string | null {
   if (c.archived || !(c.startDate || c.dueDate)) return null
-  const s = JSON.stringify([c.title, c.description, c.startDate, c.dueDate, c.completed])
+  // The time joins in only when set, so cards without one keep the fingerprint they already have.
+  const s = JSON.stringify([c.title, c.description, c.startDate, c.dueDate, c.completed, ...(c.time ? [c.time] : [])])
   let h = 0x811c9dc5
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193)
   return (h >>> 0).toString(36) + s.length.toString(36)
@@ -567,6 +568,14 @@ function applyCalendarChange(s: AppState, ch: CalendarChange): AppState {
   }
   // A card deleted here while its event was edited there stays deleted.
   if (s.trash.some((t) => t.card.id === ch.cardId)) return s
+  const created = newCard('', ch.title, { ...fields, id: ch.cardId, completedAt: ch.completed ? today() : null })
+  const added = addToCalendarList(s, created, `從行事曆收到「${ch.title}」`)
+  // Already on the calendar: mark it as written so it isn't sent back.
+  return { ...added, cards: { ...added.cards, [created.id]: { ...added.cards[created.id], calHash: calendarHash(added.cards[created.id]) } } }
+}
+
+/** Adds a card to the top 行事曆 list, creating that list the first time. */
+function addToCalendarList(s: AppState, card: Card, activity: string): AppState {
   let next = s
   let listId = next.boards[next.focusBoardId].listIds.find((id) => next.lists[id].title === CALENDAR_LIST)
   if (!listId) {
@@ -574,16 +583,15 @@ function applyCalendarChange(s: AppState, ch: CalendarChange): AppState {
     listId = next.boards[next.focusBoardId].listIds.at(-1)!
     next = { ...next, lists: { ...next.lists, [listId]: { ...next.lists[listId], color: '#a78bfa' } } }
   }
-  const created = newCard(listId, ch.title, { ...fields, id: ch.cardId, completedAt: ch.completed ? today() : null })
   const list = next.lists[listId]
   return log(
     {
       ...next,
-      cards: { ...next.cards, [created.id]: { ...created, calHash: calendarHash(created) } },
-      lists: { ...next.lists, [listId]: { ...list, cardIds: [...list.cardIds, created.id] } },
+      cards: { ...next.cards, [card.id]: { ...card, listId } },
+      lists: { ...next.lists, [listId]: { ...list, cardIds: [...list.cardIds, card.id] } },
     },
     next.focusBoardId,
-    `從行事曆收到「${ch.title}」`,
+    activity,
   )
 }
 
@@ -607,6 +615,45 @@ export interface InboxTodo {
   priority?: 'low' | 'normal' | 'high'
   tags?: string[]
   done?: boolean
+}
+
+/** An event (行程) as Beamup sends it in Mothership mode: instants in ISO, end exclusive for all-day ones. */
+export interface InboxEvent {
+  type: 'event.created' | 'event.updated' | 'event.deleted'
+  id: string
+  title: string
+  notes?: string
+  allDay?: boolean
+  start?: string
+  end?: string
+}
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const hhmm = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+
+/** A Beamup event becomes a card in the 行事曆 list, carrying its time; calendar sync puts it on the calendar. */
+function ingestEvent(s: AppState, e: InboxEvent): AppState {
+  if (!e || typeof e.id !== 'string') return s
+  const sourceId = 'ev:' + e.id
+  const existing = Object.values(s.cards).find((c) => c.sourceId === sourceId)
+  if (e.type === 'event.deleted') return existing ? baseReducer(s, { type: 'deleteCard', cardId: existing.id }) : s
+  const start = new Date(e.start ?? '')
+  let end = new Date(e.end ?? '')
+  if (typeof e.title !== 'string' || isNaN(start.getTime())) return s
+  if (isNaN(end.getTime()) || end < start) end = start
+  // All-day events end at midnight after their last day; timed ones may end exactly at midnight too.
+  const last = new Date(Math.max(start.getTime(), end.getTime() - (e.allDay ? 86400000 : 1)))
+  const first = ymd(start)
+  const due = ymd(last)
+  const fields: Partial<Card> = {
+    title: e.title,
+    description: (e.notes ?? '').trim(),
+    startDate: first !== due ? first : null,
+    dueDate: due,
+    time: e.allDay ? null : `${hhmm(start)}–${hhmm(end)}`,
+  }
+  if (existing) return { ...s, cards: { ...s.cards, [existing.id]: { ...existing, ...fields, archived: false } } }
+  return addToCalendarList(s, newCard('', e.title, { ...fields, sourceId }), `從 Beamup 收到行程「${e.title}」`)
 }
 
 /** The split-mode list a Beamup todo lands in: 急件 for high priority, otherwise 待辦 (or the first top list). */
@@ -660,7 +707,8 @@ function rewardFor(prev: AppState, next: AppState, a: Action): { kind: PetKind; 
       return { kind: 'note.add', text: '謝謝你的留言～' }
     case 'ingestInbox': {
       const n = a.items.filter((t) => t?.type === 'todo.created').length
-      return n ? { kind: 'todo.add', text: n > 1 ? `Beamup 送來 ${n} 件待辦！` : '收到 Beamup 的待辦！' } : null
+      if (n) return { kind: 'todo.add', text: n > 1 ? `Beamup 送來 ${n} 件待辦！` : '收到 Beamup 的待辦！' }
+      return a.items.some((t) => t?.type === 'event.created') ? { kind: 'event.add', text: '收到 Beamup 的行程！' } : null
     }
     case 'updateCard': {
       const before = prev.cards[a.cardId]

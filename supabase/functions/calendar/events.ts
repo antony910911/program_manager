@@ -41,6 +41,8 @@ export interface CardPush {
   startDate: string | null
   dueDate: string | null
   completed: boolean
+  /** "14:00–15:30" when the card has a time of day (e.g. from a Beamup event); single-day cards only. */
+  time?: string | null
 }
 
 export const DONE_MARK = '✓ '
@@ -158,6 +160,14 @@ export function draftFor(card: CardPush, tz: string, current?: { ev: CalEvent; c
   const span = cardSpan(card)
   if (!span) return null
   const title = (card.completed ? DONE_MARK : '') + card.title
+  // A single-day card with a time of day is a timed event at that time, in the user's time zone.
+  const m = span[0] === span[1] ? /^(\d{2}):(\d{2})[–-](\d{2}):(\d{2})$/.exec(card.time ?? '') : null
+  if (m) {
+    const start = wallToUtc(`${span[0]}T${m[1]}:${m[2]}:00`, tz)
+    let end = wallToUtc(`${span[0]}T${m[3]}:${m[4]}:00`, tz)
+    if (end <= start) end = wallToUtc(`${addDays(span[0], 1)}T${m[3]}:${m[4]}:00`, tz)
+    return { title, description: card.description, allDay: false, start, end }
+  }
   if (current && !current.ev.allDay) {
     return {
       title,

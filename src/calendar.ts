@@ -93,7 +93,7 @@ interface SyncReply {
 
 /** Cards to write to (or remove from) the calendar right now. */
 export function pendingCalendarWork(state: AppState) {
-  const upserts: { cardId: ID; title: string; description: string; startDate: string | null; dueDate: string | null; completed: boolean }[] = []
+  const upserts: { cardId: ID; title: string; description: string; startDate: string | null; dueDate: string | null; completed: boolean; time: string | null }[] = []
   const deletes: ID[] = []
   const hashes: Record<ID, string | null> = {}
   for (const c of Object.values(state.cards)) {
@@ -101,7 +101,7 @@ export function pendingCalendarWork(state: AppState) {
     const have = c.calHash ?? null
     if (want === have) continue
     hashes[c.id] = want
-    if (want) upserts.push({ cardId: c.id, title: c.title, description: c.description, startDate: c.startDate, dueDate: c.dueDate, completed: c.completed })
+    if (want) upserts.push({ cardId: c.id, title: c.title, description: c.description, startDate: c.startDate, dueDate: c.dueDate, completed: c.completed, time: c.time ?? null })
     else deletes.push(c.id)
   }
   for (const t of state.trash)

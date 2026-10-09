@@ -177,3 +177,21 @@ test('new cards go to the target account', async () => {
   assert.equal(a.events.size, 0)
   assert.equal(b.events.size, 1)
 })
+
+test('a card with a time (from a Beamup event) becomes a timed event, and follows time changes', async () => {
+  const { events, provider } = fakeCalendar()
+  const store = memoryStore()
+  const day = addDays(today, 1)
+  const card = { cardId: 'b1', title: '跟廠商開會', description: '@會議室', startDate: null, dueDate: day, completed: false, time: '14:00–15:30' }
+  await push([acct], () => provider, store, TZ, [card], [])
+  const ev = [...events.values()][0]
+  assert.equal(ev.allDay, false)
+  assert.equal(ev.start, wallToUtc(day + 'T14:00:00', TZ))
+  assert.equal(ev.end, wallToUtc(day + 'T15:30:00', TZ))
+  assert.deepEqual(await pullAccount(acct, provider, store, TZ), [], 'not echoed')
+  await push([acct], () => provider, store, TZ, [{ ...card, time: '16:00–17:00' }], [])
+  assert.equal(events.get(ev.id)!.start, wallToUtc(day + 'T16:00:00', TZ))
+  // Ending at midnight rolls to the next day.
+  await push([acct], () => provider, store, TZ, [{ ...card, time: '23:00–00:00' }], [])
+  assert.equal(events.get(ev.id)!.end, wallToUtc(addDays(day, 1) + 'T00:00:00', TZ))
+})
