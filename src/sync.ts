@@ -13,6 +13,11 @@ import { supabase, supabaseCollection, usesSupabase } from './supabase'
  *
  * Merging is per document: a remote change is applied unless this device changed the same document
  * since the last sync, in which case the local version is kept and written back (last writer wins).
+ *
+ * Each stored document carries a revision number `_rev`, one more than the newest revision of it the
+ * writer had seen. A snapshot holding an older revision than the one this device last wrote or saw is
+ * stale (read before our write landed, or a late echo of an earlier write) and is ignored; otherwise it
+ * would undo the edit, e.g. a renamed list jumping back to its old name.
  */
 
 export type SyncStatus = 'local' | 'connecting' | 'synced' | 'saving' | 'error'
@@ -56,6 +61,15 @@ export function fromDocs(docs: Record<string, Body>): AppState | null {
 
 const stringify = (docs: Record<string, Body>) => Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, JSON.stringify(v)]))
 
+/** Splits a stored document into its content (as compared with local docs) and its revision. */
+function unwrap(data: Body): { json: string; rev: number } {
+  const { _rev, ...body } = data
+  return { json: JSON.stringify(body), rev: typeof _rev === 'number' ? _rev : 0 }
+}
+
+/** A doc missing from a snapshot this soon after this device created it is a read from before the write. */
+const CREATE_GRACE_MS = 2 * 60 * 1000
+
 /** The cloud the app syncs to: claude.ai's artifact database, or Supabase on the self-hosted site. */
 async function connectBackend(): Promise<ClaudeDbCollection | null> {
   const claude = window.claude
@@ -82,6 +96,9 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
   const flushing = useRef(false)
   const again = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // Revision of each document as last written or seen, and when this device created a document.
+  const revs = useRef<Record<string, number>>({})
+  const created = useRef<Record<string, number>>({})
 
   useEffect(() => {
     stateRef.current = state
@@ -104,12 +121,16 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
         setStatus('saving')
         // One write at a time per document, as the store asks.
         for (const id of changed) {
-          await col.current.doc(id).set(JSON.parse(local[id]))
+          const rev = (revs.current[id] ?? 0) + 1
+          if (synced.current[id] === undefined) created.current[id] = Date.now()
+          await col.current.doc(id).set({ ...JSON.parse(local[id]), _rev: rev })
           synced.current[id] = local[id]
+          revs.current[id] = rev
         }
         for (const id of removed) {
           await col.current.doc(id).delete()
           delete synced.current[id]
+          delete created.current[id]
         }
       } while (again.current)
       setStatus('synced')
@@ -145,7 +166,13 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
       unsub = c.onSnapshot(
         (snap) => {
           const remote: Record<string, string> = {}
-          for (const d of snap.docs) if (d.exists) remote[d.id] = JSON.stringify(d.data())
+          const remoteRev: Record<string, number> = {}
+          for (const d of snap.docs)
+            if (d.exists) {
+              const { json, rev } = unwrap(d.data() as Body)
+              remote[d.id] = json
+              remoteRev[d.id] = rev
+            }
 
           if (!ready.current) {
             // A cached empty answer may not be the truth yet; wait for the server.
@@ -159,6 +186,7 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
             }
             // The cloud copy wins over whatever this device had stored locally.
             synced.current = remote
+            revs.current = { ...remoteRev }
             const next = fromDocs(Object.fromEntries(Object.entries(remote).map(([k, v]) => [k, JSON.parse(v)])))
             if (next) dispatch({ type: 'hydrate', state: next })
             setStatus('synced')
@@ -167,12 +195,22 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
 
           const local = stringify(toDocs(stateRef.current))
           const merged: Record<string, string> = {}
+          const confirmed: Record<string, string> = {}
           for (const id of new Set([...Object.keys(remote), ...Object.keys(local), ...Object.keys(synced.current)])) {
             const localChanged = local[id] !== synced.current[id]
-            const value = localChanged ? local[id] : remote[id]
+            const known = revs.current[id] ?? 0
+            // Older than what this device last wrote or saw: keep ours (and still count it as confirmed).
+            const stale =
+              remote[id] === undefined
+                ? synced.current[id] !== undefined && Date.now() - (created.current[id] ?? 0) < CREATE_GRACE_MS
+                : remote[id] !== synced.current[id] && remoteRev[id] < known
+            const value = localChanged || stale ? local[id] : remote[id]
             if (value !== undefined) merged[id] = value
+            const base = stale ? synced.current[id] : remote[id]
+            if (base !== undefined) confirmed[id] = base
+            if (!stale && remote[id] !== undefined) revs.current[id] = Math.max(known, remoteRev[id])
           }
-          synced.current = remote
+          synced.current = confirmed
           const changedFromLocal =
             Object.keys(merged).some((id) => merged[id] !== local[id]) || Object.keys(local).some((id) => !(id in merged))
           if (changedFromLocal) {
