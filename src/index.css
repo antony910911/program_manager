@@ -525,6 +525,18 @@ input.full {
   border: 1px solid var(--border);
   animation: pop 0.14s ease-out;
 }
+/* Phones: the anchor button sits mid-bar, so hang the popover from the whole bar with even margins. */
+@media (max-width: 720px) {
+  .board-bar .popover-anchor {
+    position: static;
+  }
+  .board-bar .popover {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(100dvh - 180px);
+  }
+}
 .popover-head {
   display: flex;
   align-items: center;
