@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { LogIn, Mail, SquareKanban } from 'lucide-react'
+import { LogIn, Mail } from 'lucide-react'
 import { supabase, usesSupabase } from '../supabase'
 import { Segmented } from './controls'
+import { BrandMark } from './common'
 
 /**
  * On the self-hosted site (Supabase configured), require sign-in before the app mounts, so cloud
@@ -85,9 +86,9 @@ function LoginScreen() {
       <form className="auth-card" onSubmit={submit}>
         <div className="auth-brand">
           <span className="brand-mark">
-            <SquareKanban size={18} />
+            <BrandMark size={18} />
           </span>
-          Project Manager
+          Arbor
         </div>
         <p className="muted">登入後，你的看板會在手機、電腦、平板之間同步。</p>
         <Segmented

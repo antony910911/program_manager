@@ -15,7 +15,7 @@
 
 1. 到 <https://supabase.com>，按 **Start your project**，用 GitHub 帳號登入。
 2. 按 **New project**：
-   - **Name**：隨意，例如 `project-manager`
+   - **Name**：隨意，例如 `arbor`
    - **Database Password**：按 Generate 產生一組，記在密碼管理器（之後幾乎用不到）
    - **Region**：選 **Northeast Asia (Tokyo)** 或 **Southeast Asia (Singapore)**，離台灣近比較快
 3. 等 1～2 分鐘，專案建立完成。
@@ -80,16 +80,16 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 只要做一次：
 
 1. Supabase → **SQL Editor** → **New query**，把 [`supabase/inbox.sql`](supabase/inbox.sql) 全部貼上 → **Run**。
-2. 打開 Project Manager 並登入 → 右上角「外觀」→ 最上面的 **連接 Beamup** → **產生連接碼** → **複製連接碼**。
+2. 打開 Arbor 並登入 → 右上角「外觀」→ 最上面的 **連接 Beamup** → **產生連接碼** → **複製連接碼**。
 3. 打開 Beamup → 右上角齒輪 **設定** → 「待辦事項 → 專案管理工具」，把連接碼貼進第一格 → 按 **測試連線**，看到「連線成功」就好了。
 
-之後在 Beamup 新增待辦，幾秒內就會出現在 Project Manager 雙層模式上方的「待辦」清單，卡片上有綠色的 Beamup 標記：
+之後在 Beamup 新增待辦，幾秒內就會出現在 Arbor 雙層模式上方的「待辦」清單，卡片上有綠色的 Beamup 標記：
 
 - 用 `!!` 標成高優先的會放進「急件」。
 - 截止日會變成卡片的到期日，`#標籤` 和備註會寫進卡片描述。
 - 在 Beamup 修改或勾選完成，卡片也會跟著改。
 - 在 Beamup 刪除，卡片會被封存，不會直接刪掉。
-- Project Manager 沒開著也沒關係，待辦會先放在 Supabase，下次打開時再收進來。
+- Arbor 沒開著也沒關係，待辦會先放在 Supabase，下次打開時再收進來。
 
 連接碼等同一把鑰匙，只能用來「送待辦進來」，看不到你的資料。不小心外流的話，按「換一組」，舊的就會失效，再把新的貼到 Beamup。
 
@@ -126,6 +126,6 @@ npm run dev
 | 註冊後一直說帳號還沒確認 | 去信箱點確認信，或照第 3 步把 Confirm email 關掉 |
 | 確認信的連結打開是錯的網址 | 第 3 步的 Site URL／Redirect URLs 要填你的網站網址 |
 | 右上角出現同步警告 | 確認第 2 步的 SQL 有跑成功（Table Editor 裡要看得到 `user_docs`） |
-| Beamup 說「Project Manager 還沒設定好」 | 照「連接 Beamup」第 1 步執行 `supabase/inbox.sql` |
-| Beamup 說「連接碼已失效」 | 到 Project Manager 重新複製連接碼，貼回 Beamup |
+| Beamup 說「Arbor 還沒設定好」 | 照「連接 Beamup」第 1 步執行 `supabase/inbox.sql` |
+| Beamup 說「連接碼已失效」 | 到 Arbor 重新複製連接碼，貼回 Beamup |
 | Supabase 專案顯示 Paused | 免費專案超過一週沒人使用會暫停，進 Supabase 按 **Restore** 即可，資料不會消失 |

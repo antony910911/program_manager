@@ -28,7 +28,7 @@ import type { Board, BoardBackground, Filter, ID, ViewKind } from './types'
 import { BOARD_TEMPLATES, LABEL_COLORS, cardBoard, emptyFilter, useAppStore } from './store'
 import type { Action } from './store'
 import { BACKGROUND_PRESETS, backgroundCss, defaultBackground, themeVars } from './theme'
-import { Avatar, InlineEdit } from './components/common'
+import { Avatar, BrandMark, InlineEdit } from './components/common'
 import { CardModal } from './components/CardModal'
 import { AppearancePanel } from './components/AppearancePanel'
 import { BackgroundEditor } from './components/BackgroundEditor'
@@ -119,9 +119,9 @@ export default function App({ account }: { account: Account | null }) {
       <header className="topbar">
         <button className="brand" onClick={() => setBoardId(null)}>
           <span className="brand-mark">
-            <SquareKanban size={16} />
+            <BrandMark size={16} />
           </span>
-          <span className="brand-text">Project Manager</span>
+          <span className="brand-text">Arbor</span>
         </button>
         {board && (
           <>

@@ -1,10 +1,10 @@
--- Project Manager × Beamup: run this once in Supabase → SQL Editor → New query → Run
+-- Arbor × Beamup: run this once in Supabase → SQL Editor → New query → Run
 -- (after schema.sql). Safe to run again.
 --
--- Beamup has no Project Manager login. It sends each todo with a private "connection code" that
--- Project Manager generates for you (外觀 → 連接 Beamup). inbox_push() looks the code up, files the
--- todo under its owner, and Project Manager picks it up, turns it into a card in the top 待辦 list
--- and deletes the row. Regenerating the code in Project Manager cuts off the old one.
+-- Beamup has no Arbor login. It sends each todo with a private "connection code" that
+-- Arbor generates for you (外觀 → 連接 Beamup). inbox_push() looks the code up, files the
+-- todo under its owner, and Arbor picks it up, turns it into a card in the top 待辦 list
+-- and deletes the row. Regenerating the code in Arbor cuts off the old one.
 
 create table if not exists public.inbox_keys (
   user_id uuid primary key default auth.uid() references auth.users (id) on delete cascade,

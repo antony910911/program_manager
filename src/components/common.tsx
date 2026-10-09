@@ -106,3 +106,16 @@ export function AddForm({ label, placeholder, onAdd }: { label: string; placehol
     </div>
   )
 }
+
+/** The Arbor mark: an arbor arch with three kanban columns and a leaf (same drawing as public/icon.svg). */
+export function BrandMark({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="96 64 352 360" aria-hidden="true">
+      <path d="M128 404V244a128 128 0 0 1 256 0v160" fill="none" stroke="currentColor" strokeWidth="44" strokeLinecap="round" />
+      <path d="M330 136c18-40 58-60 100-58-2 44-34 78-84 80z" fill="#86efac" />
+      <rect x="182" y="214" width="44" height="150" rx="16" fill="currentColor" />
+      <rect x="235" y="214" width="44" height="104" rx="16" fill="currentColor" opacity=".85" />
+      <rect x="288" y="214" width="44" height="128" rx="16" fill="currentColor" opacity=".7" />
+    </svg>
+  )
+}

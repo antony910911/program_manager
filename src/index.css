@@ -331,13 +331,12 @@ input.full {
   width: 30px;
   height: 30px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 50%, #ec4899));
-  color: var(--on-accent);
-  box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--accent) 70%, transparent);
+  background: linear-gradient(135deg, #4f46e5, #9333ea);
+  color: #fff;
+  box-shadow: 0 4px 12px -4px rgba(79, 70, 229, 0.7);
 }
 .on-board .brand-mark {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.35);
 }
 .board-switch {
   background: rgba(255, 255, 255, 0.16);
@@ -1751,15 +1750,17 @@ input.full {
 }
 .split-top-lists {
   flex: 1;
+  min-width: 0;
   min-height: 0;
+  overflow-x: auto;
   display: flex;
   gap: calc(var(--gap) + 4px);
   align-items: stretch;
 }
+/* Same width as the project lists below (外觀 → 清單寬度), so the top row doesn't stretch across the screen. */
 .list.focus-list {
-  flex: 1 1 0;
-  width: auto;
-  min-width: 220px;
+  flex: 0 0 var(--list-w);
+  width: var(--list-w);
   max-height: 100%;
 }
 .list.focus-list .list-cards {

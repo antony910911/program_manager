@@ -1,5 +1,5 @@
 {
-  "name": "project-manager",
+  "name": "arbor",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "build:single": "vite build --base ./ --outDir dist-single --emptyOutDir && python3 scripts/pack-single.py dist-single dist-single/project-manager.html"
+    "build:single": "vite build --base ./ --outDir dist-single --emptyOutDir && python3 scripts/pack-single.py dist-single dist-single/arbor.html"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",
