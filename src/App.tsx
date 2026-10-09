@@ -47,6 +47,7 @@ import { ReviewView } from './views/ReviewView'
 import { SplitView } from './views/SplitView'
 import { useCloudSync } from './sync'
 import { useInbox } from './inbox'
+import { useCalendarSync } from './calendar'
 import type { SyncStatus } from './sync'
 
 const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
@@ -68,6 +69,7 @@ export default function App({ account }: { account: Account | null }) {
   const [state, dispatch] = useAppStore(account?.id)
   const sync = useCloudSync(state, dispatch)
   useInbox(account?.id, sync.status, dispatch)
+  const calendar = useCalendarSync(account?.id, sync.status, state, dispatch)
 
   // Daily visit for the alien, and a celebration for each new reward earned in this session.
   const [startedAt] = useState(() => Date.now())
@@ -277,8 +279,16 @@ export default function App({ account }: { account: Account | null }) {
           }}
         />
       )}
+      {calendar.notice && (
+        <div className={'app-notice' + (calendar.notice.ok ? '' : ' error')} role="status">
+          <span>{calendar.notice.message}</span>
+          <button className="icon-btn" onClick={calendar.clearNotice} aria-label="關閉">
+            <X size={16} />
+          </button>
+        </div>
+      )}
       {trashOpen && <TrashModal state={state} dispatch={dispatch} onClose={() => setTrashOpen(false)} />}
-      {appearanceOpen && <AppearancePanel state={state} dispatch={dispatch} onClose={() => setAppearanceOpen(false)} userId={account?.id} />}
+      {appearanceOpen && <AppearancePanel state={state} dispatch={dispatch} onClose={() => setAppearanceOpen(false)} userId={account?.id} calendar={calendar} />}
     </div>
   )
 }

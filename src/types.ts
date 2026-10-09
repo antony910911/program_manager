@@ -49,6 +49,10 @@ export interface Card {
   homeListId: ID | null
   archived: boolean
   createdAt: string
+  /** Fingerprint of what was last written to the calendar for this card; null/missing = not on a calendar. */
+  calHash?: string | null
+  /** Time of day from a timed calendar event ("14:00–15:30"); display only. */
+  time?: string | null
   /** Id of the todo this card came from in Beamup (thought-task-entry), so later edits update it. */
   sourceId?: string
 }

@@ -25,6 +25,7 @@ export function DueBadge({ card }: { card: Card }) {
   return (
     <span className={'badge ' + cls}>
       <Clock size={13} /> {formatDate(card.dueDate)}
+      {card.time && <span className="due-time">{card.time}</span>}
     </span>
   )
 }

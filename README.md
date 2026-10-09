@@ -39,6 +39,7 @@ npm run lint
 | **外星人夥伴**（來自 Beamup） | 首頁的像素外星人（Blip、Zorp、Pom、Glim、Bolt、木乃伊 Mumu）：戳他、連戳會頭暈、長按摸頭、點空地叫他走過去；會自己散步、跳舞、接星星、開飛碟；完成卡片／待辦清單、新增卡片、設到期日、留言都會餵他星星，累積經驗升級、連續天數、解鎖配件；狀態跟資料一起同步 |
 | **連接 Beamup** | 在 Beamup（thought-task-entry）新增的待辦，自動變成雙層模式上方「待辦」清單的卡片（高優先進「急件」），修改、完成也會同步；設定方式見 [DEPLOY.md](DEPLOY.md#連接-beamup在-beamup-打待辦直接進上方待辦清單) |
 | **完成與年度回顧** | 卡片打勾完成後離開清單，收進清單底部的「已完成」（可展開、可改回未完成），並自動記下完成日；時間軸可切換「計畫」（開始日→到期日）或「實際」（建立→完成）；「回顧」分頁與首頁的「年度回顧」依月份列出每年完成的卡片、各專案完成數與準時率 |
+| **行事曆同步** | 連接 Google 日曆、Outlook、iCloud：有日期的卡片 ↔ 行程雙向同步（新增、修改、完成加 ✓、刪除），行事曆上 90 天內的行程變成上方「行事曆」清單的卡片；設定見 [DEPLOY.md](DEPLOY.md#連接行事曆googleoutlookicloud-雙向同步) |
 | **垃圾桶** | 刪除的卡片（含刪除清單、看板時一起刪掉的）保留 30 天，可救回原清單（清單不在了就放進上方「待辦」）或永久刪除；入口在首頁底部與看板「設定」 |
 | **看板範本** | 新增看板時可選空白、年度專案（每個專案一個清單）或待辦／進行中／完成 |
 
@@ -51,7 +52,8 @@ src/
   dnd.ts                共用的拖放狀態與放置邏輯
   sync.ts               雲端同步（每個看板／清單一份文件，逐文件合併；後端是 claude.ai artifact db 或 Supabase）
   supabase.ts           Supabase 連線與資料表介面（自架網站用）
-  inbox.ts              接收 Beamup 送來的待辦（supabase/inbox.sql 的 inbox 資料表）
+  inbox.ts              接收 Beamup 送來的待辦
+  calendar.ts           行事曆同步（呼叫 supabase/functions/calendar）（supabase/inbox.sql 的 inbox 資料表）
   touch.ts              觸控拖曳（長按拖曳）
   alien/                Beamup 的外星人系統（aliens 角色圖鑑、mascot 動畫與互動、pet 養成），index.ts 是型別化的入口
   theme.ts              主題預設、背景預設、色彩工具、主題 → CSS 變數
@@ -65,6 +67,7 @@ src/
     AlienHero.tsx       首頁的外星人舞台、養成狀態與換角色／配件
     AuthGate.tsx        自架網站的登入畫面（Email＋密碼、Email 連結）
     TrashModal.tsx      垃圾桶
+    CalendarConnect.tsx 行事曆同步設定
     DataTransfer.tsx    備份與搬家（複製全部資料／貼上匯入）
     BeamupConnect.tsx   產生 Beamup 連接碼
     ListColumn.tsx      清單欄、卡片方塊、清單選單（看板與雙層模式共用）
@@ -77,6 +80,8 @@ src/
     ReviewView.tsx      年度回顧
     SplitView.tsx       雙層模式
 ```
+
+`supabase/functions/calendar/` 是行事曆同步的 Supabase Edge Function（Deno）：`sync.ts` 是雙向同步規則，`google.ts`／`microsoft.ts`／`icloud.ts` 是三家行事曆的介面，測試用 `npm run test:calendar`。
 
 外觀設定會轉成 CSS 變數（`--accent`、`--radius`、`--list-w`…）寫在 `<html>` 上，`index.css` 只讀這些變數，所以要新增一個可調整的項目，只需要在 `Theme` 加欄位、在 `themeVars()` 輸出變數、在 CSS 使用它。
 

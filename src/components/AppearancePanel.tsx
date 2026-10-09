@@ -6,16 +6,19 @@ import { ACCENT_SWATCHES, FONT_NAMES, THEME_PRESETS, defaultTheme, isTheme } fro
 import { ColorPicker, Segmented, Slider, Toggle } from './controls'
 import { DataTransfer } from './DataTransfer'
 import { BeamupConnect } from './BeamupConnect'
+import { CalendarConnect } from './CalendarConnect'
+import type { CalendarAccount } from '../calendar'
 
 interface Props {
   state: AppState
   dispatch: (a: Action) => void
   onClose: () => void
-  /** Signed-in Supabase user; enables the Beamup connection. */
+  /** Signed-in Supabase user; enables the Beamup and calendar connections. */
   userId?: string
+  calendar?: { accounts: CalendarAccount[] | null; error: string; syncNow: () => void }
 }
 
-export function AppearancePanel({ state, dispatch, onClose, userId }: Props) {
+export function AppearancePanel({ state, dispatch, onClose, userId, calendar }: Props) {
   const t = state.theme
   const set = (patch: Partial<Theme>) => dispatch({ type: 'setTheme', patch })
   const [json, setJson] = useState('')
@@ -38,6 +41,7 @@ export function AppearancePanel({ state, dispatch, onClose, userId }: Props) {
           </button>
         </header>
         <div className="drawer-body">
+          {userId && calendar && <CalendarConnect {...calendar} />}
           {userId && <BeamupConnect userId={userId} />}
 
           <section>

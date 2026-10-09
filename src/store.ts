@@ -222,6 +222,10 @@ export type Action =
   | { type: 'setAlien'; alien: string }
   | { type: 'equip'; accessory: string | null }
   | { type: 'restoreTrash'; cardId: ID }
+  /** Changes pulled from the connected calendars (see calendar.ts). */
+  | { type: 'calendarApply'; changes: CalendarChange[] }
+  /** Cards whose calendar write went through, with the fingerprint now on the calendar (null = removed). */
+  | { type: 'calendarSynced'; hashes: Record<ID, string | null> }
   /** Delete one trashed card for good, or empty the trash when cardId is omitted. */
   | { type: 'purgeTrash'; cardId?: ID }
   /** Todos sent over from Beamup (see inbox.ts). */
@@ -496,6 +500,14 @@ function baseReducer(s: AppState, a: Action): AppState {
         `從垃圾桶救回「${card.title}」到「${list.title}」`,
       )
     }
+    case 'calendarApply':
+      return a.changes.reduce(applyCalendarChange, s)
+    case 'calendarSynced': {
+      const cards = { ...s.cards }
+      for (const [id, h] of Object.entries(a.hashes)) if (cards[id]) cards[id] = { ...cards[id], calHash: h }
+      const trash = s.trash.map((t) => (t.card.id in a.hashes && a.hashes[t.card.id] === null ? { ...t, card: { ...t.card, calHash: null } } : t))
+      return { ...s, cards, trash }
+    }
     case 'purgeTrash':
       return { ...s, trash: a.cardId ? s.trash.filter((t) => t.card.id !== a.cardId) : [] }
     case 'ingestInbox':
@@ -506,6 +518,74 @@ function baseReducer(s: AppState, a: Action): AppState {
 }
 
 export const TRASH_DAYS = 30
+
+/** A change from a calendar, as the calendar function reports it. */
+export type CalendarChange =
+  | {
+      type: 'upsert'
+      cardId: ID
+      isNew: boolean
+      title: string
+      description: string
+      completed: boolean
+      startDate: string | null
+      dueDate: string
+      time: string | null
+    }
+  | { type: 'delete'; cardId: ID }
+
+/** What a card puts on the calendar; when this changes the card is written again. */
+export function calendarHash(c: Card): string | null {
+  if (c.archived || !(c.startDate || c.dueDate)) return null
+  const s = JSON.stringify([c.title, c.description, c.startDate, c.dueDate, c.completed])
+  let h = 0x811c9dc5
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193)
+  return (h >>> 0).toString(36) + s.length.toString(36)
+}
+
+const CALENDAR_LIST = '行事曆'
+
+function applyCalendarChange(s: AppState, ch: CalendarChange): AppState {
+  const card = s.cards[ch.cardId]
+  if (ch.type === 'delete') {
+    if (!card) return s
+    // Deleted on the calendar: into the trash, without deleting it on the calendar again.
+    const next = baseReducer({ ...s, cards: { ...s.cards, [card.id]: { ...card, calHash: null } } }, { type: 'deleteCard', cardId: card.id })
+    return { ...next, trash: next.trash.map((t) => (t.card.id === card.id ? { ...t, card: { ...t.card, calHash: null } } : t)) }
+  }
+  const fields = {
+    title: ch.title,
+    description: ch.description,
+    startDate: ch.startDate,
+    dueDate: ch.dueDate,
+    completed: ch.completed,
+    time: ch.time,
+  }
+  if (card) {
+    const updated = { ...card, ...fields, ...completion(card, ch.completed) }
+    return { ...s, cards: { ...s.cards, [card.id]: { ...updated, calHash: calendarHash(updated) } } }
+  }
+  // A card deleted here while its event was edited there stays deleted.
+  if (s.trash.some((t) => t.card.id === ch.cardId)) return s
+  let next = s
+  let listId = next.boards[next.focusBoardId].listIds.find((id) => next.lists[id].title === CALENDAR_LIST)
+  if (!listId) {
+    next = baseReducer(next, { type: 'addList', boardId: next.focusBoardId, title: CALENDAR_LIST })
+    listId = next.boards[next.focusBoardId].listIds.at(-1)!
+    next = { ...next, lists: { ...next.lists, [listId]: { ...next.lists[listId], color: '#a78bfa' } } }
+  }
+  const created = newCard(listId, ch.title, { ...fields, id: ch.cardId, completedAt: ch.completed ? today() : null })
+  const list = next.lists[listId]
+  return log(
+    {
+      ...next,
+      cards: { ...next.cards, [created.id]: { ...created, calHash: calendarHash(created) } },
+      lists: { ...next.lists, [listId]: { ...list, cardIds: [...list.cardIds, created.id] } },
+    },
+    next.focusBoardId,
+    `從行事曆收到「${ch.title}」`,
+  )
+}
 
 function trashItem(card: Card, listTitle: string, boardTitle: string): TrashItem {
   return { card, listTitle, boardTitle, deletedAt: new Date().toISOString() }

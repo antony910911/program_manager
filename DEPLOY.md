@@ -93,6 +93,96 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 
 連接碼等同一把鑰匙，只能用來「送待辦進來」，看不到你的資料。不小心外流的話，按「換一組」，舊的就會失效，再把新的貼到 Beamup。
 
+## 連接行事曆（Google／Outlook／iCloud 雙向同步）
+
+完成後，有日期的卡片會變成行事曆上的行程。行事曆上今天起 90 天內的行程，也會變成雙層模式上方「行事曆」清單的卡片。兩邊的新增、修改、完成、刪除都會同步：
+
+- 卡片完成時，行程標題前會加上「✓ 」；在行事曆把「✓ 」拿掉，卡片會變回未完成。
+- 在 Mothership 刪除卡片，行程也會刪掉；在行事曆刪除行程，卡片會進垃圾桶，30 天內可救回。
+- 定時的行程（例如 14:00–15:00）在卡片上會顯示時間；在 Mothership 改卡片日期時，行程會保留原本的時段，只換日期。
+
+需要一個在 Supabase 上執行的小程式（Edge Function）。它負責保管行事曆的登入資訊，網頁本身看不到，資料表也只有這個程式能讀。第 1～3 步只要做一次。
+
+### 第 1 步：建立資料表
+
+Supabase → **SQL Editor** → **New query**，貼上 [`supabase/calendar.sql`](supabase/calendar.sql) 全部內容 → **Run**。
+
+### 第 2 步：讓 GitHub 可以幫你部署到 Supabase
+
+1. 打開 <https://supabase.com/dashboard/account/tokens> → **Generate new token** → 名稱填 `github` → 產生後**複製**（只會顯示一次）。
+2. 打開 <https://github.com/antony910911/program_manager/settings/secrets/actions> → **New repository secret**：
+   - **Name**：`SUPABASE_ACCESS_TOKEN`
+   - **Secret**：貼上剛剛複製的 token
+   - 按 **Add secret**。
+
+> 這個 token 等於你 Supabase 帳號的鑰匙，只放在 GitHub Secrets，不要貼給任何人（包括 Claude）。
+
+### 第 3 步：部署
+
+打開 <https://github.com/antony910911/program_manager/actions/workflows/supabase-functions.yml> → 右邊 **Run workflow** → 綠色 **Run workflow**。1～2 分鐘後出現綠色勾勾就完成了。
+
+到這裡，**iCloud 行事曆**已經可以用了（見第 6 步）。Google 和 Outlook 還要再各做一次設定。之後每次在第 4、5 步新增或修改 Secret，都要再跑一次這個 workflow。
+
+### 第 4 步：Google 日曆
+
+1. 打開 <https://console.cloud.google.com/projectcreate>，專案名稱填 `Mothership` → **建立**，然後確認上方選到這個專案。
+2. 打開 <https://console.cloud.google.com/apis/library/calendar-json.googleapis.com> → **啟用**。
+3. 打開 <https://console.cloud.google.com/auth/overview> → **開始**：
+   - 應用程式名稱：`Mothership`；使用者支援電子郵件：選你自己
+   - 目標對象：**外部**
+   - 聯絡資訊：你的 Email → 同意政策 → **建立**
+4. 左邊 **目標對象** → **發布應用程式** → 確認。這一步很重要：沒有發布的話，Google 每 7 天會讓連線失效。
+5. 左邊 **用戶端** → **建立用戶端**：
+   - 應用程式類型：**網頁應用程式**；名稱：`Mothership`
+   - **已授權的重新導向 URI** → 新增：`https://antony910911.github.io/program_manager/`
+   - **建立** → 複製 **用戶端 ID** 和 **用戶端密鑰**
+6. 回到 GitHub Secrets（同第 2 步的網址），新增兩個：`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`。
+7. 照第 3 步再跑一次 workflow。
+
+第一次連接時，Google 會顯示「Google 尚未驗證這個應用程式」。這是因為這個 App 是你自己建的，按 **進階** → **前往 Mothership（不安全）** → 允許即可。
+
+### 第 5 步：Outlook（公司帳號）
+
+1. 用公司帳號登入 <https://entra.microsoft.com> → **應用程式註冊** → **新增註冊**：
+   - 名稱：`Mothership`
+   - 支援的帳戶類型：**僅此組織目錄中的帳戶**
+   - 重新導向 URI：平台選 **Web**（不是 SPA），填 `https://antony910911.github.io/program_manager/`
+   - **註冊**
+2. 在 **概觀** 複製 **應用程式 (用戶端) 識別碼** 和 **目錄 (租用戶) 識別碼**。
+3. **憑證及祕密** → **新增用戶端密碼** → 期限選最長 → 複製 **值**（不是「祕密識別碼」）。到期前要換一組新的，換完記得更新 GitHub Secret。
+4. **API 權限** → **新增權限** → **Microsoft Graph** → **委派的權限**，勾 `Calendars.ReadWrite`、`offline_access`、`User.Read` → **新增權限**。
+5. GitHub Secrets 新增三個：
+   - `MS_CLIENT_ID`：應用程式 (用戶端) 識別碼
+   - `MS_CLIENT_SECRET`：密碼的值
+   - `MS_TENANT`：目錄 (租用戶) 識別碼
+6. 照第 3 步再跑一次 workflow。
+
+> 公司沒有開放自己註冊 App，或連接時出現「需要系統管理員核准」，就把這一步交給 IT。只需要上面三個最小的行事曆權限。Beamup 已經註冊過的 App 也可以沿用：加一個 **Web** 平台的重新導向 URI 和一組用戶端密碼就好。
+
+### 第 6 步：在 Mothership 連接
+
+打開 Mothership → 右上角 **外觀** → 最上面的 **行事曆同步**：
+
+- **Google／Outlook**：按「連接 Google 日曆」或「連接 Outlook」→ 登入並允許 → 自動回到 Mothership，下方會顯示「已連接」。
+- **iCloud**：先到 <https://account.apple.com/account/manage> → **登入與安全性** → **App 專用密碼** → 產生一組（名稱填 Mothership）。回到 Mothership 按「連接 iCloud 行事曆」，輸入 Apple ID 和這組密碼。不要輸入你的 Apple ID 密碼。
+
+連接後可以設定：
+
+- **同步的行事曆**：每個帳號要同步哪一本行事曆。
+- **Mothership 新增的卡片寫到這個行事曆**：有日期的新卡片要放到哪一個帳號。一張卡片只會對應一個行程，所以 iPhone 同時顯示三個帳號時，也不會看到重複。
+
+### 什麼時候同步
+
+- Mothership 開著的時候：打開時、切回來時、每 2 分鐘一次，以及改完卡片後約 3 秒。
+- Mothership 沒開時，行事曆上的變動會在下次打開時一起收進來，不會漏掉。
+- 中斷連接後，卡片和行程都會留著，只是不再同步。
+
+### 限制
+
+- 行事曆的行程只會收進今天起 90 天內的。重複的行程（例如每週例會）會一次一張卡片。
+- iCloud 的重複行程只能從行事曆那邊修改；在 Mothership 改這類卡片，不會改到 iCloud。
+- 卡片沒有「幾點」的欄位：從 Mothership 新增的行程都是全天行程，要指定時段請在行事曆上改。
+
 ## 把 claude.ai 版的資料搬過來
 
 1. 打開舊的 claude.ai 版 → 右上角「外觀」→ 往下到 **備份與搬家** → 按 **複製全部資料**。
@@ -126,6 +216,8 @@ npm run dev
 | 註冊後一直說帳號還沒確認 | 去信箱點確認信，或照第 3 步把 Confirm email 關掉 |
 | 確認信的連結打開是錯的網址 | 第 3 步的 Site URL／Redirect URLs 要填你的網站網址 |
 | 右上角出現同步警告 | 確認第 2 步的 SQL 有跑成功（Table Editor 裡要看得到 `user_docs`） |
+| 外觀裡寫「行事曆同步還沒部署到雲端」 | 照「連接行事曆」第 1～3 步，並確認 Actions 裡 **Deploy calendar function** 是綠色勾勾 |
+| 行事曆帳號下方出現紅字 | Google：確認第 4 步有「發布應用程式」；Outlook：密碼可能過期了，換一組並更新 `MS_CLIENT_SECRET`；iCloud：App 專用密碼被撤銷了，中斷連接後重新連接 |
 | Beamup 說「Mothership 還沒設定好」 | 照「連接 Beamup」第 1 步執行 `supabase/inbox.sql` |
 | Beamup 說「連接碼已失效」 | 到 Mothership 重新複製連接碼，貼回 Beamup |
 | Supabase 專案顯示 Paused | 免費專案超過一週沒人使用會暫停，進 Supabase 按 **Restore** 即可，資料不會消失 |
