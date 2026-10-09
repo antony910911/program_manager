@@ -532,9 +532,9 @@ function migrate(s: AppState): AppState {
   return { ...s, focusBoardId, boards, lists, cards, theme, pet: { ...newPet(), ...s.pet } }
 }
 
-function load(): AppState {
+function load(key: string): AppState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(key)
     if (raw) return migrate(JSON.parse(raw) as AppState)
   } catch {
     // ignore corrupted or unavailable storage
@@ -542,15 +542,17 @@ function load(): AppState {
   return seed()
 }
 
-export function useAppStore() {
-  const [state, dispatch] = useReducer(reducer, undefined, load)
+/** `userId` keeps each signed-in account's local copy separate on a shared browser. */
+export function useAppStore(userId?: string) {
+  const key = userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY
+  const [state, dispatch] = useReducer(reducer, key, load)
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+      localStorage.setItem(key, JSON.stringify(state))
     } catch {
       // storage full or unavailable; keep working in memory
     }
-  }, [state])
+  }, [state, key])
   return [state, dispatch] as const
 }
 

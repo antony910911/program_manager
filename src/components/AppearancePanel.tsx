@@ -4,6 +4,7 @@ import type { AppState, Theme } from '../types'
 import type { Action } from '../store'
 import { ACCENT_SWATCHES, FONT_NAMES, THEME_PRESETS, defaultTheme, isTheme } from '../theme'
 import { ColorPicker, Segmented, Slider, Toggle } from './controls'
+import { DataTransfer } from './DataTransfer'
 
 interface Props {
   state: AppState
@@ -223,6 +224,8 @@ export function AppearancePanel({ state, dispatch, onClose }: Props) {
               </button>
             </form>
           </section>
+
+          <DataTransfer state={state} dispatch={dispatch} />
 
           <section>
             <h4>匯出 / 匯入主題</h4>

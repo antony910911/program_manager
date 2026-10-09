@@ -9,6 +9,7 @@ import {
   CloudAlert,
   CloudOff,
   House,
+  LogOut,
   RefreshCw,
   Image,
   Palette,
@@ -51,8 +52,14 @@ const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
   { kind: 'dashboard', name: '儀表板', icon: <ChartColumn size={15} /> },
 ]
 
-export default function App() {
-  const [state, dispatch] = useAppStore()
+export interface Account {
+  id: string
+  email: string
+  signOut: () => void
+}
+
+export default function App({ account }: { account: Account | null }) {
+  const [state, dispatch] = useAppStore(account?.id)
   const sync = useCloudSync(state, dispatch)
 
   // Daily visit for the alien, and a celebration for each new reward earned in this session.
@@ -139,6 +146,11 @@ export default function App() {
           <Palette size={16} /> <span className="btn-label">外觀</span>
         </button>
         <SyncBadge status={sync.status} error={sync.error} />
+        {account && (
+          <button className="top-btn" onClick={account.signOut} title={`${account.email}，按這裡登出`}>
+            <LogOut size={15} /> <span className="btn-label">登出</span>
+          </button>
+        )}
         {me && <Avatar member={me} size={30} />}
       </header>
 
@@ -337,7 +349,7 @@ function Home({
         </form>
       </div>
       <p className="muted small home-foot">
-        {synced ? '資料會同步到你的 claude.ai 帳號，登入同一個帳號的手機、電腦、iPad 都看得到。' : '資料只存在這個瀏覽器裡。'}
+        {synced ? '資料會同步到你的帳號，登入同一個帳號的手機、電腦、iPad 都看得到。' : '資料只存在這個瀏覽器裡。'}
         <ConfirmButton
           className="link-btn"
           confirmText="再按一次：清除所有資料並還原範例（外觀會保留）"

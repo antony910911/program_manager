@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AppState } from './types'
 import type { Action } from './store'
+import { supabase, supabaseCollection, usesSupabase } from './supabase'
 
 /**
- * Cloud sync through the claude.ai artifact database.
+ * Cloud sync through the claude.ai artifact database, or Supabase on the self-hosted site (see supabase.ts).
  *
  * Everything lives in the viewer's private subtree `data/users/<id>/`, split into small documents
  * (each is capped at 256 KiB): `meta` (theme, members, board order, activity), one `board-<id>` per
  * board and one `list-<id>` per list holding that list's cards. Any device signed in to the same
- * claude.ai account sees the same documents, live.
+ * account sees the same documents, live.
  *
  * Merging is per document: a remote change is applied unless this device changed the same document
  * since the last sync, in which case the local version is kept and written back (last writer wins).
@@ -55,8 +56,23 @@ export function fromDocs(docs: Record<string, Body>): AppState | null {
 
 const stringify = (docs: Record<string, Body>) => Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, JSON.stringify(v)]))
 
+/** The cloud the app syncs to: claude.ai's artifact database, or Supabase on the self-hosted site. */
+async function connectBackend(): Promise<ClaudeDbCollection | null> {
+  const claude = window.claude
+  if (claude) {
+    const [db, user] = await Promise.all([claude.use('db'), claude.use('user')])
+    const uid = user ? await user.id() : null
+    return db && uid ? db.collection('data/users/' + uid) : null
+  }
+  if (supabase) {
+    const { data } = await supabase.auth.getSession()
+    return data.session ? supabaseCollection(data.session.user.id) : null
+  }
+  return null
+}
+
 export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
-  const [status, setStatus] = useState<SyncStatus>(() => (typeof window !== 'undefined' && window.claude ? 'connecting' : 'local'))
+  const [status, setStatus] = useState<SyncStatus>(() => (window.claude || usesSupabase() ? 'connecting' : 'local'))
   const [error, setError] = useState('')
   const stateRef = useRef(state)
   const col = useRef<ClaudeDbCollection | null>(null)
@@ -119,16 +135,12 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
     let unsub: (() => void) | undefined
     let cancelled = false
     void (async () => {
-      const claude = window.claude
-      if (!claude) return
-      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')])
-      const uid = user ? await user.id() : null
+      const c = await connectBackend()
       if (cancelled) return
-      if (!db || !uid) {
+      if (!c) {
         setStatus('local')
         return
       }
-      const c = db.collection('data/users/' + uid)
       col.current = c
       unsub = c.onSnapshot(
         (snap) => {

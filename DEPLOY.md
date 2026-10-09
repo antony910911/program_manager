@@ -1,0 +1,101 @@
+# 部署到自己的網站（GitHub Pages ＋ Supabase）
+
+完成後你會有一個自己的網址，例如 `https://antony910911.github.io/program_manager/`。在手機、電腦、公司電腦、iPad 用同一組 Email／密碼登入，資料就會即時同步。
+
+整個流程大約 20 分鐘，全部使用免費方案：
+
+- **Supabase**：負責資料庫和登入。
+- **GitHub Pages**：負責放網站。
+
+> 程式碼放在公開的 GitHub repo，但你的看板資料存在 Supabase。資料庫有「每個人只能讀寫自己資料」的規則（`supabase/schema.sql`），別人看不到你的資料。
+
+---
+
+## 第 1 步：建立 Supabase 專案
+
+1. 到 <https://supabase.com>，按 **Start your project**，用 GitHub 帳號登入。
+2. 按 **New project**：
+   - **Name**：隨意，例如 `program-manager`
+   - **Database Password**：按 Generate 產生一組，記在密碼管理器（之後幾乎用不到）
+   - **Region**：選 **Northeast Asia (Tokyo)** 或 **Southeast Asia (Singapore)**，離台灣近比較快
+3. 等 1～2 分鐘，專案建立完成。
+
+## 第 2 步：建立資料表
+
+1. 左側選單 **SQL Editor** → **New query**。
+2. 打開這個 repo 的 [`supabase/schema.sql`](supabase/schema.sql)，把內容全部複製貼上。
+3. 按 **Run**，看到 `Success. No rows returned` 就完成了。
+
+## 第 3 步：設定登入
+
+1. 左側 **Authentication** → **URL Configuration**：
+   - **Site URL** 填你的網址：`https://antony910911.github.io/program_manager/`
+   - **Redirect URLs** 按 Add URL，再加一次同一個網址
+   - 確認信和「Email 連結登入」點下去之後，會回到這個網址。
+2. （可選，只有自己用時建議做）**Authentication** → **Sign In / Providers** → **Email**：把 **Confirm email** 關掉。這樣註冊後不用收確認信，可以直接登入。
+
+## 第 4 步：複製兩個連線資訊
+
+左側 **Project Settings**（齒輪）→ **API**（新版介面叫 **Data API** 和 **API Keys**）：
+
+- **Project URL**：像 `https://abcdefgh.supabase.co`
+- **anon public key**：一長串以 `eyJ` 開頭的字。新版介面也可能顯示 **Publishable key**（`sb_publishable_` 開頭），用這個也可以。
+
+> 這兩個是「公開」資訊，本來就會放進網站裡。**不要**複製 `service_role` 或 `secret` key。
+
+## 第 5 步：設定 GitHub
+
+1. **把程式合併到 main 分支**：目前的程式在 `claude/trello-premium-project-tool-4qoyji` 分支。在 GitHub 開一個 Pull Request 合併到 `main`，或請 Claude 幫你開。
+2. repo 的 **Settings** → **Pages** → **Build and deployment** → **Source** 選 **GitHub Actions**。
+3. repo 的 **Settings** → **Secrets and variables** → **Actions** → 切到 **Variables** 分頁 → **New repository variable**，新增兩個：
+   - `VITE_SUPABASE_URL` = 第 4 步的 Project URL
+   - `VITE_SUPABASE_ANON_KEY` = 第 4 步的 anon（或 publishable）key
+4. **Actions** 分頁 → 左邊選 **Deploy to GitHub Pages** → **Run workflow**。等 1～2 分鐘，出現綠色勾勾就上線了。
+
+之後每次有新程式合併到 `main`，網站都會自動更新。
+
+## 第 6 步：開始使用
+
+1. 打開 `https://antony910911.github.io/program_manager/`，在「註冊」分頁用你的 Email 和密碼（至少 6 個字元）建立帳號。
+2. 其他裝置打開同一個網址，用「登入」分頁輸入同一組 Email／密碼。
+3. 加到主畫面，就會像 App 一樣有圖示、全螢幕開啟：
+   - **iPhone／iPad**：Safari → 分享 → 加入主畫面
+   - **Android**：Chrome → ⋮ → 加到主畫面（或「安裝應用程式」）
+   - **電腦**：Chrome／Edge 網址列右邊的「安裝」圖示，或加入書籤
+
+忘記密碼時，在登入畫面選「Email 連結」，收信點連結就能登入。
+
+## 把 claude.ai 版的資料搬過來
+
+1. 打開舊的 claude.ai 版 → 右上角「外觀」→ 往下到 **備份與搬家** → 按 **複製全部資料**。
+2. 打開新網站並登入 → 「外觀」→ **備份與搬家** → 把剛剛複製的內容貼進文字框 → 按 **匯入**，再按一次確認。
+3. 幾秒後右上角顯示「已同步」，其他裝置也會看到。
+
+---
+
+## 用 Vercel 取代 GitHub Pages（可選）
+
+如果想要更短的網址（`xxx.vercel.app`），或之後 repo 改成私人：
+
+1. 到 <https://vercel.com> 用 GitHub 登入 → **Add New → Project** → 選 `program_manager`。
+2. **Environment Variables** 加上同樣兩個變數：`VITE_SUPABASE_URL` 和 `VITE_SUPABASE_ANON_KEY`。
+3. 按 **Deploy**。完成後，把 Vercel 給的網址填回 Supabase 的 Site URL 和 Redirect URLs（第 3 步）。
+
+## 在自己電腦上開發（可選）
+
+```bash
+cp .env.example .env.local   # 填入第 4 步的兩個值
+npm install
+npm run dev
+```
+
+## 常見問題
+
+| 狀況 | 解法 |
+|---|---|
+| 打開網站是空白頁 | 到 Actions 看部署有沒有成功；確認 Pages 的 Source 是 GitHub Actions |
+| 網站沒有登入畫面，右上角顯示「只存在這台裝置」 | 兩個 `VITE_SUPABASE_…` 變數沒設好。設定後到 Actions 重新 Run workflow |
+| 註冊後一直說帳號還沒確認 | 去信箱點確認信，或照第 3 步把 Confirm email 關掉 |
+| 確認信的連結打開是錯的網址 | 第 3 步的 Site URL／Redirect URLs 要填你的網站網址 |
+| 右上角出現同步警告 | 確認第 2 步的 SQL 有跑成功（Table Editor 裡要看得到 `user_docs`） |
+| Supabase 專案顯示 Paused | 免費專案超過一週沒人使用會暫停，進 Supabase 按 **Restore** 即可，資料不會消失 |

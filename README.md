@@ -11,7 +11,11 @@ npm run build    # 型別檢查 + 打包
 npm run lint
 ```
 
-## 線上試用
+## 部署到自己的網站
+
+照 **[DEPLOY.md](DEPLOY.md)** 的步驟：Supabase（資料庫＋登入）＋ GitHub Pages（網站），全部免費，大約 20 分鐘。完成後用 Email／密碼登入，所有裝置同步；舊資料可用「外觀 → 備份與搬家」搬過去。
+
+## 線上試用（claude.ai 版）
 
 已發布的版本：https://claude.ai/artifact/HbbDuWHfy3JdqJ8QMxMP9V （需要登入 claude.ai；預設只有擁有者能開，可從頁面的 Share 選單分享）。
 
@@ -42,7 +46,8 @@ src/
   types.ts              資料模型（Board / List / Card / Label / CustomField …）
   store.ts              reducer + actions + localStorage 持久化 + 篩選/日期工具
   dnd.ts                共用的拖放狀態與放置邏輯
-  sync.ts               雲端同步（claude.ai artifact db，每個看板／清單一份文件，逐文件合併）
+  sync.ts               雲端同步（每個看板／清單一份文件，逐文件合併；後端是 claude.ai artifact db 或 Supabase）
+  supabase.ts           Supabase 連線與資料表介面（自架網站用）
   touch.ts              觸控拖曳（長按拖曳）
   alien/                Beamup 的外星人系統（aliens 角色圖鑑、mascot 動畫與互動、pet 養成），index.ts 是型別化的入口
   theme.ts              主題預設、背景預設、色彩工具、主題 → CSS 變數
@@ -54,6 +59,8 @@ src/
     AppearancePanel.tsx 外觀設定側欄
     BackgroundEditor.tsx 看板背景編輯器
     AlienHero.tsx       首頁的外星人舞台、養成狀態與換角色／配件
+    AuthGate.tsx        自架網站的登入畫面（Email＋密碼、Email 連結）
+    DataTransfer.tsx    備份與搬家（複製全部資料／貼上匯入）
     ListColumn.tsx      清單欄、卡片方塊、清單選單（看板與雙層模式共用）
   views/
     BoardView.tsx       看板（原生 HTML5 拖放）

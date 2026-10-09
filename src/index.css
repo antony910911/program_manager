@@ -2197,3 +2197,47 @@ input.full {
     padding: 18px 16px;
   }
 }
+
+/* ---------- sign-in (self-hosted site) ---------- */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--accent) 25%, transparent), transparent 50%),
+    var(--bg);
+}
+.auth-card {
+  width: min(400px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px 24px;
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+.auth-card p {
+  margin: 0;
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.3em;
+  font-weight: 700;
+}
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.93em;
+}
+.ok-text {
+  color: var(--success);
+  font-size: 0.93em;
+}
