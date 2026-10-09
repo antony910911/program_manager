@@ -129,6 +129,15 @@ export interface PetState {
   lastEvent: { text: string; at: number } | null
 }
 
+/** A deleted card, kept for TRASH_DAYS so it can be restored. */
+export interface TrashItem {
+  card: Card
+  /** Where it was, for display (the list or board may be gone by now). */
+  listTitle: string
+  boardTitle: string
+  deletedAt: string
+}
+
 export interface AppState {
   theme: Theme
   pet: PetState
@@ -141,6 +150,7 @@ export interface AppState {
   members: Member[]
   currentMemberId: ID
   activity: ActivityEntry[]
+  trash: TrashItem[]
 }
 
 export type ViewKind = 'board' | 'table' | 'calendar' | 'timeline' | 'dashboard' | 'review'

@@ -86,9 +86,9 @@ function LoginScreen() {
       <form className="auth-card" onSubmit={submit}>
         <div className="auth-brand">
           <span className="brand-mark">
-            <BrandMark size={18} />
+            <BrandMark size={26} />
           </span>
-          Arbor
+          Mothership
         </div>
         <p className="muted">登入後，你的看板會在手機、電腦、平板之間同步。</p>
         <Segmented

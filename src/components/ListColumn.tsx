@@ -215,7 +215,7 @@ function ListMenu({
         移除顏色
       </button>
       <div className="menu-sep" />
-      <ConfirmButton className="btn danger wide" confirmText={`再按一次刪除（含 ${list.cardIds.length} 張卡片）`} onConfirm={onDelete}>
+      <ConfirmButton className="btn danger wide" confirmText={`再按一次刪除（${list.cardIds.length} 張卡片會放進垃圾桶）`} onConfirm={onDelete}>
         <Trash2 size={14} /> 刪除清單
       </ConfirmButton>
     </div>,

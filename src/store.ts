@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react'
-import type { AppState, Board, BoardBackground, Card, Filter, ID, List, Member, PetState, Theme } from './types'
+import type { AppState, Board, BoardBackground, Card, Filter, ID, List, Member, PetState, Theme, TrashItem } from './types'
 import { gain as petGain, visit as petVisit } from './alien/pet'
 import { BACKGROUND_PRESETS, COVER_COLORS, defaultBackground, defaultTheme } from './theme'
 
@@ -172,6 +172,7 @@ function seed(): AppState {
     members,
     currentMemberId: 'm1',
     activity: [],
+    trash: [],
     pet: newPet(),
   }
 }
@@ -220,6 +221,9 @@ export type Action =
   | { type: 'petVisit' }
   | { type: 'setAlien'; alien: string }
   | { type: 'equip'; accessory: string | null }
+  | { type: 'restoreTrash'; cardId: ID }
+  /** Delete one trashed card for good, or empty the trash when cardId is omitted. */
+  | { type: 'purgeTrash'; cardId?: ID }
   /** Todos sent over from Beamup (see inbox.ts). */
   | { type: 'ingestInbox'; items: InboxTodo[] }
   /** Replace everything with state loaded from the cloud. */
@@ -294,14 +298,19 @@ function baseReducer(s: AppState, a: Action): AppState {
       const cards = { ...s.cards }
       // Cards of this project parked in the focus lists stay, detached from the project.
       for (const [id, c] of Object.entries(cards)) if (c.homeBoardId === a.boardId) cards[id] = { ...c, homeBoardId: null }
+      const trashed: TrashItem[] = []
       for (const lid of board.listIds) {
-        for (const cid of lists[lid].cardIds) delete cards[cid]
+        for (const cid of lists[lid].cardIds) {
+          trashed.push(trashItem(cards[cid], lists[lid].title, board.title))
+          delete cards[cid]
+        }
         delete lists[lid]
       }
       const boards = { ...s.boards }
       delete boards[a.boardId]
       return {
         ...s,
+        trash: [...trashed, ...s.trash],
         boards,
         lists,
         cards,
@@ -331,11 +340,13 @@ function baseReducer(s: AppState, a: Action): AppState {
       const lists = { ...s.lists }
       const cards = { ...s.cards }
       const title = lists[a.listId].title
+      const trashed = lists[a.listId].cardIds.map((cid) => trashItem(cards[cid], title, board.title))
       for (const cid of lists[a.listId].cardIds) delete cards[cid]
       delete lists[a.listId]
       return log(
         {
           ...s,
+          trash: [...trashed, ...s.trash],
           lists,
           cards,
           boards: { ...s.boards, [a.boardId]: { ...board, listIds: board.listIds.filter((l) => l !== a.listId) } },
@@ -399,8 +410,14 @@ function baseReducer(s: AppState, a: Action): AppState {
       const list = s.lists[card.listId]
       const cards = { ...s.cards }
       delete cards[a.cardId]
+      const boardTitle = s.boards[card.homeBoardId ?? boardOfList(s, list.id) ?? '']?.title ?? ''
       return log(
-        { ...s, cards, lists: { ...s.lists, [list.id]: { ...list, cardIds: list.cardIds.filter((c) => c !== a.cardId) } } },
+        {
+          ...s,
+          cards,
+          lists: { ...s.lists, [list.id]: { ...list, cardIds: list.cardIds.filter((c) => c !== a.cardId) } },
+          trash: [trashItem(card, list.title, boardTitle), ...s.trash],
+        },
         boardOfList(s, list.id),
         `刪除卡片「${card.title}」`,
       )
@@ -454,11 +471,44 @@ function baseReducer(s: AppState, a: Action): AppState {
       return { ...s, pet: { ...s.pet, alien: a.alien } }
     case 'equip':
       return { ...s, pet: { ...s.pet, equipped: a.accessory } }
+    case 'restoreTrash': {
+      const item = s.trash.find((t) => t.card.id === a.cardId)
+      if (!item) return s
+      const rest = s.trash.filter((t) => t !== item)
+      // Back to its list if that still exists, otherwise to the top 待辦 list.
+      const listId = s.lists[item.card.listId] ? item.card.listId : inboxList(s, 'normal')
+      if (!listId) return s
+      const card: Card = {
+        ...item.card,
+        listId,
+        homeBoardId: item.card.homeBoardId && s.boards[item.card.homeBoardId] ? item.card.homeBoardId : projectOf(s, listId),
+        homeListId: item.card.homeListId && s.lists[item.card.homeListId] ? item.card.homeListId : null,
+      }
+      const list = s.lists[listId]
+      return log(
+        {
+          ...s,
+          trash: rest,
+          cards: { ...s.cards, [card.id]: card },
+          lists: { ...s.lists, [listId]: { ...list, cardIds: [...list.cardIds, card.id] } },
+        },
+        boardOfList(s, listId),
+        `從垃圾桶救回「${card.title}」到「${list.title}」`,
+      )
+    }
+    case 'purgeTrash':
+      return { ...s, trash: a.cardId ? s.trash.filter((t) => t.card.id !== a.cardId) : [] }
     case 'ingestInbox':
       return a.items.reduce(ingestTodo, s)
     case 'hydrate':
       return migrate(a.state)
   }
+}
+
+export const TRASH_DAYS = 30
+
+function trashItem(card: Card, listTitle: string, boardTitle: string): TrashItem {
+  return { card, listTitle, boardTitle, deletedAt: new Date().toISOString() }
 }
 
 /** Records the day a card is checked off, and forgets it when unchecked. */
@@ -602,7 +652,10 @@ function migrate(s: AppState): AppState {
       if (lists[id].color === '#94a3b8' && lists[id].title === '待辦') lists[id] = { ...lists[id], color: '#fbbf24' }
     theme.rev = 4
   }
-  return { ...s, focusBoardId, boards, lists, cards, theme, pet: { ...newPet(), ...s.pet } }
+  // Deleted cards stay in the trash for TRASH_DAYS.
+  const cutoff = Date.now() - TRASH_DAYS * 86400000
+  const trash = (s.trash ?? []).filter((t) => Date.parse(t.deletedAt) > cutoff)
+  return { ...s, focusBoardId, boards, lists, cards, theme, trash, pet: { ...newPet(), ...s.pet } }
 }
 
 function load(key: string): AppState {

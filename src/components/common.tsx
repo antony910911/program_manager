@@ -107,15 +107,37 @@ export function AddForm({ label, placeholder, onAdd }: { label: string; placehol
   )
 }
 
-/** The Arbor mark: an arbor arch with three kanban columns and a leaf (same drawing as public/icon.svg). */
+/** Pixel mothership (same drawing as scripts/make_icons.py): G dome, W glint, S hull, T underside, Y lights, H hatch. */
+const SHIP = [
+  '......GGGGG......',
+  '.....GWGGGGG.....',
+  '....GGGGGGGGG....',
+  '..TSSSSSSSSSSST..',
+  '.SSYSSSSYSSSSYSS.',
+  'SSSSSSSSSSSSSSSSS',
+  '.TTTTTTTTTTTTTTT.',
+  '.....THHHHHT.....',
+]
+const SHIP_COLORS: Record<string, string> = {
+  G: '#96dcff',
+  W: '#ffffff',
+  S: '#d6dae6',
+  T: '#8c92a8',
+  Y: '#ffd60a',
+  H: '#ffeca0',
+}
+
+/** The Mothership mark: the pixel ship beaming up three task cards. */
 export function BrandMark({ size = 18 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="96 64 352 360" aria-hidden="true">
-      <path d="M128 404V244a128 128 0 0 1 256 0v160" fill="none" stroke="currentColor" strokeWidth="44" strokeLinecap="round" />
-      <path d="M330 136c18-40 58-60 100-58-2 44-34 78-84 80z" fill="#86efac" />
-      <rect x="182" y="214" width="44" height="150" rx="16" fill="currentColor" />
-      <rect x="235" y="214" width="44" height="104" rx="16" fill="currentColor" opacity=".85" />
-      <rect x="288" y="214" width="44" height="128" rx="16" fill="currentColor" opacity=".7" />
+    <svg width={size} height={size} viewBox="-0.5 -1 18 18" shapeRendering="crispEdges" aria-hidden="true">
+      <path d="M5 8h7l3 8H2z" fill="#ffeca0" opacity=".35" />
+      {SHIP.flatMap((row, r) =>
+        [...row].map((ch, c) => (ch === '.' ? null : <rect key={`${r}-${c}`} x={c} y={r} width={1.02} height={1.02} fill={SHIP_COLORS[ch]} />)),
+      )}
+      <rect x="4" y="13" width="3" height="2" fill="#fbbf24" />
+      <rect x="7.5" y="9.5" width="3" height="2" fill="#60a5fa" />
+      <rect x="10.5" y="11.5" width="3" height="2" fill="#f87171" />
     </svg>
   )
 }

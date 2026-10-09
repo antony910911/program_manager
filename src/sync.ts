@@ -37,6 +37,8 @@ export function toDocs(s: AppState): Record<string, Body> {
       pet: s.pet,
     },
   }
+  // Its own document so a full trash never pushes `meta` past the size cap.
+  docs.trash = { items: s.trash }
   for (const b of Object.values(s.boards)) docs['board-' + b.id] = { board: b }
   for (const l of Object.values(s.lists)) docs['list-' + l.id] = { list: l, cards: l.cardIds.map((id) => s.cards[id]).filter(Boolean) }
   return docs
@@ -45,7 +47,7 @@ export function toDocs(s: AppState): Record<string, Body> {
 export function fromDocs(docs: Record<string, Body>): AppState | null {
   const meta = docs.meta as Partial<AppState> | undefined
   if (!meta) return null
-  const state = { ...meta, boards: {}, lists: {}, cards: {} } as AppState
+  const state = { ...meta, boards: {}, lists: {}, cards: {}, trash: (docs.trash?.items as AppState['trash']) ?? [] } as AppState
   for (const [id, body] of Object.entries(docs)) {
     if (id.startsWith('board-')) {
       const b = body.board as AppState['boards'][string]

@@ -1,4 +1,4 @@
-# Arbor
+# Mothership
 
 一個類似 Trello Premium 的專案管理工具。目前是**前端 MVP**（資料存在瀏覽器 localStorage），架構設計成之後可以直接接上後端。
 
@@ -21,7 +21,7 @@ npm run lint
 
 在 claude.ai 上開啟時，資料會同步到你的 claude.ai 帳號（artifact 的 `db`，存在你個人私有的 `data/users/<你的 id>/` 底下），手機、電腦、iPad 只要登入同一個帳號就會即時同步；右上角的雲朵圖示顯示同步狀態。在其他地方（`npm run dev`、靜態主機）則只存在該瀏覽器的 localStorage。
 
-手機與平板：長按卡片或清單標題約 0.25 秒即可拖曳（`src/touch.ts` 用 mobile-drag-drop 把觸控轉成拖放事件）。要重新產生單一檔案版本：`npm run build:single`，輸出在 `dist-single/arbor.html`。
+手機與平板：長按卡片或清單標題約 0.25 秒即可拖曳（`src/touch.ts` 用 mobile-drag-drop 把觸控轉成拖放事件）。要重新產生單一檔案版本：`npm run build:single`，輸出在 `dist-single/mothership.html`。
 
 ## 已完成功能
 
@@ -39,6 +39,7 @@ npm run lint
 | **外星人夥伴**（來自 Beamup） | 首頁的像素外星人（Blip、Zorp、Pom、Glim、Bolt、木乃伊 Mumu）：戳他、連戳會頭暈、長按摸頭、點空地叫他走過去；會自己散步、跳舞、接星星、開飛碟；完成卡片／待辦清單、新增卡片、設到期日、留言都會餵他星星，累積經驗升級、連續天數、解鎖配件；狀態跟資料一起同步 |
 | **連接 Beamup** | 在 Beamup（thought-task-entry）新增的待辦，自動變成雙層模式上方「待辦」清單的卡片（高優先進「急件」），修改、完成也會同步；設定方式見 [DEPLOY.md](DEPLOY.md#連接-beamup在-beamup-打待辦直接進上方待辦清單) |
 | **完成與年度回顧** | 卡片打勾完成後離開清單，收進清單底部的「已完成」（可展開、可改回未完成），並自動記下完成日；時間軸可切換「計畫」（開始日→到期日）或「實際」（建立→完成）；「回顧」分頁與首頁的「年度回顧」依月份列出每年完成的卡片、各專案完成數與準時率 |
+| **垃圾桶** | 刪除的卡片（含刪除清單、看板時一起刪掉的）保留 30 天，可救回原清單（清單不在了就放進上方「待辦」）或永久刪除；入口在首頁底部與看板「設定」 |
 | **看板範本** | 新增看板時可選空白、年度專案（每個專案一個清單）或待辦／進行中／完成 |
 
 ## 程式結構
@@ -63,6 +64,7 @@ src/
     BackgroundEditor.tsx 看板背景編輯器
     AlienHero.tsx       首頁的外星人舞台、養成狀態與換角色／配件
     AuthGate.tsx        自架網站的登入畫面（Email＋密碼、Email 連結）
+    TrashModal.tsx      垃圾桶
     DataTransfer.tsx    備份與搬家（複製全部資料／貼上匯入）
     BeamupConnect.tsx   產生 Beamup 連接碼
     ListColumn.tsx      清單欄、卡片方塊、清單選單（看板與雙層模式共用）

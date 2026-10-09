@@ -2652,3 +2652,52 @@ input.full {
     grid-template-columns: minmax(70px, 120px) 1fr 28px;
   }
 }
+
+/* ---------- trash ---------- */
+.modal.trash h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.trash-empty {
+  padding: 18px 0;
+  text-align: center;
+}
+.trash-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.trash-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.trash-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.trash-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.trash-link {
+  margin-top: 8px;
+}
+@media (max-width: 720px) {
+  .trash-list li {
+    flex-wrap: wrap;
+  }
+  .trash-info {
+    flex-basis: 100%;
+  }
+}

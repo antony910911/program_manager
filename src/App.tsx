@@ -33,6 +33,7 @@ import { BACKGROUND_PRESETS, backgroundCss, defaultBackground, themeVars } from 
 import { Avatar, BrandMark, InlineEdit } from './components/common'
 import { CardModal } from './components/CardModal'
 import { AppearancePanel } from './components/AppearancePanel'
+import { TrashModal } from './components/TrashModal'
 import { BackgroundEditor } from './components/BackgroundEditor'
 import { AlienHero } from './components/AlienHero'
 import { cheer } from './alien'
@@ -91,6 +92,7 @@ export default function App({ account }: { account: Account | null }) {
   const [openCardId, setOpenCardId] = useState<ID | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [appearanceOpen, setAppearanceOpen] = useState(false)
+  const [trashOpen, setTrashOpen] = useState(false)
   const [bgOpen, setBgOpen] = useState(false)
   const bgRef = useRef<HTMLDivElement>(null)
 
@@ -126,9 +128,9 @@ export default function App({ account }: { account: Account | null }) {
       <header className="topbar">
         <button className="brand" onClick={() => setBoardId(null)}>
           <span className="brand-mark">
-            <BrandMark size={16} />
+            <BrandMark size={24} />
           </span>
-          <span className="brand-text">Arbor</span>
+          <span className="brand-text">Mothership</span>
         </button>
         {board && (
           <>
@@ -176,6 +178,7 @@ export default function App({ account }: { account: Account | null }) {
           dispatch={dispatch}
           onOpen={(id) => setBoardId(id)}
           onReview={() => setReviewAll(true)}
+          onTrash={() => setTrashOpen(true)}
           synced={sync.status !== 'local'}
         />
       ) : (
@@ -264,12 +267,17 @@ export default function App({ account }: { account: Account | null }) {
           board={board}
           dispatch={dispatch}
           onClose={() => setSettingsOpen(false)}
+          onTrash={() => {
+            setSettingsOpen(false)
+            setTrashOpen(true)
+          }}
           onDeleted={() => {
             setSettingsOpen(false)
             setBoardId(null)
           }}
         />
       )}
+      {trashOpen && <TrashModal state={state} dispatch={dispatch} onClose={() => setTrashOpen(false)} />}
       {appearanceOpen && <AppearancePanel state={state} dispatch={dispatch} onClose={() => setAppearanceOpen(false)} userId={account?.id} />}
     </div>
   )
@@ -280,12 +288,14 @@ function Home({
   dispatch,
   onOpen,
   onReview,
+  onTrash,
   synced,
 }: {
   state: ReturnType<typeof useAppStore>[0]
   dispatch: (a: Action) => void
   onOpen: (id: ID) => void
   onReview: () => void
+  onTrash: () => void
   synced: boolean
 }) {
   const [title, setTitle] = useState('')
@@ -401,6 +411,10 @@ function Home({
         >
           重設範例資料
         </ConfirmButton>
+        {' · '}
+        <button className="link-btn" onClick={onTrash}>
+          垃圾桶{state.trash.length ? `（${state.trash.length}）` : ''}
+        </button>
       </p>
     </main>
   )
@@ -468,12 +482,14 @@ function BoardSettings({
   board,
   dispatch,
   onClose,
+  onTrash,
   onDeleted,
 }: {
   state: ReturnType<typeof useAppStore>[0]
   board: Board
   dispatch: (a: Action) => void
   onClose: () => void
+  onTrash: () => void
   onDeleted: () => void
 }) {
   const [fieldName, setFieldName] = useState('')
@@ -602,6 +618,9 @@ function BoardSettings({
               </button>
             </div>
           ))}
+          <button className="btn small trash-link" onClick={onTrash}>
+            <Trash2 size={13} /> 垃圾桶（刪除的卡片，{state.trash.length} 張）
+          </button>
         </section>
 
         {isFocus ? (
@@ -611,7 +630,7 @@ function BoardSettings({
             <h4>危險區域</h4>
             <ConfirmButton
               className="btn danger"
-              confirmText={`再按一次刪除「${board.title}」（無法復原）`}
+              confirmText={`再按一次刪除「${board.title}」（卡片會放進垃圾桶）`}
               onConfirm={() => {
                 dispatch({ type: 'deleteBoard', boardId: board.id })
                 onDeleted()

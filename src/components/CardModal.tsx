@@ -266,7 +266,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
             </button>
             <ConfirmButton
               className="btn danger"
-              confirmText="再按一次刪除"
+              confirmText="再按一次刪除（30 天內可從垃圾桶救回）"
               onConfirm={() => {
                 dispatch({ type: 'deleteCard', cardId: card.id })
                 onClose()
