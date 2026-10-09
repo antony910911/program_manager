@@ -28,6 +28,7 @@ export function toDocs(s: AppState): Record<string, Body> {
       members: s.members,
       currentMemberId: s.currentMemberId,
       activity: s.activity.slice(0, 100),
+      pet: s.pet,
     },
   }
   for (const b of Object.values(s.boards)) docs['board-' + b.id] = { board: b }

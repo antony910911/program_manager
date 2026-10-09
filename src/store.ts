@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'react'
-import type { AppState, Board, BoardBackground, Card, Filter, ID, List, Member, Theme } from './types'
+import type { AppState, Board, BoardBackground, Card, Filter, ID, List, Member, PetState, Theme } from './types'
+import { gain as petGain, visit as petVisit } from './alien/pet'
 import { BACKGROUND_PRESETS, COVER_COLORS, defaultBackground, defaultTheme } from './theme'
 
 const STORAGE_KEY = 'program-manager:v1'
@@ -171,6 +172,24 @@ function seed(): AppState {
     members,
     currentMemberId: 'm1',
     activity: [],
+    pet: newPet(),
+  }
+}
+
+export function newPet(): PetState {
+  return {
+    alien: 'blip',
+    xp: 0,
+    energy: 60,
+    energyAt: null,
+    streak: 0,
+    best: 0,
+    lastDay: null,
+    days: [],
+    stats: { todosAdded: 0, todosDone: 0, notes: 0, events: 0 },
+    unlocked: [],
+    equipped: null,
+    lastEvent: null,
   }
 }
 
@@ -198,6 +217,9 @@ export type Action =
   | { type: 'addCustomField'; boardId: ID; name: string; fieldType: 'text' | 'number' | 'select'; options: string[] }
   | { type: 'deleteCustomField'; boardId: ID; fieldId: ID }
   | { type: 'reset' }
+  | { type: 'petVisit' }
+  | { type: 'setAlien'; alien: string }
+  | { type: 'equip'; accessory: string | null }
   /** Replace everything with state loaded from the cloud. */
   | { type: 'hydrate'; state: AppState }
 
@@ -222,7 +244,7 @@ function log(s: AppState, boardId: ID | undefined, text: string): AppState {
   return { ...s, activity: [entry, ...s.activity].slice(0, 200) }
 }
 
-export function reducer(s: AppState, a: Action): AppState {
+function baseReducer(s: AppState, a: Action): AppState {
   switch (a.type) {
     case 'addBoard': {
       const id = uid()
@@ -417,13 +439,62 @@ export function reducer(s: AppState, a: Action): AppState {
       }
     }
     case 'reset':
-      return { ...seed(), theme: s.theme }
+      return { ...seed(), theme: s.theme, pet: s.pet }
+    case 'petVisit': {
+      const pet = structuredClone(s.pet)
+      const r = petVisit(pet)
+      if (!r.firstToday) return s
+      return { ...s, pet: { ...pet, lastEvent: rewardLine(r, r.streak > 1 ? `連續 ${r.streak} 天見面了！` : '今天也來看我了！') } }
+    }
+    case 'setAlien':
+      return { ...s, pet: { ...s.pet, alien: a.alien } }
+    case 'equip':
+      return { ...s, pet: { ...s.pet, equipped: a.accessory } }
     case 'hydrate':
       return migrate(a.state)
   }
 }
 
 /** Fill in fields added after data was first saved. */
+type PetKind = 'todo.add' | 'todo.done' | 'note.add' | 'event.add'
+
+/** Which care reward (if any) an action earns the alien, and what it says about it. */
+function rewardFor(prev: AppState, next: AppState, a: Action): { kind: PetKind; text: string } | null {
+  switch (a.type) {
+    case 'addCard':
+      return { kind: 'todo.add', text: `收到新卡片「${a.title}」` }
+    case 'addComment':
+      return { kind: 'note.add', text: '謝謝你的留言～' }
+    case 'updateCard': {
+      const before = prev.cards[a.cardId]
+      const after = next.cards[a.cardId]
+      if (!before || !after) return null
+      if (after.completed && !before.completed) return { kind: 'todo.done', text: `完成「${after.title}」了！` }
+      const done = (c: Card) => c.checklist.filter((i) => i.done).length
+      if (done(after) > done(before)) return { kind: 'todo.done', text: '又勾掉一項，好棒！' }
+      if (after.dueDate && !before.dueDate) return { kind: 'event.add', text: '記下到期日了' }
+      return null
+    }
+    default:
+      return null
+  }
+}
+
+function rewardLine(r: { levelUp?: number | null; unlocked?: { name: string }[] }, text: string) {
+  if (r.unlocked?.length) text = `解鎖了${r.unlocked.map((x) => x.name).join('、')}！`
+  else if (r.levelUp) text = `升到 Lv.${r.levelUp} 了！`
+  return { text, at: Date.now() }
+}
+
+export function reducer(s: AppState, a: Action): AppState {
+  const next = baseReducer(s, a)
+  const reward = next === s ? null : rewardFor(s, next, a)
+  if (!reward) return next
+  const pet = structuredClone(next.pet)
+  const r = petGain(pet, reward.kind)
+  return { ...next, pet: { ...pet, lastEvent: rewardLine(r, reward.text) } }
+}
+
 function migrate(s: AppState): AppState {
   const boards = Object.fromEntries(
     Object.entries(s.boards).map(([id, b]) => [id, { ...b, background: b.background ?? defaultBackground(b.color) }]),
@@ -458,7 +529,7 @@ function migrate(s: AppState): AppState {
     theme.radius = Math.max(theme.radius, 18)
     theme.rev = 3
   }
-  return { ...s, focusBoardId, boards, lists, cards, theme }
+  return { ...s, focusBoardId, boards, lists, cards, theme, pet: { ...newPet(), ...s.pet } }
 }
 
 function load(): AppState {

@@ -31,6 +31,8 @@ import { Avatar, InlineEdit } from './components/common'
 import { CardModal } from './components/CardModal'
 import { AppearancePanel } from './components/AppearancePanel'
 import { BackgroundEditor } from './components/BackgroundEditor'
+import { AlienHero } from './components/AlienHero'
+import { cheer } from './alien'
 import { ConfirmButton } from './components/controls'
 import { BoardView } from './views/BoardView'
 import { TableView } from './views/TableView'
@@ -52,6 +54,16 @@ const VIEWS: { kind: ViewKind; name: string; icon: ReactNode }[] = [
 export default function App() {
   const [state, dispatch] = useAppStore()
   const sync = useCloudSync(state, dispatch)
+
+  // Daily visit for the alien, and a celebration for each new reward earned in this session.
+  const [startedAt] = useState(() => Date.now())
+  useEffect(() => {
+    dispatch({ type: 'petVisit' })
+  }, [dispatch])
+  const lastEvent = state.pet.lastEvent
+  useEffect(() => {
+    if (lastEvent && lastEvent.at >= startedAt) cheer(lastEvent.text)
+  }, [lastEvent, startedAt])
   const [boardId, setBoardIdRaw] = useState<ID | null>(null)
   const [view, setView] = useState<ViewKind>('board')
   const [filter, setFilter] = useState<Filter>(emptyFilter)
@@ -249,10 +261,7 @@ function Home({
   })
   return (
     <main className="home">
-      <div className="home-hero">
-        <h1>{greeting} 👋</h1>
-        <p className="muted">選一個看板開始工作，或建立新的看板。右上角「外觀」可以自訂整個介面。</p>
-      </div>
+      <AlienHero state={state} dispatch={dispatch} greeting={greeting} />
       <button className="split-entry" onClick={() => onOpen(state.focusBoardId)}>
         <span className="split-entry-icon">
           <Rows2 size={22} />

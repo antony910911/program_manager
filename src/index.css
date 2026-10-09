@@ -1961,3 +1961,239 @@ input.full {
   }
 }
 
+
+/* ---------- alien hero (ported from Beamup) ---------- */
+:root {
+  /* Colors the Beamup alien engine reads: Blip's body and antenna light. */
+  --todo: #34c759;
+  --note: #ff9f0a;
+  --event: #ff3b30;
+  --pixel-font: 'Pixelify Sans', var(--font);
+}
+.alien-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 24px;
+  align-items: center;
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  border-radius: calc(var(--radius) + 6px);
+  background:
+    radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 55%),
+    linear-gradient(135deg, var(--accent-soft), transparent);
+  border: 1px solid var(--border);
+}
+.alien-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.alien-hero h1 {
+  margin: 0;
+  font-size: 1.9em;
+  letter-spacing: -0.02em;
+}
+.alien-hero p {
+  margin: 0;
+}
+.eyebrow {
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.pet-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 0.9em;
+  font-variant-numeric: tabular-nums;
+}
+.pet-lv {
+  font-family: var(--pixel-font);
+  font-weight: 700;
+  font-size: 1.1em;
+}
+.pet-bar {
+  width: 70px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.pet-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--todo);
+  transition: width 0.4s;
+}
+.pet-bar.xp i {
+  background: var(--accent);
+}
+.pet-bar.hungry i {
+  background: var(--warn);
+}
+.pet-bar.starving i {
+  background: var(--danger);
+}
+.pet-mood {
+  color: var(--muted);
+}
+.pet-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--note);
+  font-weight: 700;
+}
+.alien-stage-card {
+  min-width: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.alien-stage {
+  position: relative;
+  height: 170px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, var(--surface)), color-mix(in srgb, var(--accent) 5%, var(--surface)));
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  /* Variables the engine reads for stars, ground and the speech bubble. */
+  --label-2: var(--muted);
+  --label-3: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+.blip-canvas {
+  display: block;
+  width: 100%;
+  height: 170px;
+  image-rendering: pixelated;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.blip-bubble {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 70%;
+  padding: 6px 10px;
+  border: 2px solid var(--text);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--text) 18%, transparent);
+  animation: bubble-in 0.25s steps(3) both;
+}
+@keyframes bubble-in {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+.alien-cap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 14px;
+  font-size: 0.86em;
+  border-top: 1px solid var(--border);
+}
+.alien-cap .pokes {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.alien-switch b {
+  font-family: var(--pixel-font);
+  font-weight: 700;
+  font-size: 1.15em;
+}
+.alien-switch {
+  color: var(--text);
+}
+.alien-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.alien-card,
+.acc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  outline: 2px solid transparent;
+  text-align: center;
+  transition: transform 0.1s;
+}
+.alien-card:hover,
+.acc-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.alien-card.on,
+.acc-card.on {
+  outline-color: var(--accent);
+}
+.alien-card canvas {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+}
+.alien-card b {
+  font-family: var(--pixel-font);
+  font-size: 1.1em;
+}
+.alien-card small,
+.acc-card small {
+  font-size: 0.78em;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.acc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.acc-card canvas,
+.acc-none {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.acc-card.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.acc-card.locked canvas {
+  filter: grayscale(1);
+}
+.alien-picker h4 {
+  margin: 0 0 8px;
+}
+@media (max-width: 720px) {
+  .alien-hero {
+    grid-template-columns: 1fr;
+    padding: 18px 16px;
+  }
+}

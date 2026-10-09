@@ -32,6 +32,7 @@ npm run lint
 | **卡片封面** | 10 種預設色或任意自訂顏色 |
 | **清單顏色** | 每個清單可選預設色或任意顏色（清單選單 ⋯） |
 | **雙層模式**（原創） | 上方清單（預設待辦／進行中／急件）與下方各看板的清單都可改名、新增、刪除、排序；卡片與清單可上下互相拖曳，清單可跨看板移動；卡片會記住原本的看板與清單，可一鍵「移回原清單」；上下比例可拖曳調整 |
+| **外星人夥伴**（來自 Beamup） | 首頁的像素外星人（Blip、Zorp、Pom、Glim、Bolt）：戳他、連戳會頭暈、長按摸頭、點空地叫他走過去；會自己散步、跳舞、接星星、開飛碟；完成卡片／待辦清單、新增卡片、設到期日、留言都會餵他星星，累積經驗升級、連續天數、解鎖配件；狀態跟資料一起同步 |
 | **看板範本** | 新增看板時可選空白、年度專案（每個專案一個清單）或待辦／進行中／完成 |
 
 ## 程式結構
@@ -43,6 +44,7 @@ src/
   dnd.ts                共用的拖放狀態與放置邏輯
   sync.ts               雲端同步（claude.ai artifact db，每個看板／清單一份文件，逐文件合併）
   touch.ts              觸控拖曳（長按拖曳）
+  alien/                Beamup 的外星人系統（aliens 角色圖鑑、mascot 動畫與互動、pet 養成），index.ts 是型別化的入口
   theme.ts              主題預設、背景預設、色彩工具、主題 → CSS 變數
   App.tsx               頂部列、看板首頁、檢視切換、篩選列、看板設定
   components/
@@ -51,6 +53,7 @@ src/
     controls.tsx        Segmented、Slider、ColorPicker、Toggle
     AppearancePanel.tsx 外觀設定側欄
     BackgroundEditor.tsx 看板背景編輯器
+    AlienHero.tsx       首頁的外星人舞台、養成狀態與換角色／配件
     ListColumn.tsx      清單欄、卡片方塊、清單選單（看板與雙層模式共用）
   views/
     BoardView.tsx       看板（原生 HTML5 拖放）

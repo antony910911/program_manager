@@ -108,8 +108,26 @@ export interface Theme {
   rev?: number
 }
 
+/** The home-screen alien (ported from Beamup): care stats, unlocks and the latest thing it was fed for. */
+export interface PetState {
+  alien: string
+  xp: number
+  energy: number
+  energyAt: string | null
+  streak: number
+  best: number
+  lastDay: string | null
+  days: string[]
+  stats: { todosAdded: number; todosDone: number; notes: number; events: number }
+  unlocked: string[]
+  equipped: string | null
+  /** Most recent reward, so the alien can celebrate it when the home screen is shown. */
+  lastEvent: { text: string; at: number } | null
+}
+
 export interface AppState {
   theme: Theme
+  pet: PetState
   /** Hidden board holding split mode's top lists (待辦 / 進行中 / 急件 by default, fully editable). */
   focusBoardId: ID
   boards: Record<ID, Board>
