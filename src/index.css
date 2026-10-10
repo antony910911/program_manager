@@ -847,7 +847,7 @@ input.full {
   font-size: 1.3em;
 }
 .modal-cover {
-  height: 96px;
+  height: 48px;
   margin: -22px -26px 16px;
 }
 .modal-close {
@@ -859,7 +859,6 @@ input.full {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-right: 32px;
 }
 .modal-head input[type='checkbox'] {
   width: 20px;
@@ -2996,4 +2995,117 @@ input.full {
     width: 14px;
     height: 6px;
   }
+}
+
+/* ---------- card window: top bar with round tools ---------- */
+.modal-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin: -6px -8px 8px 0;
+}
+.modal-where {
+  margin: 4px 0 0 30px;
+  font-size: 0.9em;
+}
+.modal-where select {
+  max-width: 100%;
+}
+.modal-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.round-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    padding 0.15s;
+}
+.round-btn:hover,
+.round-btn.on {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.round-btn.danger:hover {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+}
+/* Second tap needed: the circle widens into a labelled pill. */
+.round-btn.armed,
+.round-btn.danger.armed:hover {
+  padding: 0 12px;
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger);
+  font-size: 0.82em;
+  font-weight: 700;
+}
+.color-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(4, 44px);
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  animation: pop 0.14s ease-out;
+}
+.color-pop .swatch {
+  width: 44px;
+  height: 28px;
+}
+.color-pop input[type='color'] {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+}
+.fold-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 0;
+  font-weight: 700;
+  font-size: 0.95em;
+  color: inherit;
+  text-align: left;
+}
+.fold-head .muted {
+  margin-left: 4px;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fold-chevron {
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.fold.open .fold-chevron {
+  transform: rotate(90deg);
+}
+.fold.open .fold-head {
+  margin-bottom: 8px;
 }

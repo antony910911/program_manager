@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { AppState, Board, Card } from '../types'
 import type { Action } from '../store'
 import { doneDate, formatDate, uid } from '../store'
-import { Undo2, Archive, CheckSquare, Image, MessageSquare, Tag, Trash2, Users, X, AlignLeft, CalendarDays, Type } from 'lucide-react'
+import { Undo2, Archive, CheckSquare, MessageSquare, Palette, Tag, Trash2, Users, X, AlignLeft, CalendarDays, ChevronRight, Type } from 'lucide-react'
 import { COVER_COLORS, softPreview } from '../theme'
 import { Avatar, InlineEdit } from './common'
 import { ConfirmButton } from './controls'
@@ -20,6 +20,9 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
   const [desc, setDesc] = useState(card.description)
   const [newItem, setNewItem] = useState('')
   const [comment, setComment] = useState('')
+  const [colorOpen, setColorOpen] = useState(false)
+  // Custom fields stay folded away until needed, or open when one is already filled in.
+  const [fieldsOpen, setFieldsOpen] = useState(() => Object.values(card.customFields).some((v) => v !== ''))
   const done = card.checklist.filter((i) => i.done).length
   // The project list a card was pulled up from, if it still exists in a board.
   const homeList =
@@ -32,21 +35,76 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
         {card.cover && <div className="modal-cover" style={{ background: softPreview(card.cover, 'card', state.theme.colorStrength) }} />}
-        <button className="modal-close icon-btn" onClick={onClose}>
-          <X size={18} />
-        </button>
+        <div className="modal-topbar">
+          <div className="modal-tools">
+            <button
+              className={'round-btn' + (colorOpen ? ' on' : '')}
+              title="卡片顏色"
+              aria-label="卡片顏色"
+              onClick={() => setColorOpen((v) => !v)}
+              style={card.cover ? { color: card.cover } : undefined}
+            >
+              <Palette size={16} />
+            </button>
+            {homeList && card.listId !== homeList.id && (
+              <button
+                className="round-btn"
+                title={`移回「${homeList.title}」`}
+                aria-label="移回原清單"
+                onClick={() => dispatch({ type: 'moveCard', cardId: card.id, toListId: homeList.id, toIndex: Infinity })}
+              >
+                <Undo2 size={16} />
+              </button>
+            )}
+            <button className="round-btn" title="封存" aria-label="封存" onClick={() => update({ archived: true })}>
+              <Archive size={16} />
+            </button>
+            <ConfirmButton
+              className="round-btn danger"
+              confirmText="再按一次刪除"
+              onConfirm={() => {
+                dispatch({ type: 'deleteCard', cardId: card.id })
+                onClose()
+              }}
+            >
+              <Trash2 size={16} />
+            </ConfirmButton>
+            <button className="round-btn" title="關閉" aria-label="關閉" onClick={onClose}>
+              <X size={17} />
+            </button>
+          </div>
+          {colorOpen && (
+            <div className="color-pop">
+              <button
+                className={'swatch none' + (card.cover ? '' : ' on')}
+                title="無顏色"
+                onClick={() => {
+                  update({ cover: null })
+                  setColorOpen(false)
+                }}
+              >
+                <X size={12} />
+              </button>
+              {COVER_COLORS.map((c) => (
+                <button
+                  key={c}
+                  className={'swatch' + (card.cover === c ? ' on' : '')}
+                  style={{ background: softPreview(c, 'card', state.theme.colorStrength) }}
+                  onClick={() => {
+                    update({ cover: c })
+                    setColorOpen(false)
+                  }}
+                />
+              ))}
+              <input type="color" title="自訂顏色" value={card.cover ?? '#579dff'} onChange={(e) => update({ cover: e.target.value })} />
+            </div>
+          )}
+        </div>
         <div className="modal-head">
           <input type="checkbox" checked={card.completed} onChange={(e) => update({ completed: e.target.checked })} title="標記完成" />
           <InlineEdit className="modal-title" value={card.title} onSave={(title) => update({ title })} />
         </div>
-        {card.completed && (
-          <div className="done-note">
-            {doneDate(card).exact
-              ? `✓ ${formatDate(doneDate(card).date)}完成，已移到清單底部的「已完成」`
-              : '✓ 已完成（完成日沒有記錄，年度回顧會用到期日估計），已移到清單底部的「已完成」'}
-          </div>
-        )}
-        <div className="muted">
+        <div className="muted modal-where">
           在清單「
           <select
             value={card.listId}
@@ -64,6 +122,13 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
           </select>
           」中
         </div>
+        {card.completed && (
+          <div className="done-note">
+            {doneDate(card).exact
+              ? `✓ ${formatDate(doneDate(card).date)}完成，已移到清單底部的「已完成」`
+              : '✓ 已完成（完成日沒有記錄，年度回顧會用到期日估計），已移到清單底部的「已完成」'}
+          </div>
+        )}
 
         <div className="modal-body">
           <div className="modal-main">
@@ -126,10 +191,13 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
             </section>
 
             {board.customFields.length > 0 && (
-              <section>
-                <h4>
+              <section className={'fold' + (fieldsOpen ? ' open' : '')}>
+                <button className="fold-head" onClick={() => setFieldsOpen((v) => !v)} aria-expanded={fieldsOpen}>
+                  <ChevronRight size={15} className="fold-chevron" />
                   <Type size={15} /> 自訂欄位
-                </h4>
+                  {!fieldsOpen && <span className="muted small">{board.customFields.map((f) => f.name).join('、')}</span>}
+                </button>
+                {fieldsOpen && (
                 <div className="custom-fields">
                   {board.customFields.map((f) => {
                     const v = card.customFields[f.id] ?? ''
@@ -151,6 +219,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                     )
                   })}
                 </div>
+                )}
               </section>
             )}
 
@@ -228,53 +297,6 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
             </section>
           </div>
 
-          <aside className="modal-side">
-            <div className="side-title">
-              <Image size={14} /> 卡片顏色
-            </div>
-            <div className="cover-swatches">
-              <button className={'swatch none' + (card.cover ? '' : ' on')} title="無顏色" onClick={() => update({ cover: null })}>
-                <X size={12} />
-              </button>
-              {COVER_COLORS.map((c) => (
-                <button
-                  key={c}
-                  className={'swatch' + (card.cover === c ? ' on' : '')}
-                  style={{ background: softPreview(c, 'card', state.theme.colorStrength) }}
-                  onClick={() => update({ cover: c })}
-                />
-              ))}
-              <input
-                type="color"
-                title="自訂封面顏色"
-                value={card.cover ?? '#579dff'}
-                onChange={(e) => update({ cover: e.target.value })}
-              />
-            </div>
-            <div className="side-title">動作</div>
-            {homeList && card.listId !== homeList.id && (
-              <button
-                className="btn primary"
-                title={`移回「${homeList.title}」`}
-                onClick={() => dispatch({ type: 'moveCard', cardId: card.id, toListId: homeList.id, toIndex: Infinity })}
-              >
-                <Undo2 size={14} /> 移回原清單
-              </button>
-            )}
-            <button className="btn" onClick={() => update({ archived: true })}>
-              <Archive size={14} /> 封存
-            </button>
-            <ConfirmButton
-              className="btn danger"
-              confirmText="再按一次刪除（30 天內可從垃圾桶救回）"
-              onConfirm={() => {
-                dispatch({ type: 'deleteCard', cardId: card.id })
-                onClose()
-              }}
-            >
-              <Trash2 size={14} /> 刪除
-            </ConfirmButton>
-          </aside>
         </div>
       </div>
     </div>
