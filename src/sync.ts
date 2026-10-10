@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AppState } from './types'
 import type { Action } from './store'
+import { mergeDoc } from './merge'
 import { supabase, supabaseCollection, usesSupabase } from './supabase'
 
 /**
@@ -12,7 +13,9 @@ import { supabase, supabaseCollection, usesSupabase } from './supabase'
  * account sees the same documents, live.
  *
  * Merging is per document: a remote change is applied unless this device changed the same document
- * since the last sync, in which case the local version is kept and written back (last writer wins).
+ * since the last sync, in which case both edits are merged card by card (merge.ts) and written back.
+ * On Supabase each save only lands if the stored document is still the revision this device last saw;
+ * otherwise the stored one is merged in first, so one device's save never undoes another's.
  *
  * Each stored document carries a revision number `_rev`, one more than the newest revision of it the
  * writer had seen. A snapshot holding an older revision than the one this device last wrote or saw is
@@ -130,6 +133,30 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
     stateRef.current = state
   }, [state])
 
+  /**
+   * Applies another writer's version of a document over this device's edit of it (both changes kept).
+   * `current` is the stored document with its `_rev`, or null when it was deleted.
+   */
+  const takeRemote = (id: string, current: Body | null) => {
+    const local = stringify(toDocs(stateRef.current))
+    if (!current) {
+      delete synced.current[id]
+      delete revs.current[id]
+      return
+    }
+    const { json, rev } = unwrap(current)
+    const docs = { ...local }
+    if (local[id] !== undefined) docs[id] = mergeDoc(id, synced.current[id], local[id], json)
+    synced.current[id] = json
+    revs.current[id] = rev
+    const next = fromDocs(Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, JSON.parse(v)])))
+    if (next) {
+      // Ahead of the re-render, so the next save round starts from the merged state.
+      stateRef.current = next
+      dispatch({ type: 'hydrate', state: next })
+    }
+  }
+
   const flush = async () => {
     if (!col.current || !ready.current) return
     if (flushing.current) {
@@ -137,6 +164,7 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
       return
     }
     flushing.current = true
+    let conflicts = 0
     try {
       do {
         again.current = false
@@ -150,13 +178,26 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
         if (!changed.length && !removed.length) break
         setStatus('saving')
         // One write at a time per document, as the store asks.
+        let conflict = false
         for (const id of changed) {
           const rev = (revs.current[id] ?? 0) + 1
           if (synced.current[id] === undefined) created.current[id] = Date.now()
-          await col.current.doc(id).set({ ...JSON.parse(local[id]), _rev: rev })
+          const doc = col.current.doc(id)
+          const body = { ...JSON.parse(local[id]), _rev: rev }
+          if (doc.setIf) {
+            const res = await doc.setIf(body, revs.current[id])
+            if (!res.ok) {
+              // Saved elsewhere since this device last saw it: merge, then save the merged version.
+              if (++conflicts > 20) throw { code: 'unavailable', message: 'conflicts' } satisfies ClaudeDbError
+              takeRemote(id, res.current)
+              conflict = again.current = true
+              break
+            }
+          } else await doc.set(body)
           synced.current[id] = local[id]
           revs.current[id] = rev
         }
+        if (conflict) continue
         for (const id of removed) {
           await col.current.doc(id).delete()
           delete synced.current[id]
@@ -234,7 +275,9 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
               remote[id] === undefined
                 ? synced.current[id] !== undefined && Date.now() - (created.current[id] ?? 0) < CREATE_GRACE_MS
                 : remote[id] !== synced.current[id] && remoteRev[id] < known
-            const value = localChanged || stale ? local[id] : remote[id]
+            // Changed both here and elsewhere: keep both edits (see merge.ts). Saving then sends the result.
+            const both = localChanged && !stale && remote[id] !== undefined && local[id] !== undefined && remote[id] !== synced.current[id]
+            const value = both ? mergeDoc(id, synced.current[id], local[id], remote[id]) : localChanged || stale ? local[id] : remote[id]
             if (value !== undefined) merged[id] = value
             const base = stale ? synced.current[id] : remote[id]
             if (base !== undefined) confirmed[id] = base

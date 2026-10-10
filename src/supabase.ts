@@ -40,6 +40,36 @@ export function supabaseCollection(userId: string): ClaudeDbCollection {
         const { error } = await sb.from(TABLE).delete().eq('user_id', userId).eq('doc_id', id)
         if (error) throw toDbError(error)
       },
+      async setIf(data, expect) {
+        const updated_at = new Date().toISOString()
+        const current = async () => {
+          const { data: row, error } = await sb.from(TABLE).select('data').eq('user_id', userId).eq('doc_id', id).maybeSingle()
+          if (error) throw toDbError(error)
+          return (row?.data as Record<string, unknown> | undefined) ?? null
+        }
+        if (expect === undefined) {
+          const { error } = await sb.from(TABLE).insert({ user_id: userId, doc_id: id, data, updated_at })
+          if (!error) return { ok: true }
+          if (error.code !== '23505') throw toDbError(error)
+          return { ok: false, current: await current() }
+        }
+        if (expect === 0) {
+          // Documents saved before revisions existed have no _rev at all.
+          const now = await current()
+          if (now && typeof now._rev === 'number' && now._rev !== 0) return { ok: false, current: now }
+          await this.set(data)
+          return { ok: true }
+        }
+        const { data: rows, error } = await sb
+          .from(TABLE)
+          .update({ data, updated_at })
+          .eq('user_id', userId)
+          .eq('doc_id', id)
+          .eq('data->>_rev', String(expect))
+          .select('doc_id')
+        if (error) throw toDbError(error)
+        return rows.length ? { ok: true } : { ok: false, current: await current() }
+      },
     }),
     onSnapshot(next, onError) {
       const docs = new Map<string, Record<string, unknown>>()

@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "build:single": "vite build --base ./ --outDir dist-single --emptyOutDir && python3 scripts/pack-single.py dist-single dist-single/mothership.html",
+    "test": "node --experimental-strip-types --no-warnings --test src/*.test.ts supabase/functions/calendar/test/*.test.ts",
     "test:calendar": "node --experimental-strip-types --no-warnings --test supabase/functions/calendar/test/*.test.ts"
   },
   "dependencies": {
