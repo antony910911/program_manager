@@ -1026,6 +1026,12 @@ input.full {
   padding: 12px 20px;
   border-top: 1px solid var(--border);
 }
+.build-tag {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.72em;
+  color: var(--muted);
+}
 .drawer-body {
   flex: 1;
   overflow-y: auto;

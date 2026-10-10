@@ -71,6 +71,32 @@ export function fromDocs(docs: Record<string, Body>): AppState | null {
 }
 
 /**
+ * A card only leaves every list by going into the trash. If a document from the cloud would make one
+ * vanish anyway (another device saving an outdated copy of a list), it stays where it was; the next save
+ * writes it back.
+ */
+export function keepCards(prev: AppState, next: AppState): AppState {
+  const where = (s: AppState) => {
+    const m = new Map<string, string>()
+    for (const l of Object.values(s.lists)) for (const c of l.cardIds) m.set(c, l.id)
+    return m
+  }
+  const after = where(next)
+  const trashed = new Set(next.trash.map((t) => t.card.id))
+  let out = next
+  for (const [cardId, listId] of where(prev)) {
+    if (after.has(cardId) || trashed.has(cardId) || !prev.cards[cardId]) continue
+    const target = out.lists[listId] ? listId : out.boards[out.focusBoardId]?.listIds[0]
+    if (!target) continue
+    if (out === next) out = { ...next, lists: { ...next.lists }, cards: { ...next.cards } }
+    out.lists[target] = { ...out.lists[target], cardIds: [...out.lists[target].cardIds, cardId] }
+    out.cards[cardId] = { ...prev.cards[cardId], listId: target }
+    console.warn('Mothership: kept a card an outdated save would have dropped', cardId)
+  }
+  return out
+}
+
+/**
  * Saving order: lists that gained a card go before the rest. A move writes two lists; if the page is
  * suspended between them (switching apps right after a drop), the card is briefly in both, never in neither.
  */
@@ -149,8 +175,9 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
     if (local[id] !== undefined) docs[id] = mergeDoc(id, synced.current[id], local[id], json)
     synced.current[id] = json
     revs.current[id] = rev
-    const next = fromDocs(Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, JSON.parse(v)])))
-    if (next) {
+    const merged = fromDocs(Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, JSON.parse(v)])))
+    if (merged) {
+      const next = keepCards(stateRef.current, merged)
       // Ahead of the re-render, so the next save round starts from the merged state.
       stateRef.current = next
       dispatch({ type: 'hydrate', state: next })
@@ -288,7 +315,11 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
             Object.keys(merged).some((id) => merged[id] !== local[id]) || Object.keys(local).some((id) => !(id in merged))
           if (changedFromLocal) {
             const next = fromDocs(Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, JSON.parse(v)])))
-            if (next) dispatch({ type: 'hydrate', state: next })
+            if (next) {
+              const kept = keepCards(stateRef.current, next)
+              stateRef.current = kept
+              dispatch({ type: 'hydrate', state: kept })
+            }
           }
           void flush()
         },

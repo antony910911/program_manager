@@ -26,6 +26,8 @@
 2. 打開這個 repo 的 [`supabase/schema.sql`](supabase/schema.sql)，把內容全部複製貼上。
 3. 按 **Run**，看到 `Success. No rows returned` 就完成了。
 
+> 2026/10/11 之前就設定好的：再跑一次 `schema.sql`（可以重複執行，不會影響資料）。新版會讓資料庫拒絕「舊版 App 用過期的資料蓋掉新資料」，例如另一台裝置上一直開著、還沒重新整理的 Mothership。被拒絕的那台會顯示暫時無法連線，重新整理就好。
+
 ## 第 3 步：設定登入
 
 1. 左側 **Authentication** → **URL Configuration**：

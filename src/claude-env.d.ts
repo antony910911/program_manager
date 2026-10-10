@@ -47,3 +47,6 @@ interface Window {
     use(name: 'user'): Promise<ClaudeUser | null>
   }
 }
+
+/** Build time (vite.config.ts), shown in 設定. */
+declare const __BUILD__: string

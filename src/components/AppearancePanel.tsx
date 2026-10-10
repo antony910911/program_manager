@@ -398,6 +398,7 @@ export function AppearancePanel({ state, dispatch, onClose, userId, calendar }: 
           <button className="btn primary wide" onClick={onClose}>
             完成
           </button>
+          <div className="build-tag">版本 {__BUILD__}</div>
         </footer>
       </aside>
     </div>

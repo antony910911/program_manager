@@ -67,8 +67,9 @@ export function supabaseCollection(userId: string): ClaudeDbCollection {
           .eq('doc_id', id)
           .eq('data->>_rev', String(expect))
           .select('doc_id')
-        if (error) throw toDbError(error)
-        return rows.length ? { ok: true } : { ok: false, current: await current() }
+        // 40001: the database's newer-revision-only rule (schema.sql) refused it; also a conflict.
+        if (error && error.code !== '40001') throw toDbError(error)
+        return !error && rows.length ? { ok: true } : { ok: false, current: await current() }
       },
     }),
     onSnapshot(next, onError) {
