@@ -278,6 +278,7 @@ export function AppearancePanel({ state, dispatch, onClose, userId, calendar }: 
               onChange={(panels) => set({ panels })}
               options={[
                 { value: 'solid', label: '實色' },
+                { value: 'glass', label: '玻璃' },
                 { value: 'clear', label: '透明' },
               ]}
             />
