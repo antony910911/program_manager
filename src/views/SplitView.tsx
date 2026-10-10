@@ -98,15 +98,8 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
         <GripHorizontal size={16} />
       </div>
 
-      <section
-        className="split-bottom"
-        onDragOver={(e) => {
-          // Scroll the project rows while dragging near the top or bottom edge.
-          const rect = e.currentTarget.getBoundingClientRect()
-          if (e.clientY < rect.top + 50) e.currentTarget.scrollBy(0, -14)
-          else if (e.clientY > rect.bottom - 50) e.currentTarget.scrollBy(0, 14)
-        }}
-      >
+      {/* Edge scrolling while dragging is global (installDragAutoScroll in dnd.ts). */}
+      <section className="split-bottom">
         {state.boardOrder.length === 0 && (
           <p className="empty-note">還沒有看板。回到首頁建立一個看板（例如「年度專案」），它就會出現在這裡。</p>
         )}

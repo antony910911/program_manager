@@ -12,10 +12,14 @@ export function enableTouchDrag() {
   // iPadOS reports a desktop Mac user agent, so the polyfill's own check misses it.
   const iPad = /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1
   const applied = polyfill({
-    holdToDrag: 250,
+    holdToDrag: 200,
+    // How often the dragged copy follows the finger and dragover fires (library default 150ms).
+    iterationInterval: 30,
     // The library's default lookup reads event.composedPath(), which is empty by the time the
     // hold timer fires, so long-press drags never started. Walk up from the touched element instead.
     tryFindDraggableTarget: (e: TouchEvent) => {
+      // A long press in a text box selects text; it doesn't pick up the list around it.
+      if ((e.target as HTMLElement).closest?.('input, textarea, select, [contenteditable="true"]')) return undefined
       for (let el = e.target as HTMLElement | null; el && el !== document.body; el = el.parentElement)
         if (el.getAttribute('draggable') === 'true') return el
       return undefined
@@ -46,6 +50,10 @@ export function enableTouchDrag() {
     // components do, so accept every polyfilled dragenter and let dragover decide as before.
     document.addEventListener('dragenter', (e) => {
       if (!e.isTrusted) e.preventDefault()
+    })
+    // A tiny buzz when a long press picks something up (Android; iOS has no vibration API).
+    document.addEventListener('dragstart', (e) => {
+      if (!e.isTrusted) navigator.vibrate?.(8)
     })
   }
   // iOS Safari needs a non-passive touchmove listener for the polyfill to block scrolling mid-drag.

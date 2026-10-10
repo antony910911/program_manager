@@ -27,7 +27,7 @@ interface Props {
 }
 
 export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCard, onDropList, showProject, className }: Props) {
-  const { drag, setDrag, dropTarget, setDropTarget, endDrag } = dnd
+  const { drag, setDrag, dropTarget, setDropTarget, endDrag, landed } = dnd
   const cards = visibleCards(state, list.id, filter)
   const done = doneCards(state, list.id, filter)
   const [showDone, setShowDone] = useState(false)
@@ -40,6 +40,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
     list.color && 'colored',
     drag?.kind === 'list' && drag.id === list.id && 'dragging',
     isTarget && 'drop-active',
+    drag?.kind === 'list' && drag.id !== list.id && dropTarget?.listId === list.id && 'list-drop',
   ]
     .filter(Boolean)
     .join(' ')
@@ -48,12 +49,33 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
     <div
       className={cls}
       style={list.color ? ({ '--list-color': list.color } as React.CSSProperties) : undefined}
+      // The whole list can be dragged by any spot that isn't a card (cards drag themselves) or a text box.
+      draggable
+      onPointerDownCapture={(e) => {
+        if (!(e.target as HTMLElement).closest(TEXT_FIELDS)) return
+        const el = e.currentTarget
+        el.draggable = false
+        const restore = () => {
+          el.draggable = true
+          window.removeEventListener('pointerup', restore, true)
+          window.removeEventListener('pointercancel', restore, true)
+        }
+        window.addEventListener('pointerup', restore, true)
+        window.addEventListener('pointercancel', restore, true)
+      }}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', list.title)
+        // After the browser has taken its picture of the list, so styling it can't cancel the drag.
+        setTimeout(() => setDrag({ kind: 'list', id: list.id }))
+      }}
+      onDragEnd={endDrag}
       onDragOver={(e) => {
         if (!drag) return
         if (drag.kind === 'list' && !onDropList) return
         e.preventDefault()
-        if (drag.kind === 'card' && (cards.length === 0 || dropTarget?.listId !== list.id))
-          setDropTarget({ listId: list.id, index: cards.length })
+        if (drag.kind === 'list') setDropTarget({ listId: list.id, index: -1 })
+        else if (cards.length === 0 || dropTarget?.listId !== list.id) setDropTarget({ listId: list.id, index: cards.length })
       }}
       onDrop={(e) => {
         e.preventDefault()
@@ -62,15 +84,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
         endDrag()
       }}
     >
-      <div
-        className="list-header"
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.effectAllowed = 'move'
-          setDrag({ kind: 'list', id: list.id })
-        }}
-        onDragEnd={endDrag}
-      >
+      <div className="list-header">
         <InlineEdit
           className="list-title"
           value={list.title}
@@ -96,15 +110,20 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
       <div className="list-cards">
         {cards.map((card, i) => (
           <div key={card.id}>
-            {isTarget && dropTarget.index === i && <div className="drop-placeholder" />}
+            {isTarget && dropTarget.index === i && <Placeholder drag={drag} />}
             <CardTile
               state={state}
               card={card}
               showProject={showProject}
               dragging={drag?.kind === 'card' && drag.id === card.id}
+              landed={landed === card.id}
               onClick={() => openCard(card.id)}
               onComplete={() => dispatch({ type: 'updateCard', cardId: card.id, patch: { completed: true } })}
-              onDragStart={() => setDrag({ kind: 'card', id: card.id })}
+              onDragStart={(height) => {
+                setDrag({ kind: 'card', id: card.id, height })
+                // The card folds away and its placeholder takes its place, so nothing jumps.
+                setDropTarget({ listId: list.id, index: i })
+              }}
               onDragEnd={endDrag}
               onDragOver={(e) => {
                 if (drag?.kind !== 'card') return
@@ -117,7 +136,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
             />
           </div>
         ))}
-        {isTarget && cards.length > 0 && dropTarget.index >= cards.length && <div className="drop-placeholder" />}
+        {isTarget && cards.length > 0 && dropTarget.index >= cards.length && <Placeholder drag={drag} />}
         {/* Stays put while a card hovers, so the list doesn't shrink out from under the pointer. */}
         {!cards.length && <div className={'list-empty' + (isTarget ? ' active' : '')}>{isTarget ? '放開即可加入' : '拖曳卡片到這裡'}</div>}
       </div>
@@ -139,7 +158,7 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
                   dragging={drag?.kind === 'card' && drag.id === card.id}
                   onClick={() => openCard(card.id)}
                   onComplete={() => dispatch({ type: 'updateCard', cardId: card.id, patch: { completed: false } })}
-                  onDragStart={() => setDrag({ kind: 'card', id: card.id })}
+                  onDragStart={(height) => setDrag({ kind: 'card', id: card.id, height })}
                   onDragEnd={endDrag}
                   onDragOver={() => {}}
                 />
@@ -150,6 +169,15 @@ export function ListColumn({ state, list, boardId, filter, dnd, dispatch, openCa
       )}
     </div>
   )
+}
+
+/** Pressing in these starts text selection, not a list drag. */
+const TEXT_FIELDS = 'input, textarea, select, [contenteditable="true"]'
+
+/** Where a dragged card will land; as tall as the card itself. */
+function Placeholder({ drag }: { drag: Dnd['drag'] }) {
+  const height = drag?.kind === 'card' && drag.height ? drag.height : 40
+  return <div className="drop-placeholder" style={{ height }} />
 }
 
 const MENU_W = 260
@@ -227,16 +255,19 @@ interface TileProps {
   state: AppState
   card: Card
   dragging: boolean
+  /** Just dropped here: plays a short settle animation. */
+  landed?: boolean
   showProject?: boolean
   onClick: () => void
   /** Round check button: marks an open card done, or a done card open again. */
   onComplete?: () => void
-  onDragStart: () => void
+  /** Receives the card's height, for its placeholder. */
+  onDragStart: (height: number) => void
   onDragEnd: () => void
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void
 }
 
-export function CardTile({ state, card, dragging, showProject, onClick, onComplete, onDragStart, onDragEnd, onDragOver }: TileProps) {
+export function CardTile({ state, card, dragging, landed, showProject, onClick, onComplete, onDragStart, onDragEnd, onDragOver }: TileProps) {
   const board = cardBoard(state, card)
   const labels = board.labels.filter((l) => card.labelIds.includes(l.id))
   const members = state.members.filter((m) => card.memberIds.includes(m.id))
@@ -245,14 +276,19 @@ export function CardTile({ state, card, dragging, showProject, onClick, onComple
   const homeList = project && card.homeListId ? state.lists[card.homeListId] : undefined
   return (
     <div
-      className={'card-tile' + (dragging ? ' dragging' : '') + (card.completed ? ' completed' : '') + (card.cover ? ' has-color' : '')}
+      className={
+        'card-tile' + (dragging ? ' dragging' : '') + (landed ? ' landed' : '') + (card.completed ? ' completed' : '') + (card.cover ? ' has-color' : '')
+      }
       style={card.cover ? coloredCardStyle(card.cover) : undefined}
       draggable
       onClick={onClick}
       onDragStart={(e) => {
         e.stopPropagation()
         e.dataTransfer.effectAllowed = 'move'
-        onDragStart()
+        e.dataTransfer.setData('text/plain', card.title)
+        const height = e.currentTarget.getBoundingClientRect().height
+        // After the browser has taken its picture of the card: hiding it any sooner cancels the drag.
+        setTimeout(() => onDragStart(height))
       }}
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
@@ -333,7 +369,11 @@ export function AddListColumn({
   return (
     <div
       className={['list add-list', className, drag?.kind === 'list' && 'drop-active'].filter(Boolean).join(' ')}
-      onDragOver={(e) => drag?.kind === 'list' && e.preventDefault()}
+      onDragOver={(e) => {
+        if (drag?.kind !== 'list') return
+        e.preventDefault()
+        dnd.setDropTarget(null)
+      }}
       onDrop={(e) => {
         e.preventDefault()
         if (drag?.kind === 'list') onDropList(drag.id)
