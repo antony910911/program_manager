@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { describeDoc, logSync } from './synclog'
 
 /**
  * Supabase backend for the self-hosted site (GitHub Pages / Vercel).
@@ -103,6 +104,7 @@ export function supabaseCollection(userId: string): ClaudeDbCollection {
         }
         docs.clear()
         for (const [k, v] of fresh) docs.set(k, v)
+        logSync(`重新讀取雲端：${fresh.size} 份`)
         loaded = true
         emit()
       }
@@ -117,6 +119,14 @@ export function supabaseCollection(userId: string): ClaudeDbCollection {
             docs.delete(old.doc_id)
           } else {
             const row = payload.new as { doc_id: string; data: Record<string, unknown> }
+            if (!row.data) {
+              // Realtime leaves out rows it finds too large; read them instead.
+              logSync(`即時更新 ${row.doc_id} 沒帶內容，重新讀取`)
+              void reload()
+              return
+            }
+            const { _rev, ...body } = row.data
+            logSync(`即時更新 ${describeDoc(row.doc_id, JSON.stringify(body), typeof _rev === 'number' ? _rev : undefined)}`)
             docs.set(row.doc_id, row.data)
           }
           emit()

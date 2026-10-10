@@ -734,7 +734,7 @@ export function reducer(s: AppState, a: Action): AppState {
   return { ...next, pet: { ...pet, lastEvent: rewardLine(r, reward.text) } }
 }
 
-function migrate(s: AppState): AppState {
+export function migrate(s: AppState): AppState {
   const boards = Object.fromEntries(
     Object.entries(s.boards).map(([id, b]) => [id, { ...b, background: b.background ?? defaultBackground(b.color) }]),
   )

@@ -3282,3 +3282,15 @@ input.full {
       0 18px 40px -18px rgba(0, 0, 0, 0.7);
   }
 }
+
+.sync-log {
+  margin-top: 10px;
+  padding: 10px;
+  max-height: 60vh;
+  overflow: auto;
+  border-radius: 10px;
+  background: var(--surface-2, rgba(127, 127, 127, 0.1));
+  font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

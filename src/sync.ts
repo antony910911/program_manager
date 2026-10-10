@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AppState } from './types'
 import type { Action } from './store'
+import { migrate } from './store'
 import { mergeDoc } from './merge'
+import { describeDoc, logSync } from './synclog'
 import { supabase, supabaseCollection, usesSupabase } from './supabase'
 
 /**
@@ -91,7 +93,7 @@ export function keepCards(prev: AppState, next: AppState): AppState {
     if (out === next) out = { ...next, lists: { ...next.lists }, cards: { ...next.cards } }
     out.lists[target] = { ...out.lists[target], cardIds: [...out.lists[target].cardIds, cardId] }
     out.cards[cardId] = { ...prev.cards[cardId], listId: target }
-    console.warn('Mothership: kept a card an outdated save would have dropped', cardId)
+    logSync(`保留「${prev.cards[cardId].title}」：雲端的資料會讓它不見，留在「${out.lists[target].title}」`)
   }
   return out
 }
@@ -166,11 +168,13 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
   const takeRemote = (id: string, current: Body | null) => {
     const local = stringify(toDocs(stateRef.current))
     if (!current) {
+      logSync(`衝突：${id} 雲端已刪除，重新建立`)
       delete synced.current[id]
       delete revs.current[id]
       return
     }
     const { json, rev } = unwrap(current)
+    logSync(`衝突，合併：雲端 ${describeDoc(id, json, rev)}；本機 ${describeDoc(id, local[id])}`)
     const docs = { ...local }
     if (local[id] !== undefined) docs[id] = mergeDoc(id, synced.current[id], local[id], json)
     synced.current[id] = json
@@ -223,6 +227,7 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
           } else await doc.set(body)
           synced.current[id] = local[id]
           revs.current[id] = rev
+          logSync(`存 ${describeDoc(id, local[id], rev)}`)
         }
         if (conflict) continue
         for (const id of removed) {
@@ -235,6 +240,7 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
       setError('')
     } catch (e) {
       const err = e as ClaudeDbError
+      logSync(`存檔失敗：${err.code ?? ''} ${err.message ?? ''}`)
       setStatus('error')
       setError(
         err.code === 'invalid_argument'
@@ -283,6 +289,7 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
               return
             }
             // The cloud copy wins over whatever this device had stored locally.
+            logSync(`載入雲端資料（${Object.keys(remote).length} 份）`)
             synced.current = remote
             revs.current = { ...remoteRev }
             const next = fromDocs(Object.fromEntries(Object.entries(remote).map(([k, v]) => [k, JSON.parse(v)])))
@@ -305,6 +312,12 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
             // Changed both here and elsewhere: keep both edits (see merge.ts). Saving then sends the result.
             const both = localChanged && !stale && remote[id] !== undefined && local[id] !== undefined && remote[id] !== synced.current[id]
             const value = both ? mergeDoc(id, synced.current[id], local[id], remote[id]) : localChanged || stale ? local[id] : remote[id]
+            if (remote[id] !== undefined && remote[id] !== local[id]) {
+              if (both) logSync(`兩邊都改，合併 ${describeDoc(id, remote[id], remoteRev[id])} + 本機 ${describeDoc(id, local[id])}`)
+              else if (stale) logSync(`忽略較舊的 ${describeDoc(id, remote[id], remoteRev[id])}（已知 r${known}）`)
+              else if (localChanged) logSync(`保留本機未存的 ${describeDoc(id, local[id])}`)
+              else logSync(`收到 ${describeDoc(id, remote[id], remoteRev[id])}，取代本機 ${describeDoc(id, local[id])}`)
+            }
             if (value !== undefined) merged[id] = value
             const base = stale ? synced.current[id] : remote[id]
             if (base !== undefined) confirmed[id] = base
@@ -314,8 +327,16 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
           const changedFromLocal =
             Object.keys(merged).some((id) => merged[id] !== local[id]) || Object.keys(local).some((id) => !(id in merged))
           if (changedFromLocal) {
-            const next = fromDocs(Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, JSON.parse(v)])))
-            if (next) {
+            const parsed = fromDocs(Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, JSON.parse(v)])))
+            if (parsed) {
+              // What loading tidies up in documents taken as they are from the cloud (a card briefly in two
+              // lists while another device's move is half saved, fields filled in by migrate) isn't an edit
+              // made here: count the tidied version as already saved, so an idle device doesn't write it
+              // back over the other device's next save.
+              const next = migrate(parsed)
+              const tidied = stringify(toDocs(next))
+              for (const id of Object.keys(merged))
+                if (merged[id] === remote[id] && confirmed[id] === remote[id] && tidied[id] !== undefined) synced.current[id] = tidied[id]
               const kept = keepCards(stateRef.current, next)
               stateRef.current = kept
               dispatch({ type: 'hydrate', state: kept })

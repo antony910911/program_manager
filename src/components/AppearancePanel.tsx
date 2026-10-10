@@ -11,6 +11,7 @@ import {
   Moon,
   Palette,
   Plus,
+  ScrollText,
   RotateCcw,
   Sparkles,
   SquareStack,
@@ -27,6 +28,7 @@ import { ColorPicker, Segmented, Slider, Toggle } from './controls'
 import { DataTransfer } from './DataTransfer'
 import { BeamupConnect } from './BeamupConnect'
 import { CalendarConnect } from './CalendarConnect'
+import { SyncLogPanel } from './SyncLogPanel'
 import type { CalendarAccount } from '../calendar'
 
 interface Props {
@@ -38,7 +40,7 @@ interface Props {
   calendar?: { accounts: CalendarAccount[] | null; error: string; syncNow: () => void }
 }
 
-type Page = 'theme' | 'text' | 'layout' | 'card' | 'calendar' | 'beamup' | 'members' | 'backup' | 'json'
+type Page = 'theme' | 'text' | 'layout' | 'card' | 'calendar' | 'beamup' | 'members' | 'backup' | 'json' | 'synclog'
 
 const PAGE_TITLES: Record<Page, string> = {
   theme: '主題與顏色',
@@ -50,6 +52,7 @@ const PAGE_TITLES: Record<Page, string> = {
   members: '成員',
   backup: '備份與搬家',
   json: '主題檔案',
+  synclog: '同步紀錄',
 }
 const MODE_NAMES: Record<Theme['mode'], string> = { light: '淺色', dark: '深色', system: '跟隨系統' }
 const CARD_STYLE_NAMES: Record<Theme['cardStyle'], string> = { shadow: '陰影', flat: '平面', outline: '線框', glass: '玻璃' }
@@ -141,6 +144,7 @@ export function AppearancePanel({ state, dispatch, onClose, userId, calendar }: 
                 <Row icon={<Users size={16} />} color="#007aff" label="成員" value={`${state.members.length} 人`} onClick={() => setPage('members')} />
                 <Row icon={<HardDriveDownload size={16} />} color="#8e8e93" label="備份與搬家" onClick={() => setPage('backup')} />
                 <Row icon={<Braces size={16} />} color="#636366" label="主題檔案" value="匯出／匯入" onClick={() => setPage('json')} />
+                <Row icon={<ScrollText size={16} />} color="#48484a" label="同步紀錄" onClick={() => setPage('synclog')} />
               </SettingsGroup>
             </div>
           )}
@@ -359,6 +363,7 @@ export function AppearancePanel({ state, dispatch, onClose, userId, calendar }: 
             </>
           )}
           {page === 'backup' && <DataTransfer state={state} dispatch={dispatch} />}
+          {page === 'synclog' && <SyncLogPanel />}
           {page === 'json' && (
             <>
             <section>

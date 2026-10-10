@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { Action, InboxTodo } from './store'
 import { supabase, usesSupabase } from './supabase'
+import { logSync } from './synclog'
 import type { SyncStatus } from './sync'
 
 /**
@@ -30,6 +31,7 @@ export function useInbox(userId: string | undefined, status: SyncStatus, dispatc
         const items = data
           .sort((a, b) => Number(a.id) - Number(b.id))
           .map((r) => r.payload as InboxTodo)
+        logSync(`收到 Beamup：${items.map((t) => `${t.type} ${t.title ?? ''}`).join('、')}`)
         dispatchRef.current({ type: 'ingestInbox', items })
       } while (again)
       busy = false
