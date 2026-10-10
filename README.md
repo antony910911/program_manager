@@ -13,7 +13,7 @@ npm run lint
 
 ## 部署到自己的網站
 
-照 **[DEPLOY.md](DEPLOY.md)** 的步驟：Supabase（資料庫＋登入）＋ GitHub Pages（網站），全部免費，大約 20 分鐘。完成後用 Email／密碼登入，所有裝置同步；舊資料可用「外觀 → 備份與搬家」搬過去。
+照 **[DEPLOY.md](DEPLOY.md)** 的步驟：Supabase（資料庫＋登入）＋ GitHub Pages（網站），全部免費，大約 20 分鐘。完成後用 Email／密碼登入，所有裝置同步；舊資料可用「設定 → 備份與搬家」搬過去。
 
 ## 線上試用（claude.ai 版）
 

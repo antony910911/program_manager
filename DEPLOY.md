@@ -80,7 +80,7 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 只要做一次：
 
 1. Supabase → **SQL Editor** → **New query**，把 [`supabase/inbox.sql`](supabase/inbox.sql) 全部貼上 → **Run**。
-2. 打開 Mothership 並登入 → 右上角「外觀」→ 最上面的 **連接 Beamup** → **產生連接碼** → **複製連接碼**。
+2. 打開 Mothership 並登入 → 右上角「設定」→ **Beamup** → **產生連接碼** → **複製連接碼**。
 3. 打開 Beamup → 右上角齒輪 **設定** → 「待辦事項 → 專案管理工具」，把連接碼貼進第一格 → 按 **測試連線**，看到「連線成功」就好了。
 
 之後在 Beamup 新增待辦，幾秒內就會出現在 Mothership 雙層模式上方的「待辦」清單，卡片上有綠色的 Beamup 標記：
@@ -161,7 +161,7 @@ Supabase → **SQL Editor** → **New query**，貼上 [`supabase/calendar.sql`]
 
 ### 第 6 步：在 Mothership 連接
 
-打開 Mothership → 右上角 **外觀** → 最上面的 **行事曆同步**：
+打開 Mothership → 右上角 **設定** → **行事曆同步**：
 
 - **Google／Outlook**：按「連接 Google 日曆」或「連接 Outlook」→ 登入並允許 → 自動回到 Mothership，下方會顯示「已連接」。
 - **iCloud**：先到 <https://account.apple.com/account/manage> → **登入與安全性** → **App 專用密碼** → 產生一組（名稱填 Mothership）。回到 Mothership 按「連接 iCloud 行事曆」，輸入 Apple ID 和這組密碼。不要輸入你的 Apple ID 密碼。
@@ -197,8 +197,8 @@ Mothership 不用開著：行程會先放在雲端，下次打開 Mothership 時
 
 ## 把 claude.ai 版的資料搬過來
 
-1. 打開舊的 claude.ai 版 → 右上角「外觀」→ 往下到 **備份與搬家** → 按 **複製全部資料**。
-2. 打開新網站並登入 → 「外觀」→ **備份與搬家** → 把剛剛複製的內容貼進文字框 → 按 **匯入**，再按一次確認。
+1. 打開舊的 claude.ai 版 → 右上角「設定」→ **備份與搬家** → 按 **複製全部資料**。
+2. 打開新網站並登入 → 「設定」→ **備份與搬家** → 把剛剛複製的內容貼進文字框 → 按 **匯入**，再按一次確認。
 3. 幾秒後右上角顯示「已同步」，其他裝置也會看到。
 
 ---

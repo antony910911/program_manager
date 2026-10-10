@@ -12,7 +12,7 @@ interface Props {
 
 const changed = () => window.dispatchEvent(new Event(CALENDAR_EVENT))
 
-/** 外觀 → 行事曆同步: connect Google / Outlook / iCloud and pick the calendars. */
+/** 設定 → 行事曆同步: connect Google / Outlook / iCloud and pick the calendars. */
 export function CalendarConnect({ accounts, error, syncNow }: Props) {
   const [config, setConfig] = useState<{ google: boolean; microsoft: boolean } | 'missing' | null>(null)
   const [note, setNote] = useState('')

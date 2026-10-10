@@ -1825,7 +1825,7 @@ input.full {
   gap: calc(var(--gap) + 4px);
   align-items: stretch;
 }
-/* Same width as the project lists below (外觀 → 清單寬度), so the top row doesn't stretch across the screen. */
+/* Same width as the project lists below (設定 → 版面 → 清單寬度), so the top row doesn't stretch across the screen. */
 .list.focus-list {
   flex: 0 0 var(--list-w);
   width: var(--list-w);
@@ -3108,4 +3108,123 @@ input.full {
 }
 .fold.open .fold-head {
   margin-bottom: 8px;
+}
+
+/* ---------- settings drawer: grouped menu + pages ---------- */
+.drawer-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+.drawer-head h3 {
+  text-align: center;
+  margin: 0;
+}
+.drawer-head .close-btn {
+  justify-self: end;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 999px;
+}
+.settings-back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: -6px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-weight: 600;
+}
+.drawer-body {
+  animation: settings-in 0.18s ease-out;
+}
+@keyframes settings-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+/* Embedded sections bring their own heading; the page title already says it. */
+.drawer-body > section > h4:first-child {
+  display: none;
+}
+.settings-home {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.settings-group-title {
+  margin: 0 0 6px 14px;
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.settings-rows {
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 50px;
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text);
+  position: relative;
+}
+.settings-row + .settings-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 54px;
+  right: 0;
+  border-top: 1px solid var(--border);
+}
+.settings-row:hover,
+.settings-row:active {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.settings-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: #fff;
+}
+.settings-label {
+  flex: 1;
+  font-weight: 500;
+}
+.settings-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88em;
+  color: var(--muted);
+}
+.settings-value .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.settings-chevron {
+  flex-shrink: 0;
+  color: var(--muted);
+  opacity: 0.6;
 }

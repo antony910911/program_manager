@@ -15,7 +15,6 @@ import {
   LogOut,
   RefreshCw,
   Image,
-  Palette,
   Plus,
   Rows2,
   Search,
@@ -157,7 +156,7 @@ export default function App({ account }: { account: Account | null }) {
           </button>
         )}
         <button className="top-btn" onClick={() => setAppearanceOpen(true)}>
-          <Palette size={16} /> <span className="btn-label">外觀</span>
+          <Settings size={16} /> <span className="btn-label">設定</span>
         </button>
         <SyncBadge status={sync.status} error={sync.error} />
         {account && (
@@ -232,7 +231,7 @@ export default function App({ account }: { account: Account | null }) {
               )}
             </div>
             <button className="glass-btn" onClick={() => setSettingsOpen(true)}>
-              <Settings size={15} /> 設定
+              <Settings size={15} /> 看板設定
             </button>
           </div>
           <FilterBar board={isSplit ? undefined : board} members={state.members} filter={filter} setFilter={setFilter} />
