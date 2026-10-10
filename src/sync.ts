@@ -58,7 +58,31 @@ export function fromDocs(docs: Record<string, Body>): AppState | null {
       for (const c of body.cards as AppState['cards'][string][]) state.cards[c.id] = c
     }
   }
+  // A card saved in two lists (a move whose second write hadn't landed, see cardsFirst) stays in its own list.
+  const seen = new Map<string, number>()
+  for (const l of Object.values(state.lists)) for (const c of l.cardIds) seen.set(c, (seen.get(c) ?? 0) + 1)
+  for (const l of Object.values(state.lists))
+    if (l.cardIds.some((c) => seen.get(c)! > 1 && state.cards[c]?.listId !== l.id))
+      state.lists[l.id] = { ...l, cardIds: l.cardIds.filter((c) => seen.get(c)! < 2 || state.cards[c]?.listId === l.id) }
   return state.boards[state.focusBoardId] ? state : null
+}
+
+/**
+ * Saving order: lists that gained a card go before the rest. A move writes two lists; if the page is
+ * suspended between them (switching apps right after a drop), the card is briefly in both, never in neither.
+ */
+function cardsFirst(ids: string[], local: Record<string, string>, synced: Record<string, string>): string[] {
+  const cardsOf = (json: string | undefined) => {
+    if (!json) return new Set<string>()
+    const body = JSON.parse(json) as { cards?: { id: string }[] }
+    return new Set((body.cards ?? []).map((c) => c.id))
+  }
+  const gains = (id: string) => {
+    if (!id.startsWith('list-')) return false
+    const before = cardsOf(synced[id])
+    return [...cardsOf(local[id])].some((c) => !before.has(c))
+  }
+  return [...ids.filter(gains), ...ids.filter((id) => !gains(id))]
 }
 
 const stringify = (docs: Record<string, Body>) => Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, JSON.stringify(v)]))
@@ -117,7 +141,11 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
       do {
         again.current = false
         const local = stringify(toDocs(stateRef.current))
-        const changed = Object.keys(local).filter((id) => local[id] !== synced.current[id])
+        const changed = cardsFirst(
+          Object.keys(local).filter((id) => local[id] !== synced.current[id]),
+          local,
+          synced.current,
+        )
         const removed = Object.keys(synced.current).filter((id) => !(id in local))
         if (!changed.length && !removed.length) break
         setStatus('saving')
@@ -230,6 +258,23 @@ export function useCloudSync(state: AppState, dispatch: (a: Action) => void) {
     return () => {
       cancelled = true
       unsub?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Leaving the app (switching to Beamup, locking the phone) saves right away: the page may be suspended
+  // before the usual short delay is up.
+  useEffect(() => {
+    const now = () => {
+      clearTimeout(timer.current)
+      void flush()
+    }
+    const onHide = () => document.visibilityState === 'hidden' && now()
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', now)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('pagehide', now)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

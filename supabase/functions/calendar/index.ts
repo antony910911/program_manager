@@ -11,7 +11,8 @@ import { pullAccount, push } from './sync.ts'
 import { googleAuthUrl, googleExchange, googleProvider } from './google.ts'
 import { microsoftAuthUrl, microsoftExchange, microsoftProvider } from './microsoft.ts'
 import { icloudProvider } from './icloud.ts'
-import { applyChanges, cardIds, dirtyDocs, ingestInbox, loadModel, markSynced, pendingWork, trashedIds } from './docs.ts'
+import type { Model } from './docs.ts'
+import { applyChanges, carryCreated, dirtyDocs, ingestInbox, loadModel, markSynced, pendingWork } from './docs.ts'
 
 const env = (k: string) => Deno.env.get(k) ?? ''
 const google = env('GOOGLE_CLIENT_ID') && env('GOOGLE_CLIENT_SECRET') ? { clientId: env('GOOGLE_CLIENT_ID'), clientSecret: env('GOOGLE_CLIENT_SECRET') } : null
@@ -201,33 +202,62 @@ async function backgroundSync(userId: string, tz: string) {
 
   // Beamup items waiting for the app. Deleting and reading back claims them, so an app opening now won't repeat them.
   const { data: claimed } = await admin.from('inbox').delete().eq('user_id', userId).select('id, payload')
-  if (claimed?.length) ingestInbox(model, [...claimed].sort((a, b) => Number(a.id) - Number(b.id)).map((r) => r.payload), tz)
+  const items = [...(claimed ?? [])].sort((a, b) => Number(a.id) - Number(b.id)).map((row) => row.payload)
+  if (items.length) ingestInbox(model, items, tz)
 
-  // A linked card that's gone from the data (lost to a concurrent edit) is brought back from its event.
-  const present = cardIds(model)
-  const trashed = trashedIds(model)
-  const { data: links } = await admin.from('calendar_links').select('account_id, event_id, card_id').eq('user_id', userId)
-  for (const l of links ?? [])
-    if (!present.has(l.card_id) && !trashed.has(l.card_id)) await admin.from('calendar_links').delete().eq('account_id', l.account_id).eq('event_id', l.event_id)
-
-  // A failing calendar mustn't lose the Beamup items claimed above: they're saved below either way.
+  // (A linked card missing from the data may be mid-move in the app; it's left alone. If it's really gone, its
+  // event's next change brings it back into 行事曆.)
   const work = pendingWork(model)
   let r: Awaited<ReturnType<typeof sync>> = { done: [], changes: [], errors: [], accounts: [] }
   try {
     r = await sync(userId, tz, work.upserts, work.deletes)
   } catch (e) {
+    // A failing calendar mustn't lose the Beamup items claimed above: they're still saved below.
     r.errors.push({ message: (e as Error).message })
   }
-  markSynced(model, Object.fromEntries(r.done.map((id) => [id, work.hashes[id]])))
-  applyChanges(model, r.changes, tz)
-
-  const rows = dirtyDocs(model)
-  if (rows.length) {
-    const now = new Date().toISOString()
-    const { error } = await admin.from('user_docs').upsert(rows.map((row) => ({ user_id: userId, ...row, updated_at: now })))
-    if (error) throw error
+  const synced = Object.fromEntries(r.done.map((id) => [id, work.hashes[id]]))
+  const finish = (m: Model) => {
+    markSynced(m, synced)
+    applyChanges(m, r.changes, tz)
   }
-  return { wrote: rows.length, pushed: r.done.length, pulled: r.changes.length, errors: r.errors.length }
+  finish(model)
+
+  // The app may have saved in the meantime. Then read again and redo these (id-based) changes on top.
+  let m = model
+  let wrote = 0
+  for (let attempt = 0; ; attempt++) {
+    const saved = await saveDocs(userId, m)
+    wrote += saved.wrote
+    if (saved.ok) break
+    if (attempt === 4) throw new Error('documents kept changing; will retry next run')
+    const created = m.created
+    m = loadModel(await loadDocs(userId))
+    carryCreated(m, created)
+    if (items.length) ingestInbox(m, items, tz)
+    finish(m)
+  }
+  return { wrote, pushed: r.done.length, pulled: r.changes.length, errors: r.errors.length }
+}
+
+/** Writes the changed documents, each only if it's unchanged since read. False when any had changed. */
+async function saveDocs(userId: string, m: Model): Promise<{ ok: boolean; wrote: number }> {
+  let ok = true
+  let wrote = 0
+  const now = new Date().toISOString()
+  for (const row of dirtyDocs(m)) {
+    const res =
+      row.expect === undefined
+        ? await admin.from('user_docs').insert({ user_id: userId, doc_id: row.doc_id, data: row.data, updated_at: now }).select('doc_id')
+        : await (row.expect === null
+            ? admin.from('user_docs').update({ data: row.data, updated_at: now }).eq('user_id', userId).eq('doc_id', row.doc_id).is('data->>_rev', null)
+            : admin.from('user_docs').update({ data: row.data, updated_at: now }).eq('user_id', userId).eq('doc_id', row.doc_id).eq('data->>_rev', String(row.expect))
+          ).select('doc_id')
+    // A duplicate key on insert means the document appeared meanwhile: also a conflict.
+    if (res.error && res.error.code !== '23505') throw res.error
+    if (res.error || !res.data?.length) ok = false
+    else wrote++
+  }
+  return { ok, wrote }
 }
 
 async function cron() {

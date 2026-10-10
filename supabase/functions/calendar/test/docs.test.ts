@@ -2,7 +2,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { calendarHash } from '../cardhash.ts'
-import { applyChanges, dirtyDocs, ingestInbox, loadModel, markSynced, pendingWork } from '../docs.ts'
+import { applyChanges, carryCreated, dirtyDocs, ingestInbox, loadModel, markSynced, pendingWork } from '../docs.ts'
 
 const TZ = 'Asia/Taipei'
 
@@ -111,4 +111,41 @@ test('ingestInbox brings in Beamup todos and events', () => {
   assert.equal(listDoc(m, 'list-l1').cards[0].completed, true)
   assert.ok(listDoc(m, 'list-l1').cards[0].completedAt)
   assert.equal(listDoc(m, 'trash').items[0].card.title, '開會')
+})
+
+test('writes carry the revision they were read at, trash and new lists first', () => {
+  const m = model([card('a', { dueDate: '2026-10-12' })], [{ doc_id: 'trash', data: { items: [] } }])
+  const base = { accountId: 'acc', description: '', startDate: null, completed: false, time: null }
+  applyChanges(m, [{ type: 'delete', cardId: 'a' }, { type: 'upsert', cardId: 'ev', isNew: true, ...base, title: '新', dueDate: '2026-10-20' }], TZ)
+  const rows = dirtyDocs(m)
+  const ids = rows.map((r) => r.doc_id)
+  assert.equal(ids[0], 'trash')
+  assert.ok(ids[1].startsWith('list-') && ids[1] !== 'list-l1') // the new 行事曆 list
+  assert.equal(ids.at(-1), 'board-f')
+  const by = Object.fromEntries(rows.map((r) => [r.doc_id, r.expect]))
+  assert.equal(by.trash, null) // stored without a revision
+  assert.equal(by['list-l1'], 5)
+  assert.equal(by[ids[1]], undefined) // new
+  assert.equal(by['board-f'], 2)
+})
+
+test('redoing changes after a partial write neither duplicates the trash nor the 行事曆 list', () => {
+  const base = { accountId: 'acc', description: '', startDate: null, completed: false, time: null }
+  const changes = [
+    { type: 'delete' as const, cardId: 'a' },
+    { type: 'upsert' as const, cardId: 'ev', isNew: true, ...base, title: '新', dueDate: '2026-10-20' },
+  ]
+  const first = model([card('a', { dueDate: '2026-10-12' })])
+  applyChanges(first, changes, TZ)
+  // Only the trash and the new list landed; the list and board writes met an app edit.
+  const landed = dirtyDocs(first).filter((r) => r.expect === undefined)
+  const again = model([card('a', { dueDate: '2026-10-12' })], landed)
+  carryCreated(again, first.created)
+  applyChanges(again, changes, TZ)
+  assert.equal(listDoc(again, 'trash').items.length, 1)
+  const board = listDoc(again, 'board-f').board
+  assert.equal(board.listIds.length, 2)
+  assert.ok(landed.some((r) => r.doc_id === 'list-' + board.listIds[1]))
+  assert.equal(listDoc(again, 'list-' + board.listIds[1]).cards.length, 1)
+  assert.deepEqual(listDoc(again, 'list-l1').list.cardIds, [])
 })

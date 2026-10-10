@@ -16,6 +16,13 @@ type Json = any
 export interface Model {
   docs: Map<string, { data: Json; rev: number }>
   dirty: Set<string>
+  /** Each stored document's `_rev` as read (null when it had none); documents created here are absent. */
+  stored: Map<string, number | null>
+  /**
+   * Lists this run created, by title. Redoing the changes after a conflict passes it on, so a list whose
+   * document landed while its board's write didn't is reused instead of created twice.
+   */
+  created: Map<string, string>
 }
 
 const CALENDAR_LIST = '行事曆'
@@ -23,18 +30,40 @@ const uid = () => Math.random().toString(36).slice(2, 10)
 
 export function loadModel(rows: { doc_id: string; data: Json }[]): Model {
   const docs = new Map<string, { data: Json; rev: number }>()
+  const stored = new Map<string, number | null>()
   for (const r of rows) {
     const { _rev, ...data } = r.data ?? {}
     docs.set(r.doc_id, { data, rev: typeof _rev === 'number' ? _rev : 0 })
+    stored.set(r.doc_id, typeof _rev === 'number' ? _rev : null)
   }
-  return { docs, dirty: new Set() }
+  return { docs, dirty: new Set(), stored, created: new Map() }
 }
 
-/** Changed documents, ready to store (revision bumped). */
-export function dirtyDocs(m: Model): { doc_id: string; data: Json }[] {
-  return [...m.dirty].map((id) => {
+/** Carries the lists an earlier attempt created into a fresh read, putting any its board lost back on top. */
+export function carryCreated(m: Model, created: Map<string, string>) {
+  m.created = created
+  const fb = focusBoardId(m)
+  const board = fb && get(m, 'board-' + fb)?.board
+  if (!board) return
+  for (const id of created.values())
+    if (m.docs.has('list-' + id) && !(board.listIds as string[]).includes(id)) {
+      board.listIds = [...board.listIds, id]
+      touch(m, 'board-' + fb)
+    }
+}
+
+/**
+ * Changed documents, ready to store (revision bumped). `expect` is the revision the document must still
+ * have when written (null: stored without one; undefined: new), so a write never lands on an edit made in
+ * the app meanwhile, such as a card moved to another list while the calendars were being synced.
+ */
+export function dirtyDocs(m: Model): { doc_id: string; data: Json; expect: number | null | undefined }[] {
+  // If a later write meets a conflict, what's written stays consistent: a trashed card is in the trash
+  // before it leaves its list, and a new list exists before its board points to it.
+  const rank = (id: string) => (id === 'trash' ? 0 : !m.stored.has(id) ? 1 : id.startsWith('board-') ? 3 : 2)
+  return [...m.dirty].sort((a, b) => rank(a) - rank(b)).map((id) => {
     const d = m.docs.get(id)!
-    return { doc_id: id, data: { ...d.data, _rev: d.rev + 1 } }
+    return { doc_id: id, data: { ...d.data, _rev: d.rev + 1 }, expect: m.stored.has(id) ? m.stored.get(id) : undefined }
   })
 }
 
@@ -57,8 +86,7 @@ function trashItems(m: Model): Json[] {
   return (get(m, 'trash')?.items as Json[]) ?? []
 }
 
-export const cardIds = (m: Model) => new Set(lists(m).flatMap((l) => (l.data.cards as Json[]).map((c) => c.id as string)))
-export const trashedIds = (m: Model) => new Set(trashItems(m).map((t) => t.card.id as string))
+const trashedIds = (m: Model) => new Set(trashItems(m).map((t) => t.card.id as string))
 
 /** Cards to write to (or remove from) the calendar, as the app computes them. */
 export function pendingWork(m: Model) {
@@ -116,8 +144,9 @@ function focusList(m: Model, title: string, color: string | null, create: boolea
   if (!board) return null
   const existing = (board.listIds as string[]).find((id) => get(m, 'list-' + id)?.list.title === title)
   if (existing || !create) return existing ?? null
-  const id = uid()
-  m.docs.set('list-' + id, { data: { list: { id, title, cardIds: [], color }, cards: [] }, rev: 0 })
+  const id = m.created.get(title) ?? uid()
+  m.created.set(title, id)
+  if (!m.docs.has('list-' + id)) m.docs.set('list-' + id, { data: { list: { id, title, cardIds: [], color }, cards: [] }, rev: 0 })
   board.listIds = [...board.listIds, id]
   touch(m, 'list-' + id)
   touch(m, 'board-' + fb)
@@ -175,6 +204,8 @@ function trashCard(m: Model, cardId: string, keepCalendar: boolean) {
   found.data.list = { ...found.data.list, cardIds: found.data.list.cardIds.filter((id: string) => id !== cardId) }
   touch(m, found.docId)
   const trash = get(m, 'trash') ?? (m.docs.set('trash', { data: { items: [] }, rev: 0 }), get(m, 'trash'))
+  // Already there when an earlier attempt's trash write landed but its list write didn't.
+  if ((trash.items as Json[]).some((t) => t.card.id === cardId)) return
   trash.items = [
     { card: keepCalendar ? card : { ...card, calHash: null }, listTitle: found.data.list.title, boardTitle: boardTitleOf(m, found.data.list.id), deletedAt: new Date().toISOString() },
     ...trash.items,
