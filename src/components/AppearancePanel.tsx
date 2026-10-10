@@ -272,6 +272,15 @@ export function AppearancePanel({ state, dispatch, onClose, userId, calendar }: 
                 ]}
               />
               <Toggle label="毛玻璃效果" checked={t.blur} onChange={(blur) => set({ blur })} />
+            <div className="field-label">首頁面板</div>
+            <Segmented
+              value={t.panels ?? 'solid'}
+              onChange={(panels) => set({ panels })}
+              options={[
+                { value: 'solid', label: '實色' },
+                { value: 'clear', label: '透明' },
+              ]}
+            />
             </section>
             </>
           )}

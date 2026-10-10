@@ -2156,9 +2156,7 @@ input.full {
   padding: 22px 24px;
   margin-bottom: 24px;
   border-radius: calc(var(--radius) + 6px);
-  background:
-    radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 55%),
-    linear-gradient(135deg, var(--accent-soft), transparent);
+  background: var(--surface);
   border: 1px solid var(--border);
 }
 .alien-hero-text {
@@ -2239,7 +2237,7 @@ input.full {
 .alien-stage {
   position: relative;
   height: 170px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, var(--surface)), color-mix(in srgb, var(--accent) 5%, var(--surface)));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -2855,9 +2853,7 @@ input.full {
   padding: 14px 16px;
   text-align: left;
   border-radius: var(--radius);
-  background:
-    radial-gradient(140% 120% at 100% 0%, color-mix(in srgb, var(--sc) 16%, transparent), transparent 60%),
-    var(--surface);
+  background: var(--surface);
   border: 1px solid color-mix(in srgb, var(--sc) 22%, var(--border));
   box-shadow: var(--shadow-sm);
   overflow: hidden;
@@ -3227,4 +3223,19 @@ input.full {
   flex-shrink: 0;
   color: var(--muted);
   opacity: 0.6;
+}
+
+/* 設定 › 版面 › 首頁面板「透明」: home panels drop their fill and keep only an outline. */
+[data-panels='clear'] .alien-hero,
+[data-panels='clear'] .alien-stage-card,
+[data-panels='clear'] .alien-stage,
+[data-panels='clear'] .shortcut,
+[data-panels='clear'] .board-tile.add {
+  background: transparent;
+  box-shadow: none;
+}
+[data-panels='clear'] .alien-hero,
+[data-panels='clear'] .alien-stage-card,
+[data-panels='clear'] .shortcut {
+  border: 1px solid var(--border);
 }

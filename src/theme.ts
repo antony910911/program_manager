@@ -13,6 +13,7 @@ export const defaultTheme: Theme = {
   labelStyle: 'pill',
   blur: true,
   colorStrength: 80,
+  panels: 'solid',
   rev: 4,
 }
 

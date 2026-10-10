@@ -112,6 +112,8 @@ export interface Theme {
   blur: boolean
   /** How saturated list and card colors look, percent 20–100. */
   colorStrength: number
+  /** Home page panels (greeting, alien stage, shortcuts): solid, or see-through with just an outline. */
+  panels?: 'solid' | 'clear'
   /** Appearance defaults revision, used to upgrade saved themes once. */
   rev?: number
 }

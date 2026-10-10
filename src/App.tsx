@@ -115,6 +115,7 @@ export default function App({ account }: { account: Account | null }) {
     for (const [k, v] of Object.entries(themeVars(state.theme))) root.style.setProperty(k, v)
     root.dataset.cardStyle = state.theme.cardStyle
     root.dataset.labelStyle = state.theme.labelStyle
+    root.dataset.panels = state.theme.panels ?? 'solid'
   }, [state.theme])
 
   const board = boardId ? state.boards[boardId] : undefined
