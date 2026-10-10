@@ -534,15 +534,9 @@ export type CalendarChange =
     }
   | { type: 'delete'; cardId: ID }
 
-/** What a card puts on the calendar; when this changes the card is written again. */
-export function calendarHash(c: Card): string | null {
-  if (c.archived || !(c.startDate || c.dueDate)) return null
-  // The time joins in only when set, so cards without one keep the fingerprint they already have.
-  const s = JSON.stringify([c.title, c.description, c.startDate, c.dueDate, c.completed, ...(c.time ? [c.time] : [])])
-  let h = 0x811c9dc5
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193)
-  return (h >>> 0).toString(36) + s.length.toString(36)
-}
+/** What a card puts on the calendar (shared with the calendar function, which syncs while the app is closed). */
+import { calendarHash } from '../supabase/functions/calendar/cardhash.ts'
+export { calendarHash }
 
 const CALENDAR_LIST = '行事曆'
 

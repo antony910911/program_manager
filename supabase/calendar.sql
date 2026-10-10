@@ -20,6 +20,8 @@ create table if not exists public.calendar_accounts (
   created_at timestamptz not null default now()
 );
 create index if not exists calendar_accounts_user_idx on public.calendar_accounts (user_id);
+-- Added later: the user's time zone, for syncs that run while the app is closed.
+alter table public.calendar_accounts add column if not exists tz text;
 
 -- One row per card ↔ event pair.
 create table if not exists public.calendar_links (

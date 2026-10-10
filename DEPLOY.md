@@ -181,19 +181,32 @@ Supabase → **SQL Editor** → **New query**，貼上 [`supabase/calendar.sql`]
 2. Mothership 再把它寫進你勾選「新增的卡片寫到這個行事曆」的那一本，例如 iCloud，所以 iPhone 內建行事曆也看得到，而且保留時段。
 3. 在 Beamup 修改時間，行事曆上的那一筆會直接改，不會多出一筆；在 Beamup 刪除，行事曆和卡片也會一起刪，卡片會先進垃圾桶。
 
-Mothership 不用開著：行程會先放在雲端，下次打開 Mothership 時才寫進行事曆。如果想要更即時，在要用的裝置上把 Mothership 開著就好。
+Mothership 不用開著：做完下面「不開 App 也同步」後，最多 5 分鐘就會寫進行事曆；沒做的話，會等下次打開 Mothership 才寫進去。
 
 ### 什麼時候同步
 
 - Mothership 開著的時候：打開時、切回來時、每 2 分鐘一次，以及改完卡片後約 3 秒。
-- Mothership 沒開時，行事曆上的變動會在下次打開時一起收進來，不會漏掉。
+- Mothership 沒開時：做完下面「不開 App 也同步」，雲端每 5 分鐘同步一次；沒做的話，變動會在下次打開時一起收進來，不會漏掉。
 - 中斷連接後，卡片和行程都會留著，只是不再同步。
+
+### 不開 App 也同步（每 5 分鐘）
+
+讓 Supabase 每 5 分鐘替你同步一次：行事曆 ↔ 卡片、Beamup 送來的待辦和行程，都不用打開 Mothership。只要做一次：
+
+1. Supabase → **SQL Editor** → **New query**，再貼一次 [`supabase/calendar.sql`](supabase/calendar.sql) → **Run**（多了一個時區欄位，重跑不會影響已有資料）。
+2. 再開一個 **New query**，貼上 [`supabase/calendar-cron.sql`](supabase/calendar-cron.sql) 全部內容 → **Run**。如果你的 Supabase 網址不是 `bunbpnmcpcqtfshgvzup`，先把檔案裡的網址換成你的。
+3. 打開一次 Mothership 並同步一次（設定 → 行事曆同步 → 立即同步），讓雲端記住你的時區。
+
+確認有在跑：SQL Editor 執行 `select status, return_message, start_time from cron.job_run_details order by start_time desc limit 5;`，看到 `succeeded` 就是好了。想停掉就執行 `select cron.unschedule('mothership-calendar');`。
+
+- Mothership 開著的裝置會自己同步，雲端這時會跳過你（3 分鐘內同步過就不重複做）。
+- 雲端收進來的 Beamup 待辦不會給外星人獎勵。
 
 ### 限制
 
 - 行事曆的行程只會收進今天起 90 天內的。重複的行程（例如每週例會）會一次一張卡片。
 - iCloud 的重複行程只能從行事曆那邊修改；在 Mothership 改這類卡片，不會改到 iCloud。
-- 卡片沒有「幾點」的欄位：從 Mothership 新增的行程都是全天行程，要指定時段請在行事曆上改。
+- 從 Mothership 新增的行程是全天行程；只有帶時間的卡片（例如 Beamup 送來的行程）會是有時段的行程。
 
 ## 把 claude.ai 版的資料搬過來
 

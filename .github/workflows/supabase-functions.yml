@@ -49,4 +49,4 @@ jobs:
           if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "${{ steps.check.outputs.ref }}" "${args[@]}"; fi
       - name: Deploy
         if: steps.check.outputs.skip != 'true'
-        run: supabase functions deploy calendar --project-ref "${{ steps.check.outputs.ref }}" --use-api
+        run: supabase functions deploy calendar --project-ref "${{ steps.check.outputs.ref }}" --use-api --no-verify-jwt

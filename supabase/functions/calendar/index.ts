@@ -11,6 +11,7 @@ import { pullAccount, push } from './sync.ts'
 import { googleAuthUrl, googleExchange, googleProvider } from './google.ts'
 import { microsoftAuthUrl, microsoftExchange, microsoftProvider } from './microsoft.ts'
 import { icloudProvider } from './icloud.ts'
+import { applyChanges, cardIds, dirtyDocs, ingestInbox, loadModel, markSynced, pendingWork, trashedIds } from './docs.ts'
 
 const env = (k: string) => Deno.env.get(k) ?? ''
 const google = env('GOOGLE_CLIENT_ID') && env('GOOGLE_CLIENT_SECRET') ? { clientId: env('GOOGLE_CLIENT_ID'), clientSecret: env('GOOGLE_CLIENT_SECRET') } : null
@@ -36,6 +37,7 @@ interface AccountRow extends Account {
   calendar_name: string | null
   last_sync: string | null
   last_error: string | null
+  tz: string | null
 }
 
 type FullProvider = Provider & { calendars(): Promise<{ id: string; name: string }[]>; latestRefreshToken?: () => string }
@@ -117,7 +119,7 @@ function defaultCalendar(provider: AccountRow['provider'], cals: { id: string; n
 }
 
 async function connect(userId: string, body: Record<string, string>) {
-  let row: Omit<AccountRow, 'id' | 'calendar_id' | 'calendar_name' | 'is_target' | 'last_sync' | 'last_error'>
+  let row: Omit<AccountRow, 'id' | 'calendar_id' | 'calendar_name' | 'is_target' | 'last_sync' | 'last_error' | 'tz'>
   if (body.provider === 'google') {
     if (!google) throw new Error('伺服器還沒設定 Google 的連線資訊（GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET）')
     const r = await googleExchange(google, body.code, body.redirectUri)
@@ -149,6 +151,8 @@ async function connect(userId: string, body: Record<string, string>) {
 
 async function sync(userId: string, tz: string, upserts: CardPush[], deletes: string[]) {
   const accounts = await accountsOf(userId)
+  // Remember the user's time zone for syncs that run while the app is closed.
+  if (accounts.some((a) => a.tz !== tz)) await admin.from('calendar_accounts').update({ tz }).eq('user_id', userId)
   const store = storeFor(userId)
   const providers = new Map<string, FullProvider>()
   const p = (a: Account) => {
@@ -174,10 +178,92 @@ async function sync(userId: string, tz: string, upserts: CardPush[], deletes: st
   return { done: pushed.done, changes, errors, accounts: accounts.map(publicAccount) }
 }
 
+// ---------- background sync (every 5 minutes, scheduled in supabase/calendar-cron.sql) ----------
+
+/** An app that synced this recently is open and syncing itself; leave that user to it. */
+const APP_ACTIVE_MS = 3 * 60 * 1000
+
+async function loadDocs(userId: string) {
+  const rows: { doc_id: string; data: unknown }[] = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await admin.from('user_docs').select('doc_id, data').eq('user_id', userId).range(from, from + 999)
+    if (error) throw error
+    rows.push(...(data as { doc_id: string; data: unknown }[]))
+    if (data.length < 1000) break
+  }
+  return rows
+}
+
+/** What the app would do on open: take in Beamup items, write changed cards, pull calendar changes. */
+async function backgroundSync(userId: string, tz: string) {
+  const model = loadModel(await loadDocs(userId))
+  if (!model.docs.has('meta')) return { skipped: 'no data' }
+
+  // Beamup items waiting for the app. Deleting and reading back claims them, so an app opening now won't repeat them.
+  const { data: claimed } = await admin.from('inbox').delete().eq('user_id', userId).select('id, payload')
+  if (claimed?.length) ingestInbox(model, [...claimed].sort((a, b) => Number(a.id) - Number(b.id)).map((r) => r.payload), tz)
+
+  // A linked card that's gone from the data (lost to a concurrent edit) is brought back from its event.
+  const present = cardIds(model)
+  const trashed = trashedIds(model)
+  const { data: links } = await admin.from('calendar_links').select('account_id, event_id, card_id').eq('user_id', userId)
+  for (const l of links ?? [])
+    if (!present.has(l.card_id) && !trashed.has(l.card_id)) await admin.from('calendar_links').delete().eq('account_id', l.account_id).eq('event_id', l.event_id)
+
+  // A failing calendar mustn't lose the Beamup items claimed above: they're saved below either way.
+  const work = pendingWork(model)
+  let r: Awaited<ReturnType<typeof sync>> = { done: [], changes: [], errors: [], accounts: [] }
+  try {
+    r = await sync(userId, tz, work.upserts, work.deletes)
+  } catch (e) {
+    r.errors.push({ message: (e as Error).message })
+  }
+  markSynced(model, Object.fromEntries(r.done.map((id) => [id, work.hashes[id]])))
+  applyChanges(model, r.changes, tz)
+
+  const rows = dirtyDocs(model)
+  if (rows.length) {
+    const now = new Date().toISOString()
+    const { error } = await admin.from('user_docs').upsert(rows.map((row) => ({ user_id: userId, ...row, updated_at: now })))
+    if (error) throw error
+  }
+  return { wrote: rows.length, pushed: r.done.length, pulled: r.changes.length, errors: r.errors.length }
+}
+
+async function cron() {
+  const { data: accounts, error } = await admin.from('calendar_accounts').select('user_id, last_sync, tz')
+  if (error) throw error
+  const users = new Map<string, { last: number; tz: string }>()
+  for (const a of accounts as { user_id: string; last_sync: string | null; tz: string | null }[]) {
+    const last = a.last_sync ? Date.parse(a.last_sync) : 0
+    const u = users.get(a.user_id)
+    users.set(a.user_id, { last: Math.max(u?.last ?? 0, last), tz: a.tz ?? u?.tz ?? 'Asia/Taipei' })
+  }
+  const report: Record<string, unknown> = {}
+  for (const [userId, u] of users) {
+    if (Date.now() - u.last < APP_ACTIVE_MS) {
+      report[userId] = { skipped: 'app is open' }
+      continue
+    }
+    try {
+      report[userId] = await backgroundSync(userId, u.tz)
+    } catch (e) {
+      report[userId] = { error: (e as Error).message }
+    }
+  }
+  return report
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   try {
     const body = await req.json()
+    if (body.action === 'cron') {
+      // Only the scheduled job knows this secret (it lives in calendar_cron, readable by the service role).
+      const { data } = await admin.from('calendar_cron').select('secret').eq('id', 1).maybeSingle()
+      if (!data?.secret || req.headers.get('x-cron-secret') !== data.secret) return reply({ error: 'forbidden' }, 403)
+      return reply(await cron())
+    }
     if (body.action === 'config')
       return reply({ google: !!google, microsoft: !!microsoft })
 
