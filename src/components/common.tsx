@@ -76,12 +76,19 @@ export function AddForm({ label, placeholder, onAdd }: { label: string; placehol
         <Plus size={15} /> {label}
       </button>
     )
+  // Adding closes the form; so does leaving it empty (tapping elsewhere).
   const submit = () => {
     if (text.trim()) onAdd(text.trim())
     setText('')
+    setOpen(false)
   }
   return (
-    <div className="add-form">
+    <div
+      className="add-form"
+      onBlur={(e) => {
+        if (!text.trim() && !e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false)
+      }}
+    >
       <textarea
         autoFocus
         rows={2}
