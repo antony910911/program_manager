@@ -49,7 +49,7 @@ export function BeamupConnect({ userId }: { userId: string }) {
         <Link2 size={15} /> 連接 Beamup
       </h4>
       <p className="muted small">
-        在 Beamup 新增的待辦，會自動變成上方「待辦」清單的卡片（高優先放進「急件」）。在 Beamup 修改或勾選完成也會同步過來。
+        在 Beamup 新增的待辦，會自動變成上方「待辦」清單的卡片（高優先放進「急件」）。在 Beamup 修改或勾選完成也會同步過來；反過來，在這裡刪除、完成、改標題或日期，Beamup 也會跟著改。
       </p>
       {state === 'loading' && <p className="muted small">讀取中…</p>}
       {state === 'missing-sql' && (
