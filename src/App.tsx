@@ -4,6 +4,7 @@ import {
   Archive,
   ChartColumn,
   ChartGantt,
+  ChevronRight,
   CalendarDays,
   Cloud,
   CloudAlert,
@@ -312,6 +313,21 @@ function Home({
   const [template, setTemplate] = useState(0)
   const [nextYear] = useState(() => new Date().getFullYear() + 1)
   const [bg, setBg] = useState<BoardBackground>({ ...defaultBackground('#000'), ...BACKGROUND_PRESETS[0].bg })
+  const [newOpen, setNewOpen] = useState(false)
+  const focusLists = state.boards[state.focusBoardId].listIds.map((id) => {
+    const l = state.lists[id]
+    return { id, title: l.title, color: l.color, count: l.cardIds.filter((c) => !state.cards[c].archived && !state.cards[c].completed).length }
+  })
+  const focusTotal = focusLists.reduce((n, l) => n + l.count, 0)
+  const thisYear = String(nextYear - 1)
+  const [thisMonth] = useState(() => new Date().getMonth())
+  const monthly = Array.from({ length: 12 }, () => 0)
+  for (const c of Object.values(state.cards)) {
+    if (!c.completed) continue
+    const d = doneDate(c).date
+    if (d.startsWith(thisYear)) monthly[Number(d.slice(5, 7)) - 1]++
+  }
+  const monthlyPeak = Math.max(...monthly)
   const [greeting] = useState(() => {
     const hour = new Date().getHours()
     return hour < 12 ? '早安' : hour < 18 ? '午安' : '晚安'
@@ -319,36 +335,46 @@ function Home({
   return (
     <main className="home">
       <AlienHero state={state} dispatch={dispatch} greeting={greeting} />
-      <button className="split-entry" onClick={() => onOpen(state.focusBoardId)}>
-        <span className="split-entry-icon">
-          <Rows2 size={22} />
-        </span>
-        <span>
-          <strong>雙層模式</strong>
-          <span className="muted">
-            上方放你最常看的清單（預設待辦 / 進行中 / 急件），下方列出每個看板的所有清單，卡片可以上下互相拖曳。
+      <div className="shortcuts">
+        <button className="shortcut split-shortcut" onClick={() => onOpen(state.focusBoardId)}>
+          <span className="shortcut-head">
+            <span className="shortcut-icon">
+              <Rows2 size={18} />
+            </span>
+            <strong>雙層模式</strong>
           </span>
-        </span>
-        <span className="split-entry-count">
-          {state.boards[state.focusBoardId].listIds.reduce(
-            (n, l) => n + state.lists[l].cardIds.filter((c) => !state.cards[c].archived).length,
-            0,
-          )}{' '}
-          張焦點卡片
-        </span>
-      </button>
-      <button className="split-entry review-entry" onClick={onReview}>
-        <span className="split-entry-icon">
-          <History size={22} />
-        </span>
-        <span>
-          <strong>年度回顧</strong>
-          <span className="muted">每個月完成了哪些卡片、時間花在哪些專案。完成的卡片離開清單後，紀錄都留在這裡。</span>
-        </span>
-        <span className="split-entry-count">
-          今年完成 {Object.values(state.cards).filter((c) => c.completed && doneDate(c).date.startsWith(String(nextYear - 1))).length} 張
-        </span>
-      </button>
+          <span className="shortcut-lists">
+            {focusLists.map((l) => (
+              <span key={l.id} className="shortcut-list" style={{ '--c': l.color ?? 'var(--accent)' } as React.CSSProperties}>
+                <i />
+                <span>{l.title}</span>
+                <b>{l.count}</b>
+              </span>
+            ))}
+          </span>
+          <span className="shortcut-foot">
+            {focusTotal} 張焦點卡片 <ChevronRight size={14} />
+          </span>
+        </button>
+        <button className="shortcut review-shortcut" onClick={onReview}>
+          <span className="shortcut-head">
+            <span className="shortcut-icon">
+              <History size={18} />
+            </span>
+            <strong>年度回顧</strong>
+          </span>
+          <span className="shortcut-bars" aria-hidden="true">
+            {monthly.map((n, i) => (
+              <span key={i} className={i === thisMonth ? 'now' : ''}>
+                <i style={{ height: `${monthlyPeak ? Math.max(8, (n / monthlyPeak) * 100) : 8}%`, opacity: n ? 1 : 0.35 }} />
+              </span>
+            ))}
+          </span>
+          <span className="shortcut-foot">
+            今年完成 {monthly.reduce((a, b) => a + b, 0)} 張 <ChevronRight size={14} />
+          </span>
+        </button>
+      </div>
       <h2 className="section-title">
         你的看板 <span className="section-count">{state.boardOrder.length}</span>
       </h2>
@@ -374,43 +400,56 @@ function Home({
             </button>
           )
         })}
-        <form
-          className="board-tile new"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (!title.trim()) return
-            dispatch({ type: 'addBoard', title: title.trim(), background: bg, lists: BOARD_TEMPLATES[template].lists })
-            setTitle('')
-          }}
-        >
-          <span className="new-preview" style={{ background: backgroundCss(bg) }} />
-          <input placeholder={`新看板名稱，例：${nextYear} 年度專案`} value={title} onChange={(e) => setTitle(e.target.value)} />
-          <select value={template} onChange={(e) => setTemplate(Number(e.target.value))} title="初始清單">
-            {BOARD_TEMPLATES.map((t, i) => (
-              <option key={t.name} value={i}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-          <div className="bg-presets small">
-            {BACKGROUND_PRESETS.map((p) => {
-              const next = { ...defaultBackground('#000'), ...p.bg }
-              return (
-                <button
-                  type="button"
-                  key={p.name}
-                  title={p.name}
-                  className={next.color === bg.color && next.color2 === bg.color2 ? 'bg-preset on' : 'bg-preset'}
-                  style={{ background: backgroundCss(next) }}
-                  onClick={() => setBg(next)}
-                />
-              )
-            })}
-          </div>
-          <button className="btn primary">
-            <Plus size={15} /> 建立看板
+        {newOpen ? (
+          <form
+            className="board-tile new"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!title.trim()) return
+              dispatch({ type: 'addBoard', title: title.trim(), background: bg, lists: BOARD_TEMPLATES[template].lists })
+              setTitle('')
+              setNewOpen(false)
+            }}
+          >
+            <span className="new-preview" style={{ background: backgroundCss(bg) }} />
+            <input autoFocus placeholder={`新看板名稱，例：${nextYear} 年度專案`} value={title} onChange={(e) => setTitle(e.target.value)} />
+            <select value={template} onChange={(e) => setTemplate(Number(e.target.value))} title="初始清單">
+              {BOARD_TEMPLATES.map((t, i) => (
+                <option key={t.name} value={i}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            <div className="bg-presets small">
+              {BACKGROUND_PRESETS.map((p) => {
+                const next = { ...defaultBackground('#000'), ...p.bg }
+                return (
+                  <button
+                    type="button"
+                    key={p.name}
+                    title={p.name}
+                    className={next.color === bg.color && next.color2 === bg.color2 ? 'bg-preset on' : 'bg-preset'}
+                    style={{ background: backgroundCss(next) }}
+                    onClick={() => setBg(next)}
+                  />
+                )
+              })}
+            </div>
+            <div className="row">
+              <button className="btn primary">
+                <Plus size={15} /> 建立看板
+              </button>
+              <button type="button" className="btn" onClick={() => setNewOpen(false)}>
+                取消
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button className="board-tile add" onClick={() => setNewOpen(true)}>
+            <Plus size={20} />
+            <span>新增看板</span>
           </button>
-        </form>
+        )}
       </div>
       <p className="muted small home-foot">
         {synced ? '資料會同步到你的帳號，登入同一個帳號的手機、電腦、iPad 都看得到。' : '資料只存在這個瀏覽器裡。'}
