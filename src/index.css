@@ -3228,3 +3228,250 @@ input.full {
   color: var(--muted);
   opacity: 0.6;
 }
+
+/* ---------- home: weather-app sky ---------- */
+.app.home-sky {
+  --glass: rgba(255, 255, 255, 0.13);
+  --glass-strong: rgba(255, 255, 255, 0.2);
+  --glass-line: rgba(255, 255, 255, 0.22);
+  --on-sky: #fff;
+  --on-sky-dim: rgba(255, 255, 255, 0.72);
+  --sky-dim: 0;
+  color: var(--on-sky);
+  background-attachment: fixed;
+  background-color: #1c2340;
+}
+:root[data-theme='dark'] .app.home-sky {
+  --sky-dim: 0.28;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .app.home-sky {
+    --sky-dim: 0.28;
+  }
+}
+.app.sky-dawn {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, var(--sky-dim)), rgba(0, 0, 0, var(--sky-dim))),
+    radial-gradient(120% 60% at 20% 0%, #ffd3a5 0%, transparent 55%),
+    linear-gradient(180deg, #ff9a8b 0%, #c376b6 45%, #5b4b8a 100%);
+}
+.app.sky-day {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, var(--sky-dim)), rgba(0, 0, 0, var(--sky-dim))),
+    radial-gradient(90% 50% at 85% 0%, rgba(255, 255, 255, 0.45) 0%, transparent 60%),
+    linear-gradient(180deg, #4fb4f7 0%, #2f7de1 45%, #1d3f94 100%);
+}
+.app.sky-afternoon {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, var(--sky-dim)), rgba(0, 0, 0, var(--sky-dim))),
+    radial-gradient(100% 55% at 80% 0%, #ffd27a 0%, transparent 55%),
+    linear-gradient(180deg, #f6a04d 0%, #e5566f 50%, #6a3093 100%);
+}
+.app.sky-dusk {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, var(--sky-dim)), rgba(0, 0, 0, var(--sky-dim))),
+    radial-gradient(120% 50% at 50% 100%, rgba(238, 111, 87, 0.55) 0%, transparent 60%),
+    linear-gradient(180deg, #2c1a4d 0%, #8e44ad 55%, #ee6f57 100%);
+}
+.app.sky-night {
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 42%, rgba(255, 255, 255, 0.8) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 46% 12%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 30%, rgba(255, 255, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 78% 9%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 36%, rgba(255, 255, 255, 0.8) 50%, transparent 51%),
+    radial-gradient(1px 1px at 8% 60%, rgba(255, 255, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 92% 66%, rgba(255, 255, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(80% 40% at 80% 0%, rgba(120, 140, 255, 0.25) 0%, transparent 60%),
+    linear-gradient(180deg, #0b1026 0%, #1b2a55 60%, #2a2f6b 100%);
+}
+.home-sky .topbar {
+  background: transparent;
+  border-bottom-color: transparent;
+  color: var(--on-sky);
+}
+.home-sky .topbar .top-btn {
+  background: var(--glass);
+  color: var(--on-sky);
+}
+.home-sky .home {
+  --muted: var(--on-sky-dim);
+}
+
+/* hero: big number like a temperature */
+.home-sky .alien-hero {
+  background: none;
+  border: none;
+  padding: 8px 4px 0;
+  box-shadow: none;
+}
+.home-sky .eyebrow {
+  color: var(--on-sky-dim);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.hero-number {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 2px 0 2px;
+}
+.hero-big {
+  font-size: clamp(5.5rem, 22vw, 8.5rem);
+  font-weight: 800;
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+}
+.hero-unit {
+  padding-bottom: 10px;
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1.25;
+  opacity: 0.9;
+}
+.hero-condition {
+  margin: 10px 0 16px;
+  font-size: 1.15em;
+  font-weight: 600;
+}
+.forecast {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 12px 10px;
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  margin-bottom: 14px;
+}
+.forecast-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 0;
+  border-radius: 12px;
+}
+.forecast-day.today {
+  background: var(--glass-strong);
+}
+.forecast-label {
+  font-size: 0.78em;
+  font-weight: 600;
+  color: var(--on-sky-dim);
+  white-space: nowrap;
+}
+.forecast-day.today .forecast-label {
+  color: var(--on-sky);
+}
+.forecast-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 44px;
+  width: 100%;
+}
+.forecast-bar i {
+  display: block;
+  width: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.55));
+}
+.forecast-count {
+  font-size: 1.05em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.home-sky .pet-stats {
+  color: var(--on-sky-dim);
+}
+.home-sky .alien-stage-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: 0 20px 50px -24px rgba(0, 0, 0, 0.45);
+}
+.home-sky .alien-cap {
+  background: transparent;
+  color: var(--on-sky);
+  border-top-color: var(--glass-line);
+}
+
+/* glass panels for the rest of home */
+.home-sky .shortcut {
+  background: var(--glass);
+  border-color: var(--glass-line);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: none;
+  color: var(--on-sky);
+}
+.home-sky .shortcut:hover {
+  background: var(--glass-strong);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.home-sky .shortcut-list span,
+.home-sky .shortcut-foot {
+  color: var(--on-sky-dim);
+}
+.home-sky .shortcut-foot {
+  color: var(--on-sky);
+}
+.home-sky .shortcut-bars i {
+  background: rgba(255, 255, 255, 0.45);
+}
+.home-sky .shortcut-bars span.now i {
+  background: #fff;
+}
+.home-sky .section-title {
+  color: var(--on-sky);
+}
+.home-sky .section-count {
+  background: var(--glass-strong);
+  color: var(--on-sky);
+}
+.home-sky .board-tile {
+  box-shadow: 0 14px 30px -18px rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--glass-line);
+}
+.home-sky .board-tile.add {
+  background: var(--glass);
+  border: 1.5px dashed rgba(255, 255, 255, 0.45);
+  color: var(--on-sky);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.home-sky .board-tile.new {
+  color: var(--text);
+}
+.home-sky .home-foot,
+.home-sky .home-foot .link-btn {
+  color: var(--on-sky-dim);
+}
+.home-sky .home-foot .link-btn {
+  text-decoration: underline;
+}
+@media (min-width: 900px) {
+  .home-sky .alien-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+  }
+}
+/* The alien stands right on the sky: no stage colour, white stars and ground. */
+.home-sky .alien-stage {
+  background: linear-gradient(180deg, transparent 60%, rgba(255, 255, 255, 0.08));
+  --label-2: rgba(255, 255, 255, 0.8);
+  --label-3: rgba(255, 255, 255, 0.35);
+}
+/* iOS ignores fixed backgrounds; let the sky stretch over the whole page instead. */
+.app.home-sky {
+  background-attachment: scroll;
+  min-height: 100dvh;
+}

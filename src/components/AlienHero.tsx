@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Flame, X } from 'lucide-react'
 import type { AppState, Card } from '../types'
 import type { Action } from '../store'
-import { isOverdue, today } from '../store'
+import { addDays, isOverdue, parseYmd, today } from '../store'
 import {
   ACCESSORIES,
   ALIENS,
@@ -82,17 +82,50 @@ export function AlienHero({ state, dispatch, greeting }: { state: AppState; disp
   const open = openCards(state)
   const def = character(pet.alien)
 
+  // Like a weather app: one big number (cards still to do), a one-line "condition", and a 7-day forecast.
+  const t = today()
+  const overdue = open.filter(isOverdue).length
+  const dueToday = open.filter((c) => c.dueDate === t).length
+  const urgentList = state.boards[state.focusBoardId].listIds.map((id) => state.lists[id]).find((l) => l.title.includes('急'))
+  const urgent = urgentList ? urgentList.cardIds.filter((id) => !state.cards[id].archived && !state.cards[id].completed).length : 0
+  const condition = [
+    urgent && `${urgent} 張急件`,
+    dueToday && `今天到期 ${dueToday} 張`,
+    overdue && `逾期 ${overdue} 張`,
+  ].filter(Boolean) as string[]
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(t, i)
+    return { date, count: open.filter((c) => c.dueDate === date).length }
+  })
+  const peak = Math.max(1, ...days.map((d) => d.count))
+
   return (
     <section className="alien-hero">
       <div className="alien-hero-text">
         <p className="eyebrow">
-          {now.getMonth() + 1}月{now.getDate()}日 星期{WEEK[now.getDay()]}
+          {now.getMonth() + 1}月{now.getDate()}日 星期{WEEK[now.getDay()]} · {greeting}
         </p>
-        <h1>{greeting}！</h1>
-        <p className="muted">
-          {open.length ? `還有 ${open.length} 張卡片沒完成。` : '所有卡片都完成了。'}完成卡片、勾待辦清單、寫留言，都會餵 {def.name}{' '}
-          一顆星星。
-        </p>
+        <div className="hero-number">
+          <span className="hero-big">{open.length}</span>
+          <span className="hero-unit">張卡片
+            <br />
+            待完成</span>
+        </div>
+        <p className="hero-condition">{condition.length ? condition.join(' · ') : open.length ? '今天沒有急事，慢慢來' : '全部完成，晴空萬里'}</p>
+        <div className="forecast" aria-label="接下來 7 天到期的卡片">
+          {days.map((d, i) => {
+            const date = parseYmd(d.date)
+            return (
+              <div key={d.date} className={'forecast-day' + (i === 0 ? ' today' : '')} title={`${date.getMonth() + 1}/${date.getDate()}：${d.count} 張到期`}>
+                <span className="forecast-label">{i === 0 ? '今天' : `週${WEEK[date.getDay()]}`}</span>
+                <span className="forecast-bar">
+                  <i style={{ height: `${d.count ? 28 + (d.count / peak) * 72 : 10}%`, opacity: d.count ? 1 : 0.35 }} />
+                </span>
+                <span className="forecast-count">{d.count || '·'}</span>
+              </div>
+            )
+          })}
+        </div>
         <div className="pet-stats">
           <span className="pet-lv">Lv.{lv.level}</span>
           <span className="pet-bar xp" title={`經驗值：再 ${lv.toNext} 點升級`}>

@@ -65,6 +65,22 @@ export interface Account {
   signOut: () => void
 }
 
+type Sky = 'dawn' | 'day' | 'afternoon' | 'dusk' | 'night'
+const skyNow = (): Sky => {
+  const h = new Date().getHours()
+  return h >= 5 && h < 8 ? 'dawn' : h < 15 && h >= 8 ? 'day' : h >= 15 && h < 18 ? 'afternoon' : h >= 18 && h < 20 ? 'dusk' : 'night'
+}
+
+/** The home page sky follows the time of day, like a weather app; checked every few minutes. */
+function useSky(): Sky {
+  const [sky, setSky] = useState(skyNow)
+  useEffect(() => {
+    const t = setInterval(() => setSky(skyNow()), 5 * 60_000)
+    return () => clearInterval(t)
+  }, [])
+  return sky
+}
+
 export default function App({ account }: { account: Account | null }) {
   const [state, dispatch] = useAppStore(account?.id)
   const sync = useCloudSync(state, dispatch)
@@ -117,6 +133,7 @@ export default function App({ account }: { account: Account | null }) {
     root.dataset.labelStyle = state.theme.labelStyle
   }, [state.theme])
 
+  const sky = useSky()
   const board = boardId ? state.boards[boardId] : undefined
   const isSplit = !!board && board.id === state.focusBoardId
   const openCard = openCardId ? state.cards[openCardId] : undefined
@@ -124,7 +141,7 @@ export default function App({ account }: { account: Account | null }) {
 
   return (
     <div
-      className={(board ? 'app on-board' : 'app') + (isSplit ? ' split-mode' : '')}
+      className={(board ? 'app on-board' : `app home-sky sky-${sky}`) + (isSplit ? ' split-mode' : '')}
       style={board ? { background: backgroundCss(board.background) } : undefined}
     >
       <header className="topbar">
