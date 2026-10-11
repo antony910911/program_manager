@@ -67,9 +67,22 @@ export function InlineEdit({ value, onSave, className }: { value: string; onSave
 }
 
 /** "+ Add ..." button that expands into a small form. */
-export function AddForm({ label, placeholder, onAdd }: { label: string; placeholder: string; onAdd: (v: string) => void }) {
-  const [open, setOpen] = useState(false)
+export function AddForm({
+  label,
+  placeholder,
+  onAdd,
+  onClose,
+}: {
+  label: string
+  placeholder: string
+  onAdd: (v: string) => void
+  /** Given: the form starts open, and closing it calls this instead of showing the add button. */
+  onClose?: () => void
+}) {
+  const [opened, setOpened] = useState(false)
   const [text, setText] = useState('')
+  const open = opened || !!onClose
+  const setOpen = (v: boolean) => (v || !onClose ? setOpened(v) : onClose())
   if (!open)
     return (
       <button className="add-btn" onClick={() => setOpen(true)}>

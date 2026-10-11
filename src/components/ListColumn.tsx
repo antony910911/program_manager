@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { AlignLeft, Check, ChevronDown, ChevronRight, Ellipsis, MessageSquare, Sparkles, SquareCheck, Trash2, X } from 'lucide-react'
+import { AlignLeft, Check, ChevronDown, ChevronRight, Ellipsis, MessageSquare, Plus, Sparkles, SquareCheck, Trash2, X } from 'lucide-react'
 import type { AppState, Card, Filter, ID, List } from '../types'
 import type { Action } from '../store'
 import { cardBoard } from '../store'
@@ -366,9 +366,16 @@ export function AddListColumn({
   className?: string
 }) {
   const { drag, endDrag } = dnd
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  // The name box is wider than the button: bring it fully into view on narrow screens.
+  useEffect(() => {
+    if (open) ref.current?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  }, [open])
   return (
     <div
-      className={['list add-list', className, drag?.kind === 'list' && 'drop-active'].filter(Boolean).join(' ')}
+      ref={ref}
+      className={['list add-list', !open && 'collapsed', className, drag?.kind === 'list' && 'drop-active'].filter(Boolean).join(' ')}
       onDragOver={(e) => {
         if (drag?.kind !== 'list') return
         e.preventDefault()
@@ -380,7 +387,13 @@ export function AddListColumn({
         endDrag()
       }}
     >
-      <AddForm label="新增清單" placeholder="輸入清單名稱…" onAdd={onAdd} />
+      {open ? (
+        <AddForm label="新增清單" placeholder="輸入清單名稱…" onAdd={onAdd} onClose={() => setOpen(false)} />
+      ) : (
+        <button className="add-list-fab" title="新增清單" aria-label="新增清單" onClick={() => setOpen(true)}>
+          <Plus size={20} />
+        </button>
+      )}
     </div>
   )
 }
