@@ -30,6 +30,14 @@ export const ACCESSORY_SPRITES = {
   bow: { place: 'side', rows: ['pp.pp', 'ppxpp', 'pp.pp'] },
   flower: { place: 'left', rows: ['.f.f.', 'ffoff', '.fff.', '..g..'] },
 }
+// Mumu 的小寵物蝙蝠「小蝠」：拍翅膀繞著頭飛，主人睡著時就收起翅膀窩在頭頂。
+const BAT = {
+  up: ['W.........W', 'WW..B.B..WW', '.WWWBBBWWW.', '...BEBEB...', '....BBB....'],
+  down: ['....B.B....', '....BBB....', '.WWBEBEBWW.', 'WWW.BBB.WWW', 'W.........W'],
+  rest: ['..B.B..', '.WBBBW.', '.WBBBW.', '..W.W..'],
+}
+const BAT_COLORS = { B: '#5c4a73', W: '#8a72ad', E: '#7dffae' }
+
 const ACCESSORY_COLORS = {
   Q: '#ffd60a',
   p: '#ff6fa8',
@@ -864,6 +872,7 @@ export function mountMascot(stage, opts = {}) {
     const ay = groundY - 16 - Math.round(S.y) + (frame.bob || 0) - hover
     const rows = alienRows()
     const blink = Math.floor(now / 250) % 2
+    if (def.pet === 'bat' && batBehind(now)) drawBat(now, ax, ay)
     const seat = def.rideRows || 10 // 坐在飛碟裡時露出來的列數（要看得到眼睛和嘴巴）
     if (frame.riding) {
       drawMap(rows.slice(0, seat), ax, ay, 1, colors)
@@ -885,6 +894,7 @@ export function mountMascot(stage, opts = {}) {
       const pos = accessoryPos(def, acc, ax, ay)
       if (pos) drawMap(ACCESSORY_SPRITES[acc].rows, pos.x, pos.y, 1, ACCESSORY_COLORS)
     }
+    if (def.pet === 'bat' && !batBehind(now)) drawBat(now, ax, ay)
     if (frame.saucer != null) {
       pal.Y = blink ? '#ffd60a' : '#ff9f0a'
       drawMap(RIDE_UFO, Math.round(frame.saucer), groundY - 7)
@@ -916,6 +926,26 @@ export function mountMascot(stage, opts = {}) {
         bubble.style.top = `${Math.max(6, ay * PX - bubble.offsetHeight - 6)}px`
       }
     }
+  }
+
+  // 小蝠跟著主人飛（慢慢追上去，主人跳走或換位置時不會瞬間移動）
+  const bat = { x: null, y: null, at: 0 }
+  // 繞到後半圈時畫在主人身後
+  const batBehind = (now) => frame.expr !== 'sleep' && Math.sin((now / 1000) * 0.9) > 0
+  function drawBat(now, ax, ay) {
+    const resting = frame.expr === 'sleep'
+    const startled = ['surprised', 'dizzy'].includes(frame.expr)
+    const t = now / 1000
+    const tx = resting ? ax + 8 : Math.min(W - 7, Math.max(6, S.x + Math.cos(t * 0.9) * 12))
+    const ty = resting ? ay - 1 : ay - 4 + Math.sin(t * 1.8) * 2.5 - (startled ? 4 : 0)
+    if (bat.x == null) Object.assign(bat, { x: tx, y: ty, at: now })
+    const k = Math.min(1, ((now - bat.at) / 1000) * (resting ? 3 : 5))
+    bat.x += (tx - bat.x) * k
+    bat.y += (ty - bat.y) * k
+    bat.at = now
+    const near = Math.abs(tx - bat.x) < 1.5 && Math.abs(ty - bat.y) < 1.5
+    const rows = resting && near ? BAT.rest : Math.floor(now / (startled ? 70 : 140)) % 2 ? BAT.up : BAT.down
+    drawMap(rows, Math.round(bat.x) - Math.floor(rows[0].length / 2), Math.round(bat.y), 1, BAT_COLORS)
   }
 
   function update(dt) {
