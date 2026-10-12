@@ -717,7 +717,7 @@ function ingestTodo(s: AppState, t: InboxTodo): AppState {
 type PetKind = 'todo.add' | 'todo.done' | 'note.add' | 'event.add'
 
 /** Which care reward (if any) an action earns the alien, and what it says about it. */
-function rewardFor(prev: AppState, next: AppState, a: Action): { kind: PetKind; text: string } | null {
+function rewardFor(prev: AppState, next: AppState, a: Action): { kind: PetKind; text: string; count?: number } | null {
   switch (a.type) {
     case 'addCard':
       return { kind: 'todo.add', text: `收到新卡片「${a.title}」` }
@@ -725,7 +725,7 @@ function rewardFor(prev: AppState, next: AppState, a: Action): { kind: PetKind; 
       return { kind: 'note.add', text: '謝謝你的留言～' }
     case 'ingestInbox': {
       const n = a.items.filter((t) => t?.type === 'todo.created').length
-      if (n) return { kind: 'todo.add', text: n > 1 ? `Beamup 送來 ${n} 件待辦！` : '收到 Beamup 的待辦！' }
+      if (n) return { kind: 'todo.add', text: n > 1 ? `Beamup 送來 ${n} 件待辦！` : '收到 Beamup 的待辦！', count: n }
       return a.items.some((t) => t?.type === 'event.created') ? { kind: 'event.add', text: '收到 Beamup 的行程！' } : null
     }
     case 'updateCard': {
@@ -755,6 +755,8 @@ export function reducer(s: AppState, a: Action): AppState {
   if (!reward) return next
   const pet = structuredClone(next.pet)
   const r = petGain(pet, reward.kind)
+  // A batch from Beamup feeds once but counts every card it brought.
+  if (reward.kind === 'todo.add' && reward.count) pet.stats.todosAdded += reward.count - 1
   return { ...next, pet: { ...pet, lastEvent: rewardLine(r, reward.text) } }
 }
 

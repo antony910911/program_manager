@@ -2618,6 +2618,17 @@ input.full {
 .stat-grid small {
   color: var(--muted);
   font-size: max(12px, 0.8em);
+  text-align: center;
+  line-height: 1.3;
+}
+.stat-note {
+  margin: -4px 0 8px;
+  font-size: max(12px, 0.85em);
+}
+@media (max-width: 520px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .acc-card b {
   font-size: 0.9em;

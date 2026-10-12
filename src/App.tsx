@@ -73,9 +73,18 @@ export default function App({ account }: { account: Account | null }) {
 
   // Daily visit for the alien, and a celebration for each new reward earned in this session.
   const [startedAt] = useState(() => Date.now())
+  // Only once the cloud copy has loaded: loading replaces the whole state, so a visit counted before it would
+  // be lost. Again whenever the app comes back to the front, for a PWA left open overnight (one per day).
+  const settled = sync.status !== 'connecting'
   useEffect(() => {
+    if (!settled) return
     dispatch({ type: 'petVisit' })
-  }, [dispatch])
+    const onShow = () => {
+      if (document.visibilityState === 'visible') dispatch({ type: 'petVisit' })
+    }
+    document.addEventListener('visibilitychange', onShow)
+    return () => document.removeEventListener('visibilitychange', onShow)
+  }, [dispatch, settled])
   const lastEvent = state.pet.lastEvent
   useEffect(() => {
     if (lastEvent && lastEvent.at >= startedAt) cheer(lastEvent.text)

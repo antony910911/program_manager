@@ -19,7 +19,7 @@ export const ACCESSORIES = [
   { id: 'party', name: '派對帽', hint: '完成第 1 張卡片', goal: 1, stat: (p) => p.stats.todosDone },
   { id: 'flower', name: '小花', hint: '連續使用 3 天', goal: 3, stat: (p) => p.best },
   { id: 'shades', name: '太陽眼鏡', hint: '寫 5 則留言', goal: 5, stat: (p) => p.stats.notes },
-  { id: 'bow', name: '蝴蝶結', hint: '完成 20 張卡片', goal: 20, stat: (p) => p.stats.todosDone },
+  { id: 'bow', name: '蝴蝶結', hint: '勾掉 20 張卡片或項目', goal: 20, stat: (p) => p.stats.todosDone },
   { id: 'crown', name: '皇冠', hint: '連續使用 7 天', goal: 7, stat: (p) => p.best },
 ]
 

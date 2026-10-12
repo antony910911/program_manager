@@ -253,22 +253,23 @@ function AlienPicker({
         </section>
 
         <h4>成績</h4>
+        <p className="muted stat-note">從有外星人開始一路累計，刪掉卡片或取消完成不會扣回去，所以跟看板上現有的卡片數不一樣。</p>
         <div className="stat-grid">
           <div>
             <b>{pet.stats.todosDone}</b>
-            <small>完成</small>
+            <small>勾掉的卡片和項目</small>
           </div>
           <div>
             <b>{pet.stats.todosAdded}</b>
-            <small>新增卡片</small>
+            <small>新增過的卡片</small>
           </div>
           <div>
             <b>{pet.stats.notes}</b>
-            <small>留言</small>
+            <small>寫過的留言</small>
           </div>
           <div>
             <b>{pokes}</b>
-            <small>被戳</small>
+            <small>被戳（這支裝置）</small>
           </div>
         </div>
 
