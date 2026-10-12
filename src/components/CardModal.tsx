@@ -168,14 +168,14 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
               </div>
             </section>
 
-            <section className="row wrap dates">
-              <CalendarDays size={15} />
-              <label>
-                開始日 <input type="date" value={card.startDate ?? ''} onChange={(e) => update({ startDate: e.target.value || null })} />
-              </label>
-              <label>
-                到期日 <input type="date" value={card.dueDate ?? ''} onChange={(e) => update({ dueDate: e.target.value || null })} />
-              </label>
+            <section>
+              <h4>
+                <CalendarDays size={15} /> 日期
+              </h4>
+              <div className="dates">
+                <DateField label="開始" value={card.startDate} onChange={(startDate) => update({ startDate })} />
+                <DateField label="到期" value={card.dueDate} onChange={(dueDate) => update({ dueDate })} />
+              </div>
             </section>
 
             <section>
@@ -301,5 +301,31 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
         </div>
       </div>
     </div>
+  )
+}
+
+/** A labelled date box; shows 未設定 when empty (iOS leaves empty date inputs blank) and × to clear. */
+function DateField({ label, value, onChange }: { label: string; value: string | null; onChange: (v: string | null) => void }) {
+  return (
+    <label className="date-field">
+      <span className="date-label">{label}</span>
+      <span className={'date-box' + (value ? '' : ' empty')}>
+        <input type="date" value={value ?? ''} onChange={(e) => onChange(e.target.value || null)} />
+        {!value && <span className="date-empty" aria-hidden="true">未設定</span>}
+        {value && (
+          <button
+            type="button"
+            className="date-clear icon-btn"
+            aria-label={`清除${label}日`}
+            onClick={(e) => {
+              e.preventDefault()
+              onChange(null)
+            }}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </span>
+    </label>
   )
 }
