@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, Flame, Lock, X } from 'lucide-react'
 import type { AppState, Card } from '../types'
 import type { Action } from '../store'
@@ -183,7 +184,8 @@ function AlienPicker({
     return { key, label: `${d.getMonth() + 1}/${d.getDate()}`, on: came.has(key), today: key === ymd(now), future: d > now }
   })
 
-  return (
+  // On document.body: a glass home panel (backdrop-filter) would otherwise clip this full-screen window to the panel.
+  return createPortal(
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div className="modal narrow alien-house" ref={root} onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-label={`${def.name} 的小屋`}>
         <header className="house-head">
@@ -345,6 +347,7 @@ function AlienPicker({
           能量每小時少 1 點，太久沒來 {def.name} 會餓到垂頭喪氣。在首頁戳他會有反應，連戳會頭暈；長按是摸摸頭；點空地他會走過去。
         </p>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
