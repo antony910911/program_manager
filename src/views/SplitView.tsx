@@ -44,6 +44,7 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
   const [collapsed, setCollapsed] = useState<ID[]>(() => readStored(COLLAPSE_KEY, []))
   const containerRef = useRef<HTMLDivElement>(null)
   const [resizing, setResizing] = useState(false)
+  const resizeFrom = useRef(0)
 
   useEffect(() => writeStored(SPLIT_KEY, ratio), [ratio])
   useEffect(() => writeStored(COLLAPSE_KEY, collapsed), [collapsed])
@@ -55,12 +56,26 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
       if (!rect) return
       setRatio(Math.round(Math.min(75, Math.max(20, ((e.clientY - rect.top) / rect.height) * 100))))
     }
-    const up = () => setResizing(false)
+    const up = (e: PointerEvent) => {
+      setResizing(false)
+      // iOS still sends a click for a touch that moved here (nothing scrolled), aimed at where the finger first
+      // landed, which by now is often a card that moved under it. Swallow that click.
+      if (!(Math.abs(e.clientY - resizeFrom.current) > 4)) return
+      const swallow = (ev: MouseEvent) => {
+        ev.stopPropagation()
+        ev.preventDefault()
+      }
+      window.addEventListener('click', swallow, { capture: true, once: true })
+      setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 600)
+    }
     window.addEventListener('pointermove', move)
+    const cancel = () => setResizing(false)
     window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', cancel)
     return () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', cancel)
     }
   }, [resizing])
 
@@ -97,7 +112,10 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
         </div>
       </section>
 
-      <div className="split-resizer" onPointerDown={() => setResizing(true)} title="拖曳調整上下比例">
+      <div className="split-resizer" onPointerDown={(e) => {
+          resizeFrom.current = e.clientY
+          setResizing(true)
+        }} title="拖曳調整上下比例">
         <GripHorizontal size={16} />
       </div>
 

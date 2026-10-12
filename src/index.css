@@ -1957,6 +1957,13 @@ input.full {
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.3);
 }
+/* A finger-sized grip: the 16px bar was easy to miss and land on a card instead. */
+@media (pointer: coarse) {
+  .split-resizer {
+    height: 28px;
+    margin: -4px 16px;
+  }
+}
 .split-resizer:hover::before,
 .split-resizer:hover::after,
 .split.resizing .split-resizer::before,
