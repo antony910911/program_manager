@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, ExternalLink, GripHorizontal } from 'lucide-react'
+import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpToLine, ChevronDown, ChevronRight, Ellipsis, Eye, EyeOff, ExternalLink, GripHorizontal, X } from 'lucide-react'
 import type { AppState, Filter, ID } from '../types'
 import type { Action } from '../store'
-import { AddListColumn, ListColumn } from '../components/ListColumn'
+import { AddListColumn, AnchoredPopover, ListColumn } from '../components/ListColumn'
 import { useDnd, visibleCards } from '../dnd'
 
 interface Props {
@@ -64,6 +64,9 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
     }
   }, [resizing])
 
+  const shown = state.boardOrder.filter((bid) => !state.boards[bid]?.hiddenInSplit)
+  const hidden = state.boardOrder.filter((bid) => state.boards[bid]?.hiddenInSplit)
+
   const toggle = (id: ID) => setCollapsed((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]))
 
   return (
@@ -100,10 +103,10 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
 
       {/* Edge scrolling while dragging is global (installDragAutoScroll in dnd.ts). */}
       <section className="split-bottom">
-        {state.boardOrder.length === 0 && (
+        {shown.length === 0 && hidden.length === 0 && (
           <p className="empty-note">還沒有看板。回到首頁建立一個看板（例如「年度專案」），它就會出現在這裡。</p>
         )}
-        {state.boardOrder.map((bid) => {
+        {shown.map((bid) => {
           const board = state.boards[bid]
           const isCollapsed = collapsed.includes(bid)
           const count = board.listIds.reduce((n, l) => n + visibleCards(state, l, filter).length, 0)
@@ -121,6 +124,13 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
                 <button className="glass-btn small" onClick={() => openBoard(bid)}>
                   <ExternalLink size={13} /> 開啟看板
                 </button>
+                <ProjectMenu
+                  title={board.title}
+                  index={state.boardOrder.indexOf(bid)}
+                  count={state.boardOrder.length}
+                  onMove={(toIndex) => dispatch({ type: 'moveBoard', boardId: bid, toIndex })}
+                  onHide={() => dispatch({ type: 'setBoardHiddenInSplit', boardId: bid, hidden: true })}
+                />
               </header>
               {!isCollapsed && (
                 <div className="project-lists">
@@ -147,7 +157,83 @@ export function SplitView({ state, filter, dispatch, openCard, openBoard }: Prop
             </div>
           )
         })}
+        {hidden.length > 0 && (
+          <div className="hidden-projects">
+            <EyeOff size={14} />
+            <span className="muted small">已隱藏：</span>
+            {hidden.map((bid) => (
+              <button
+                key={bid}
+                className="hidden-chip"
+                title="在雙層模式顯示"
+                onClick={() => dispatch({ type: 'setBoardHiddenInSplit', boardId: bid, hidden: false })}
+              >
+                <span className="project-swatch" style={{ background: state.boards[bid].color }} />
+                {state.boards[bid].title}
+                <Eye size={13} />
+              </button>
+            ))}
+          </div>
+        )}
       </section>
     </div>
+  )
+}
+
+/** A project's ⋯ menu below 雙層模式: its place in the order (shared with the home page), or fold it away. */
+function ProjectMenu({
+  title,
+  index,
+  count,
+  onMove,
+  onHide,
+}: {
+  title: string
+  index: number
+  count: number
+  onMove: (toIndex: number) => void
+  onHide: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const btn = useRef<HTMLButtonElement>(null)
+  const act = (fn: () => void) => () => {
+    fn()
+    setOpen(false)
+  }
+  return (
+    <>
+      <button ref={btn} className="icon-btn" title="專案選單" onClick={() => setOpen((o) => !o)}>
+        <Ellipsis size={16} />
+      </button>
+      {open && (
+        <AnchoredPopover anchor={btn} onClose={() => setOpen(false)}>
+          <div className="popover-head">
+            <strong>{title}</strong>
+            <button className="icon-btn" onClick={() => setOpen(false)}>
+              <X size={16} />
+            </button>
+          </div>
+          <div className="menu-list">
+            <button className="menu-item" disabled={index <= 0} onClick={act(() => onMove(0))}>
+              <ArrowUpToLine size={15} /> 移到最上面
+            </button>
+            <button className="menu-item" disabled={index <= 0} onClick={act(() => onMove(index - 1))}>
+              <ArrowUp size={15} /> 上移
+            </button>
+            <button className="menu-item" disabled={index >= count - 1} onClick={act(() => onMove(index + 1))}>
+              <ArrowDown size={15} /> 下移
+            </button>
+            <button className="menu-item" disabled={index >= count - 1} onClick={act(() => onMove(count - 1))}>
+              <ArrowDownToLine size={15} /> 移到最下面
+            </button>
+          </div>
+          <div className="menu-sep" />
+          <button className="menu-item" onClick={act(onHide)}>
+            <EyeOff size={15} /> 在雙層模式隱藏
+          </button>
+          <p className="muted small menu-hint">看板和卡片都還在，首頁也看得到；底下可以再顯示回來。順序也會套用到首頁的看板。</p>
+        </AnchoredPopover>
+      )}
+    </>
   )
 }

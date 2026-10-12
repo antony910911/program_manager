@@ -182,21 +182,18 @@ function Placeholder({ drag }: { drag: Dnd['drag'] }) {
 
 const MENU_W = 260
 
-/** Rendered in a portal with fixed coordinates so scroll containers and blurred lists can't clip or cover it. */
-function ListMenu({
+/**
+ * A menu under (or above) its button, rendered in a portal with fixed coordinates so scroll containers and
+ * blurred lists can't clip or cover it. Closes on a click outside.
+ */
+export function AnchoredPopover({
   anchor,
-  list,
-  colorStrength,
   onClose,
-  onColor,
-  onDelete,
+  children,
 }: {
   anchor: RefObject<HTMLButtonElement | null>
-  list: List
-  colorStrength: number
   onClose: () => void
-  onColor: (c: string | null) => void
-  onDelete: () => void
+  children: React.ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
@@ -226,6 +223,29 @@ function ListMenu({
   }, [onClose, anchor])
   return createPortal(
     <div className="popover list-menu" ref={ref} style={{ position: 'fixed', top: pos.top, left: pos.left, width: MENU_W }}>
+      {children}
+    </div>,
+    document.body,
+  )
+}
+
+function ListMenu({
+  anchor,
+  list,
+  colorStrength,
+  onClose,
+  onColor,
+  onDelete,
+}: {
+  anchor: RefObject<HTMLButtonElement | null>
+  list: List
+  colorStrength: number
+  onClose: () => void
+  onColor: (c: string | null) => void
+  onDelete: () => void
+}) {
+  return (
+    <AnchoredPopover anchor={anchor} onClose={onClose}>
       <div className="popover-head">
         <strong>{list.title}</strong>
         <button className="icon-btn" onClick={onClose}>
@@ -246,8 +266,7 @@ function ListMenu({
       <ConfirmButton className="btn danger wide" confirmText={`再按一次刪除（${list.cardIds.length} 張卡片會放進垃圾桶）`} onConfirm={onDelete}>
         <Trash2 size={14} /> 刪除清單
       </ConfirmButton>
-    </div>,
-    document.body,
+    </AnchoredPopover>
   )
 }
 

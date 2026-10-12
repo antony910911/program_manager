@@ -3332,3 +3332,52 @@ input.full {
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* 雙層模式: a project's ⋯ menu, and the projects folded away. */
+.menu-list {
+  display: grid;
+  gap: 2px;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  color: var(--text);
+}
+.menu-item:hover:not(:disabled) {
+  background: var(--hover);
+}
+.menu-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.menu-hint {
+  margin: 8px 2px 0;
+  line-height: 1.5;
+}
+.hidden-projects {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 4px 12px;
+  color: var(--muted);
+}
+.hidden-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  font-size: 0.85em;
+}
+.hidden-chip:hover {
+  border-style: solid;
+}

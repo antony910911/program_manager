@@ -202,6 +202,8 @@ export type Action =
   | { type: 'updateMember'; memberId: ID; patch: Partial<Member> }
   | { type: 'deleteMember'; memberId: ID }
   | { type: 'renameBoard'; boardId: ID; title: string }
+  | { type: 'moveBoard'; boardId: ID; toIndex: number }
+  | { type: 'setBoardHiddenInSplit'; boardId: ID; hidden: boolean }
   | { type: 'deleteBoard'; boardId: ID }
   | { type: 'addList'; boardId: ID; title: string }
   | { type: 'renameList'; listId: ID; title: string }
@@ -295,6 +297,19 @@ function baseReducer(s: AppState, a: Action): AppState {
     }
     case 'renameBoard':
       return { ...s, boards: { ...s.boards, [a.boardId]: { ...s.boards[a.boardId], title: a.title } } }
+    case 'moveBoard': {
+      const rest = s.boardOrder.filter((b) => b !== a.boardId)
+      if (rest.length === s.boardOrder.length) return s
+      rest.splice(Math.max(0, Math.min(a.toIndex, rest.length)), 0, a.boardId)
+      return { ...s, boardOrder: rest }
+    }
+    case 'setBoardHiddenInSplit': {
+      const board = s.boards[a.boardId]
+      if (!board) return s
+      const next = { ...board, hiddenInSplit: a.hidden || undefined }
+      if (!a.hidden) delete next.hiddenInSplit
+      return { ...s, boards: { ...s.boards, [a.boardId]: next } }
+    }
     case 'deleteBoard': {
       if (a.boardId === s.focusBoardId) return s
       const board = s.boards[a.boardId]

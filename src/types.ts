@@ -89,6 +89,8 @@ export interface Board {
   listIds: ID[]
   labels: Label[]
   customFields: CustomField[]
+  /** Folded away below 雙層模式 (e.g. last year's project); the board itself is unchanged. */
+  hiddenInSplit?: boolean
 }
 
 export interface ActivityEntry {
