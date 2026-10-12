@@ -95,6 +95,13 @@ details > div { padding: 0 16px 12px; }
 .check li { position: relative; padding-left: 30px; margin: 8px 0; }
 .check li::before { content: ""; position: absolute; left: 0; top: 4px; width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--accent); }
 .me { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 14px 0; }
+@media (max-width: 560px) { .shots { grid-template-columns: 1fr; } }
+.shots figure, figure.wide { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+figure.wide { margin: 14px 0; }
+.shots img, figure.wide img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--line); background: var(--code); }
+figcaption { padding: 10px 14px 12px; font-size: 14.5px; color: var(--muted); line-height: 1.6; }
+figcaption b { color: var(--fg); display: block; font-size: 15px; }
 .me input { flex: 1; min-width: 180px; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--code); color: var(--fg); }
 .me small { color: var(--muted); }
 .u { color: var(--accent); font-weight: 600; }
@@ -117,6 +124,27 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
   </ul>
 </header>
 
+<h2 id="look">先看看長什麼樣</h2>
+<p>Mothership 就像一面貼滿便利貼的白板：每個<b>看板</b>是一個專案，看板裡有好幾欄<b>清單</b>（例如「待辦／進行中／完成」），每張<b>卡片</b>是一件要做的事，可以拖來拖去。下面是範例資料的畫面（點圖可以放大）。</p>
+<figure class="wide"><a href="setup/board.webp" target="_blank" rel="noopener"><img src="setup/board.webp" alt="看板畫面：四欄清單，每欄有幾張彩色卡片" width="1280" height="448" loading="lazy"></a>
+  <figcaption><b>看板</b>一個專案一個看板。卡片可以加標籤、成員、到期日、勾選清單和留言；拖曳卡片就能換清單、換順序。</figcaption></figure>
+<div class="shots">
+  <figure><a href="setup/home.webp" target="_blank" rel="noopener"><img src="setup/home.webp" alt="首頁：問候、像素外星人、雙層模式和年度回顧捷徑、看板列表" width="1280" height="800" loading="lazy"></a>
+    <figcaption><b>首頁</b>今天還有幾件事沒做、你的看板，還有一隻會跟著你完成進度長大的像素外星人。</figcaption></figure>
+  <figure><a href="setup/split.webp" target="_blank" rel="noopener"><img src="setup/split.webp" alt="雙層模式：上方是待辦、進行中、急件三欄，下方是專案的清單" width="1280" height="800" loading="lazy"></a>
+    <figcaption><b>雙層模式</b>上面是「今天要處理的」，下面是各個專案。把專案裡的卡片拖到上面，就變成你的焦點清單。</figcaption></figure>
+  <figure><a href="setup/card.webp" target="_blank" rel="noopener"><img src="setup/card.webp" alt="卡片內容：標籤、成員、日期、描述、待辦清單、留言" width="1280" height="800" loading="lazy"></a>
+    <figcaption><b>卡片內容</b>點一張卡片就能打開，填日期、描述、待辦清單和留言。</figcaption></figure>
+  <figure><a href="setup/calendar.webp" target="_blank" rel="noopener"><img src="setup/calendar.webp" alt="行事曆：月曆上顯示有日期的卡片" width="1280" height="800" loading="lazy"></a>
+    <figcaption><b>行事曆</b>有日期的卡片會排在月曆上，拖到別天就改日期。也能和 Google／iCloud 行事曆同步（進階）。</figcaption></figure>
+  <figure><a href="setup/timeline.webp" target="_blank" rel="noopener"><img src="setup/timeline.webp" alt="時間軸：每張卡片是一條橫條，顯示開始到結束" width="1280" height="800" loading="lazy"></a>
+    <figcaption><b>時間軸</b>每件事從開始到截止畫成一條，一眼看出哪段時間最忙。</figcaption></figure>
+  <figure><a href="setup/dashboard.webp" target="_blank" rel="noopener"><img src="setup/dashboard.webp" alt="儀表板：完成率、快到期、各清單和標籤的統計" width="1280" height="800" loading="lazy"></a>
+    <figcaption><b>儀表板</b>完成率、快到期的、各清單和標籤各有幾張。年底還有「年度回顧」看這一年做了什麼。</figcaption></figure>
+</div>
+<figure class="wide"><a href="setup/phone.webp" target="_blank" rel="noopener"><img src="setup/phone.webp" alt="手機畫面：首頁和雙層模式" width="1000" height="830" loading="lazy" style="max-width: 560px; margin: 0 auto; border-bottom: 0"></a>
+  <figcaption><b>手機上也能用</b>加到主畫面就像一般 App。手機、iPad、電腦登入同一個帳號，改了馬上同步。可以選深色或淺色，背景和顏色也能自己換。</figcaption></figure>
+
 <div class="card">
   <b>先填你的 GitHub 使用者名稱（第 1 步申請完再回來填也可以）</b>
   <div class="me"><input id="gh-user" placeholder="例如 amy-notes" autocomplete="off" autocapitalize="off" spellcheck="false"><small>填了之後，下面的網址和連結都會自動換成你的。</small></div>
@@ -125,6 +153,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
 <div class="card toc">
   <b>目錄</b>
   <ul>
+    <li><a href="#look">先看看長什麼樣</a></li>
     <li><a href="#idea">先搞懂：我們要做什麼？</a></li>
     <li><a href="#s1">1. 申請 GitHub 帳號</a></li>
     <li><a href="#s2">2. 複製一份 Mothership 給自己</a></li>
