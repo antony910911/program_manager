@@ -6,10 +6,12 @@ import { enableTouchDrag } from './touch'
 import { installImeGuard } from './ime'
 import { installDragAutoScroll } from './dnd'
 import { AuthGate } from './components/AuthGate'
+import { nameIconButtons } from './a11y'
 
 enableTouchDrag()
 installImeGuard()
 installDragAutoScroll()
+nameIconButtons()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

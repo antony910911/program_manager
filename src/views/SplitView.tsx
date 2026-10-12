@@ -209,7 +209,7 @@ function ProjectMenu({
         <AnchoredPopover anchor={btn} onClose={() => setOpen(false)}>
           <div className="popover-head">
             <strong>{title}</strong>
-            <button className="icon-btn" onClick={() => setOpen(false)}>
+            <button className="icon-btn" aria-label="關閉" onClick={() => setOpen(false)}>
               <X size={16} />
             </button>
           </div>

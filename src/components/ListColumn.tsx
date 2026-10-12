@@ -248,7 +248,7 @@ function ListMenu({
     <AnchoredPopover anchor={anchor} onClose={onClose}>
       <div className="popover-head">
         <strong>{list.title}</strong>
-        <button className="icon-btn" onClick={onClose}>
+        <button className="icon-btn" aria-label="關閉" onClick={onClose}>
           <X size={16} />
         </button>
       </div>

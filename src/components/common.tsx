@@ -2,10 +2,15 @@ import { useState } from 'react'
 import { Clock, Plus, X } from 'lucide-react'
 import type { Card, Label, Member } from '../types'
 import { formatDate, isOverdue } from '../store'
+import { labelStyle, readableOn } from '../theme'
 
 export function Avatar({ member, size = 26 }: { member: Member; size?: number }) {
   return (
-    <span className="avatar" title={member.name} style={{ background: member.color, width: size, height: size, fontSize: size * 0.45 }}>
+    <span
+      className="avatar"
+      title={member.name}
+      style={{ background: member.color, color: readableOn(member.color), width: size, height: size, fontSize: Math.max(12, size * 0.5) }}
+    >
       {member.name.slice(0, 1).toUpperCase()}
     </span>
   )
@@ -13,7 +18,7 @@ export function Avatar({ member, size = 26 }: { member: Member; size?: number })
 
 export function LabelChip({ label, wide }: { label: Label; wide?: boolean }) {
   return (
-    <span className={wide ? 'label-chip wide' : 'label-chip'} style={{ background: label.color }} title={label.name}>
+    <span className={wide ? 'label-chip wide' : 'label-chip'} style={labelStyle(label.color)} title={label.name}>
       {label.name}
     </span>
   )
@@ -120,7 +125,7 @@ export function AddForm({
         <button className="btn primary" onClick={submit}>
           {label}
         </button>
-        <button className="icon-btn" onClick={() => setOpen(false)}>
+        <button className="icon-btn" aria-label="取消" onClick={() => setOpen(false)}>
           <X size={16} />
         </button>
       </div>

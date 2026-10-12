@@ -3,7 +3,7 @@ import type { AppState, Board, Card } from '../types'
 import type { Action } from '../store'
 import { doneDate, formatDate, uid } from '../store'
 import { Undo2, Archive, CheckSquare, MessageSquare, Palette, Tag, Trash2, Users, X, AlignLeft, CalendarDays, ChevronRight, Type } from 'lucide-react'
-import { COVER_COLORS, softPreview } from '../theme'
+import { COVER_COLORS, labelStyle, softPreview } from '../theme'
 import { Avatar, InlineEdit } from './common'
 import { ConfirmButton } from './controls'
 
@@ -61,6 +61,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
             </button>
             <ConfirmButton
               className="round-btn danger"
+              label="刪除卡片"
               confirmText="再按一次刪除"
               onConfirm={() => {
                 dispatch({ type: 'deleteCard', cardId: card.id })
@@ -96,7 +97,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                   }}
                 />
               ))}
-              <input type="color" title="自訂顏色" value={card.cover ?? '#579dff'} onChange={(e) => update({ cover: e.target.value })} />
+              <input type="color" title="自訂顏色" aria-label="自訂顏色" value={card.cover ?? '#579dff'} onChange={(e) => update({ cover: e.target.value })} />
             </div>
           )}
         </div>
@@ -141,7 +142,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                   <button
                     key={l.id}
                     className={'label-toggle' + (card.labelIds.includes(l.id) ? ' on' : '')}
-                    style={{ background: l.color }}
+                    style={labelStyle(l.color)}
                     onClick={() => update({ labelIds: toggle(card.labelIds, l.id) })}
                   >
                     {l.name || ' '}
@@ -245,7 +246,7 @@ export function CardModal({ state, board, card, dispatch, onClose }: Props) {
                     onChange={() => update({ checklist: card.checklist.map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)) })}
                   />
                   <span className={item.done ? 'strike' : ''}>{item.text}</span>
-                  <button className="icon-btn" onClick={() => update({ checklist: card.checklist.filter((i) => i.id !== item.id) })}>
+                  <button className="icon-btn" aria-label="刪除這一項" onClick={() => update({ checklist: card.checklist.filter((i) => i.id !== item.id) })}>
                     <X size={14} />
                   </button>
                 </div>

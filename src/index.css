@@ -28,7 +28,7 @@
   --surface-2: #f1f3f9;
   --list-bg: #eef0f6;
   --text: #1f2937;
-  --muted: #6b7280;
+  --muted: #5b6270;
   --border: #e3e6ee;
   --hover: rgba(15, 23, 42, 0.06);
   --danger: #dc2626;
@@ -251,7 +251,7 @@ input.full {
   color: var(--muted);
 }
 .small {
-  font-size: 0.86em;
+  font-size: max(12px, 0.86em);
 }
 .center {
   text-align: center;
@@ -477,7 +477,7 @@ input.full {
   min-width: 44px;
   padding: 4px 10px;
   border-radius: 999px;
-  opacity: 0.5;
+  opacity: 0.62;
   transition:
     opacity 0.15s,
     transform 0.1s;
@@ -786,7 +786,7 @@ input.full {
   border-radius: 999px;
   padding: 1px 9px;
   color: #fff;
-  font-size: 0.8em;
+  font-size: max(12px, 0.8em);
   font-weight: 600;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
   min-height: 18px;
@@ -1067,7 +1067,7 @@ input.full {
 .build-tag {
   margin-top: 8px;
   text-align: center;
-  font-size: 0.72em;
+  font-size: max(12px, 0.72em);
   color: var(--muted);
 }
 .drawer-body {
@@ -1603,7 +1603,7 @@ input.full {
   margin: 0 0 14px;
 }
 .section-count {
-  font-size: 0.7em;
+  font-size: max(12px, 0.7em);
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 999px;
@@ -1667,7 +1667,7 @@ input.full {
   box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.55);
 }
 .board-tile-meta {
-  font-size: 0.75em;
+  font-size: max(12px, 0.75em);
   opacity: 0.9;
 }
 .board-tile-progress {
@@ -1972,7 +1972,7 @@ input.full {
   align-items: center;
   gap: 5px;
   align-self: flex-start;
-  font-size: 0.78em;
+  font-size: max(12px, 0.78em);
   font-weight: 600;
   color: var(--muted);
 }
@@ -2011,7 +2011,7 @@ input.full {
   margin: 2px 0;
   padding: 14px 10px;
   text-align: center;
-  font-size: 0.82em;
+  font-size: max(12px, 0.82em);
   color: color-mix(in srgb, currentColor 55%, transparent);
   border: 1.5px dashed color-mix(in srgb, currentColor 22%, transparent);
   border-radius: var(--radius-sm);
@@ -2218,7 +2218,7 @@ input.full {
   margin: 0;
 }
 .eyebrow {
-  font-size: 0.8em;
+  font-size: max(12px, 0.8em);
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--muted);
@@ -2267,7 +2267,8 @@ input.full {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  color: var(--note);
+  /* Orange toned toward the text colour, so the number reads on light and dark cards alike. */
+  color: color-mix(in srgb, var(--note) 62%, var(--text));
   font-weight: 700;
 }
 .alien-stage-card {
@@ -2510,7 +2511,7 @@ input.full {
   gap: 4px;
   padding: 4px 6px;
   border-radius: var(--radius-sm);
-  font-size: 0.82em;
+  font-size: max(12px, 0.82em);
   font-weight: 600;
   color: color-mix(in srgb, currentColor 65%, transparent);
 }
@@ -2995,7 +2996,7 @@ input.full {
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  font-size: 0.82em;
+  font-size: max(12px, 0.82em);
   font-weight: 600;
   color: color-mix(in srgb, var(--sc) 80%, var(--text));
 }
@@ -3199,7 +3200,7 @@ input.full {
 }
 .settings-group-title {
   margin: 0 0 6px 14px;
-  font-size: 0.78em;
+  font-size: max(12px, 0.78em);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--muted);
@@ -3380,4 +3381,58 @@ input.full {
 }
 .hidden-chip:hover {
   border-style: solid;
+}
+
+/* Touch screens: small buttons keep their look, but an invisible ring around each makes it easier to hit
+   (about 44px for icon buttons, per Apple's guideline; the card's done circle a bit less, so tapping near
+   the title still opens the card). */
+@media (pointer: coarse) {
+  .icon-btn,
+  .top-btn,
+  .tab,
+  .avatar-toggle,
+  .label-toggle,
+  .link-btn,
+  .round-btn,
+  .alien-switch,
+  .brand,
+  .close-btn,
+  .card-check,
+  .list-done-toggle,
+  .member-toggle {
+    position: relative;
+  }
+  .chips:has(> .avatar-toggle) {
+    gap: 8px;
+  }
+  .icon-btn::after,
+  .top-btn::after,
+  .round-btn::after,
+  .brand::after,
+  .close-btn::after,
+  .alien-switch::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+  }
+  .card-check::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+  }
+  .avatar-toggle::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
+  .tab::after,
+  .label-toggle::after,
+  .link-btn::after,
+  .list-done-toggle::after,
+  .member-toggle::after {
+    content: '';
+    position: absolute;
+    inset: -9px -2px;
+  }
 }

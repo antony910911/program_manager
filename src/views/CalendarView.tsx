@@ -36,13 +36,13 @@ export function CalendarView({ state, board, filter, dispatch, openCard }: Props
   return (
     <div className="view-panel">
       <div className="row cal-nav">
-        <button className="icon-btn" onClick={() => shift(-1)}>
+        <button className="icon-btn" aria-label="上個月" onClick={() => shift(-1)}>
           <ChevronLeft size={18} />
         </button>
         <strong>
           {cursor.getFullYear()} 年 {cursor.getMonth() + 1} 月
         </strong>
-        <button className="icon-btn" onClick={() => shift(1)}>
+        <button className="icon-btn" aria-label="下個月" onClick={() => shift(1)}>
           <ChevronRight size={18} />
         </button>
         <button className="btn small" onClick={() => setCursor(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}>

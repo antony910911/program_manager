@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { BoardBackground, Theme } from './types'
 
 export const defaultTheme: Theme = {
@@ -100,7 +101,14 @@ export function readableOn(hex: string): string {
     return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
   })
   const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
-  return lum > 0.4 ? '#111827' : '#ffffff'
+  // Contrast against white vs. against near-black (#111827, luminance ≈ 0.0089): pick the higher one.
+  return (lum + 0.05) / (0.0089 + 0.05) > 1.05 / (lum + 0.05) ? '#111827' : '#ffffff'
+}
+
+/** A label's colour with text that stays readable on it (dark on yellow, white on blue). */
+export function labelStyle(color: string): CSSProperties {
+  const text = readableOn(color)
+  return { background: color, color: text, textShadow: text === '#ffffff' ? undefined : 'none' }
 }
 
 const FONTS: Record<Theme['font'], string> = {

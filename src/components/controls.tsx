@@ -106,11 +106,14 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
 /** Destructive button that asks for a second click instead of a browser confirm() dialog. */
 export function ConfirmButton({
   className,
+  label,
   confirmText,
   onConfirm,
   children,
 }: {
   className?: string
+  /** Name for an icon-only button (screen readers); the confirm text speaks for itself once armed. */
+  label?: string
   confirmText: string
   onConfirm: () => void
   children: ReactNode
@@ -125,6 +128,7 @@ export function ConfirmButton({
     <button
       type="button"
       className={(className ?? '') + (armed ? ' armed' : '')}
+      aria-label={armed ? undefined : label}
       onClick={() => (armed ? onConfirm() : setArmed(true))}
       onBlur={() => setArmed(false)}
     >

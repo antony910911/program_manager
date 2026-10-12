@@ -29,7 +29,7 @@ import {
 import type { Board, BoardBackground, Filter, ID, ViewKind } from './types'
 import { BOARD_TEMPLATES, LABEL_COLORS, cardBoard, doneDate, emptyFilter, useAppStore } from './store'
 import type { Action } from './store'
-import { BACKGROUND_PRESETS, backgroundCss, defaultBackground, themeVars } from './theme'
+import { BACKGROUND_PRESETS, backgroundCss, defaultBackground, labelStyle, themeVars } from './theme'
 import { Avatar, BrandMark, InlineEdit } from './components/common'
 import { CardModal } from './components/CardModal'
 import { AppearancePanel } from './components/AppearancePanel'
@@ -220,7 +220,7 @@ export default function App({ account }: { account: Account | null }) {
                 <div className="popover">
                   <div className="popover-head">
                     <strong>{isSplit ? '雙層模式背景' : '看板背景'}</strong>
-                    <button className="icon-btn" onClick={() => setBgOpen(false)}>
+                    <button className="icon-btn" aria-label="關閉" onClick={() => setBgOpen(false)}>
                       <X size={16} />
                     </button>
                   </div>
@@ -493,7 +493,7 @@ function FilterBar({
           <button
             key={l.id}
             className={'label-toggle small' + (filter.labelIds.includes(l.id) ? ' on' : '')}
-            style={{ background: l.color }}
+            style={labelStyle(l.color)}
             onClick={() => setFilter({ ...filter, labelIds: toggle(filter.labelIds, l.id) })}
           >
             {l.name || ' '}
@@ -551,7 +551,7 @@ function BoardSettings({
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div className="modal narrow" onMouseDown={(e) => e.stopPropagation()}>
-        <button className="modal-close icon-btn" onClick={onClose}>
+        <button className="modal-close icon-btn" aria-label="關閉" onClick={onClose}>
           <X size={18} />
         </button>
         <h3>{isFocus ? '雙層模式設定' : '看板設定'}</h3>
@@ -582,7 +582,7 @@ function BoardSettings({
                 placeholder="標籤名稱"
                 onChange={(e) => dispatch({ type: 'upsertLabel', boardId: board.id, label: { ...l, name: e.target.value } })}
               />
-              <button className="icon-btn" onClick={() => dispatch({ type: 'deleteLabel', boardId: board.id, labelId: l.id })}>
+              <button className="icon-btn" aria-label="刪除標籤" onClick={() => dispatch({ type: 'deleteLabel', boardId: board.id, labelId: l.id })}>
                 <Trash2 size={15} />
               </button>
             </div>
@@ -615,7 +615,7 @@ function BoardSettings({
                 </span>
               </span>
               <span className="spacer" />
-              <button className="icon-btn" onClick={() => dispatch({ type: 'deleteCustomField', boardId: board.id, fieldId: f.id })}>
+              <button className="icon-btn" aria-label="刪除欄位" onClick={() => dispatch({ type: 'deleteCustomField', boardId: board.id, fieldId: f.id })}>
                 <Trash2 size={15} />
               </button>
             </div>
