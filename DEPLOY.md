@@ -2,6 +2,8 @@
 
 完成後你會有一個自己的網址，例如 `https://antony910911.github.io/program_manager/`。在手機、電腦、公司電腦、iPad 用同一組 Email／密碼登入，資料就會即時同步。
 
+> 給不熟 GitHub 的朋友：[`public/setup.html`](public/setup.html) 是一步一步的圖文教學，教他 Fork 一份自己架（部署後在 `https://<使用者名稱>.github.io/program_manager/setup.html`，或 App 裡 設定 › 資料 › 教朋友架一份）。
+
 整個流程大約 20 分鐘，全部使用免費方案：
 
 - **Supabase**：負責資料庫和登入。

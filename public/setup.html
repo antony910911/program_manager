@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>架一份自己的 Mothership</title>
+<meta name="description" content="一步一步教你免費架一份只屬於自己的 Mothership 看板 App：不用會寫程式、不用會 GitHub。">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --fg: #1d2330;
+  --muted: #5d6676;
+  --line: #e1e5eb;
+  --accent: #5b5bd6;
+  --accent-soft: #ececfb;
+  --ok: #2f9e6e;
+  --ok-soft: #e5f5ee;
+  --warn: #b7791f;
+  --warn-soft: #fdf4e3;
+  --danger: #c2413b;
+  --danger-soft: #fbeaea;
+  --code: #f0f2f5;
+  --shadow: 0 1px 2px rgba(20, 30, 50, .06), 0 4px 16px rgba(20, 30, 50, .05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161b; --card: #1c1f26; --fg: #e6e9ee; --muted: #9aa3b2; --line: #2c313a;
+    --accent: #9a9af2; --accent-soft: #24243d; --ok: #5cc596; --ok-soft: #17302a;
+    --warn: #e3b25c; --warn-soft: #33291a; --danger: #ef7d76; --danger-soft: #3a1f1f;
+    --code: #252a32; --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161b; --card: #1c1f26; --fg: #e6e9ee; --muted: #9aa3b2; --line: #2c313a;
+  --accent: #9a9af2; --accent-soft: #24243d; --ok: #5cc596; --ok-soft: #17302a;
+  --warn: #e3b25c; --warn-soft: #33291a; --danger: #ef7d76; --danger-soft: #3a1f1f;
+  --code: #252a32; --shadow: none;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.75 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+}
+.wrap { max-width: 780px; margin: 0 auto; padding: 32px 16px 80px; }
+header.hero { text-align: center; padding: 24px 0 8px; }
+.hero img { width: 72px; height: 72px; border-radius: 18px; box-shadow: var(--shadow); }
+h1 { font-size: 30px; line-height: 1.3; margin: 16px 0 8px; text-wrap: balance; }
+.lead { color: var(--muted); font-size: 17px; margin: 0 auto; max-width: 580px; text-wrap: pretty; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 20px 0 8px; padding: 0; list-style: none; }
+.facts li { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; font-size: 14px; }
+h2 { font-size: 22px; margin: 48px 0 12px; line-height: 1.4; scroll-margin-top: 16px; }
+h3 { font-size: 17px; margin: 24px 0 8px; }
+p { margin: 10px 0; }
+a { color: var(--accent); text-underline-offset: 3px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); margin: 14px 0; }
+.toc ul { margin: 6px 0 0; padding-left: 0; list-style: none; columns: 2; column-gap: 32px; }
+.toc li { margin: 2px 0; break-inside: avoid; }
+@media (max-width: 560px) { .toc ul { columns: 1; } }
+.glossary { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.glossary .card { margin: 0; }
+.glossary .card > b { display: block; font-size: 16px; margin-bottom: 2px; }
+.glossary span { color: var(--muted); font-size: 15px; }
+.step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 4px 14px; margin: 20px 0; }
+.step .num { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 15px; margin-top: 2px; }
+.step .body > :first-child { margin-top: 4px; }
+.part-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.part-head .tag { font-size: 13px; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.part-head .tag.opt { background: var(--code); color: var(--muted); }
+ol.do { padding-left: 22px; margin: 8px 0; }
+ol.do > li { margin: 6px 0; padding-left: 2px; }
+.btn { display: inline-block; font-weight: 600; font-size: 14.5px; line-height: 1.5; padding: 0 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--code); white-space: nowrap; }
+.btn.long { white-space: normal; }
+code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14.5px; background: var(--code); padding: 1px 6px; border-radius: 5px; word-break: break-all; }
+.copy { display: flex; align-items: stretch; margin: 8px 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--code); }
+.copy code { flex: 1; min-width: 0; background: none; padding: 9px 12px; font-size: 15px; white-space: pre-wrap; }
+.copy button { flex: none; border: 0; border-left: 1px solid var(--line); background: var(--card); color: var(--accent); font: inherit; font-size: 14px; font-weight: 600; padding: 0 16px; cursor: pointer; min-height: 44px; }
+.copy button.done { color: var(--ok); }
+.copy.sql code { max-height: 220px; overflow: auto; font-size: 12.5px; line-height: 1.5; }
+.note { border-radius: 12px; padding: 12px 16px; margin: 12px 0; font-size: 15px; }
+.note b:first-child { display: block; margin-bottom: 2px; }
+.note.see { background: var(--ok-soft); border-left: 4px solid var(--ok); }
+.note.tip { background: var(--accent-soft); border-left: 4px solid var(--accent); }
+.note.warn { background: var(--warn-soft); border-left: 4px solid var(--warn); }
+.note.stop { background: var(--danger-soft); border-left: 4px solid var(--danger); }
+details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin: 10px 0; }
+summary { cursor: pointer; padding: 12px 16px; font-weight: 600; list-style-position: inside; }
+details > div { padding: 0 16px 12px; }
+.prompt { white-space: pre-wrap; }
+.check { list-style: none; padding: 0; margin: 8px 0; }
+.check li { position: relative; padding-left: 30px; margin: 8px 0; }
+.check li::before { content: ""; position: absolute; left: 0; top: 4px; width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--accent); }
+.me { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.me input { flex: 1; min-width: 180px; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--code); color: var(--fg); }
+.me small { color: var(--muted); }
+.u { color: var(--accent); font-weight: 600; }
+footer { margin-top: 56px; color: var(--muted); font-size: 14px; text-align: center; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <img src="icon-192.png" alt="">
+  <h1>架一份只屬於你的 Mothership</h1>
+  <p class="lead">Mothership 是一個像 Trello 的看板 App：卡片、清單、行事曆、時間軸、年度回顧，手機、iPad、電腦登入同一個帳號就會即時同步。照著這份教學做，你就會有一份<b>完全屬於自己</b>的 Mothership。<b>不用會寫程式，也不用會 GitHub。</b></p>
+  <ul class="facts">
+    <li>⏱ 大約 30 分鐘</li>
+    <li>💰 全部免費</li>
+    <li>💻 建議用電腦設定</li>
+    <li>🔒 資料只有你看得到</li>
+  </ul>
+</header>
+
+<div class="card">
+  <b>先填你的 GitHub 使用者名稱（第 1 步申請完再回來填也可以）</b>
+  <div class="me"><input id="gh-user" placeholder="例如 amy-notes" autocomplete="off" autocapitalize="off" spellcheck="false"><small>填了之後，下面的網址和連結都會自動換成你的。</small></div>
+</div>
+
+<div class="card toc">
+  <b>目錄</b>
+  <ul>
+    <li><a href="#idea">先搞懂：我們要做什麼？</a></li>
+    <li><a href="#s1">1. 申請 GitHub 帳號</a></li>
+    <li><a href="#s2">2. 複製一份 Mothership 給自己</a></li>
+    <li><a href="#s3">3. 打開自動部署和網站功能</a></li>
+    <li><a href="#s4">4. 申請 Supabase、建立資料庫</a></li>
+    <li><a href="#s5">5. 建立資料表</a></li>
+    <li><a href="#s6">6. 設定登入</a></li>
+    <li><a href="#s7">7. 把資料庫接到你的網站</a></li>
+    <li><a href="#s8">8. 網站上線、註冊帳號</a></li>
+    <li><a href="#s9">9. 裝到手機、iPad、電腦</a></li>
+    <li><a href="#s10">10.（選用）連接 Beamup</a></li>
+    <li><a href="#s11">11. 之後怎麼更新</a></li>
+    <li><a href="#s12">12.（進階）請 Claude 幫你改</a></li>
+    <li><a href="#help">卡住了怎麼辦</a></li>
+  </ul>
+</div>
+
+<h2 id="idea">先搞懂：我們要做什麼？</h2>
+<p>把整件事想成「<b>開一間自己的店</b>」：</p>
+<div class="glossary">
+  <div class="card"><b>📦 GitHub＝倉庫</b><span>放 Mothership「程式碼」的地方。你會從原作者的倉庫<b>複製一份</b>到自己名下（這個動作叫 <b>Fork</b>）。</span></div>
+  <div class="card"><b>🏪 GitHub Pages＝店面</b><span>GitHub 附送的免費網站空間。你的倉庫會自動變成一個網址，任何裝置打開就能用（這叫<b>部署</b>）。</span></div>
+  <div class="card"><b>🗄 Supabase＝保險櫃</b><span>存你的看板資料、管理登入帳號的地方。每台裝置登入同一個帳號，看到的就是同一份資料。</span></div>
+  <div class="card"><b>🤖 Claude＝助理（選用）</b><span>想加功能、改樣子時，可以用中文請它幫你改。完全不用也能正常使用。</span></div>
+</div>
+<div class="note tip"><b>做完之後</b>你的 Mothership 和原作者的是<b>兩份完全分開</b>的 App：網址不同、資料庫不同。你看不到他的看板，他也看不到你的。</div>
+
+<div class="card">
+  <b>開始前準備好</b>
+  <ul class="check">
+    <li>一個常用的 Email（會收到驗證信）</li>
+    <li>一台電腦（用 iPad 也可以，只是按鈕比較難找）</li>
+    <li>一個密碼管理器或記事本，用來記幾組密碼</li>
+  </ul>
+</div>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1"><span class="part-head">1. 申請 GitHub 帳號 <span class="tag">約 5 分鐘</span></span></h2>
+<p>已經有 GitHub 帳號的話，登入後直接跳到<a href="#s2">第 2 步</a>。</p>
+<div class="step"><div class="num">1</div><div class="body"><p>打開 <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a>。</p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>依序填入 <b>Email</b>、<b>密碼</b>、<b>使用者名稱</b>，按 <span class="btn">Continue</span> 或 <span class="btn">Create account</span>。</p>
+  <div class="note tip"><b>使用者名稱會變成你的網址</b>例如取 <code>amy-notes</code>，你的 Mothership 網址就會是 <code>https://amy-notes.github.io/program_manager/</code>。只能用英文、數字和減號。</div>
+</div></div>
+<div class="step"><div class="num">3</div><div class="body"><p>可能會要你做一個小驗證（選圖片之類），證明你不是機器人。</p></div></div>
+<div class="step"><div class="num">4</div><div class="body"><p>去信箱收 GitHub 寄來的<b>驗證碼</b>，填回網頁。</p></div></div>
+<div class="step"><div class="num">5</div><div class="body"><p>如果問你一些問卷問題，可以按 <span class="btn">Skip personalization</span> 跳過。方案選<b>免費（Free）</b>。</p></div></div>
+<div class="note see"><b>✅ 完成的樣子</b>畫面右上角有你的頭像圓圈。現在可以回到這頁最上面，填你的使用者名稱。</div>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2"><span class="part-head">2. 複製一份 Mothership 給自己（Fork） <span class="tag">約 2 分鐘</span></span></h2>
+<div class="step"><div class="num">1</div><div class="body">
+  <p>確定已經登入 GitHub，打開原作者的倉庫：</p>
+  <div class="copy"><code>https://github.com/antony910911/program_manager</code><button type="button" data-copy="https://github.com/antony910911/program_manager">複製</button></div>
+</div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>在頁面<b>右上方</b>找到 <span class="btn">Fork</span> 按鈕（旁邊有一個分岔的小圖示），按下去。</p>
+  <div class="note tip"><b>用手機找不到？</b>手機版畫面比較擠，可以把網頁往右滑，或改用電腦。</div>
+</div></div>
+<div class="step"><div class="num">3</div><div class="body"><p>會出現「Create a new fork」頁面。<b>什麼都不用改</b>，Repository name 保持 <code>program_manager</code>（改了的話，下面的網址也要跟著改），直接按最下面綠色的 <span class="btn">Create fork</span>。</p></div></div>
+<div class="note see"><b>✅ 完成的樣子</b>網址變成 <code>github.com/<span class="u" data-u>你的使用者名稱</span>/program_manager</code>，標題下面有一行小字「forked from antony910911/program_manager」。這就是<b>你自己的</b>倉庫了。</div>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3"><span class="part-head">3. 打開自動部署和網站功能 <span class="tag">約 3 分鐘</span></span></h2>
+<p>複製來的倉庫，GitHub 為了安全會先把「自動部署」關起來，要你自己按一下打開。</p>
+<h3>3-1 打開自動部署（Actions）</h3>
+<div class="step"><div class="num">1</div><div class="body"><p>在你的倉庫頁面上方，點 <span class="btn">Actions</span> 分頁。或直接打開：<br><a data-href="https://github.com/{u}/program_manager/actions" target="_blank" rel="noopener"><code>github.com/<span data-u>你的使用者名稱</span>/program_manager/actions</code></a></p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>會看到一段說明「Workflows aren't being run on this forked repository」，按綠色的 <span class="btn long">I understand my workflows, go ahead and enable them</span>。</p></div></div>
+<h3>3-2 打開網站功能（Pages）</h3>
+<div class="step"><div class="num">1</div><div class="body"><p>點倉庫上方的 <span class="btn">Settings</span>（齒輪），左邊選單點 <span class="btn">Pages</span>。或直接打開：<br><a data-href="https://github.com/{u}/program_manager/settings/pages" target="_blank" rel="noopener"><code>github.com/<span data-u>你的使用者名稱</span>/program_manager/settings/pages</code></a></p>
+  <div class="note tip"><b>手機上找不到 Settings？</b>它可能藏在倉庫上方分頁列的最右邊，或「⋯」選單裡。直接打開上面的連結最快。</div>
+</div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>找到 <b>Build and deployment</b> 底下的 <b>Source</b>，下拉選單選 <span class="btn">GitHub Actions</span>。選了就會自動儲存。</p></div></div>
+<div class="note see"><b>✅ 完成的樣子</b>Source 那格顯示 <b>GitHub Actions</b>。網站還不會馬上出現，要等第 7 步填好資料庫之後才部署。</div>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4"><span class="part-head">4. 申請 Supabase、建立資料庫 <span class="tag">約 5 分鐘</span></span></h2>
+<div class="step"><div class="num">1</div><div class="body"><p>打開 <a href="https://supabase.com/dashboard/sign-in" target="_blank" rel="noopener">supabase.com</a>，按 <span class="btn">Continue with GitHub</span>，用剛剛的 GitHub 帳號登入，按 <span class="btn">Authorize</span> 同意。</p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>第一次會要你建立一個「組織」（Organization）：名稱隨便填（例如你的名字），Type 選 <b>Personal</b>，Plan 選 <b>Free</b>，按 <span class="btn">Create organization</span>。</p></div></div>
+<div class="step"><div class="num">3</div><div class="body">
+  <p>接著建立專案（New project），填這幾格：</p>
+  <ul>
+    <li><b>Project name</b>：隨意，例如 <code>mothership</code>。</li>
+    <li><b>Database Password</b>：按 <span class="btn">Generate a password</span> 自動產生，<b>複製起來記在密碼管理器</b>（之後幾乎用不到，但最好留著）。</li>
+    <li><b>Region</b>（主機放在哪）：選 <b>Northeast Asia (Tokyo)</b>。離台灣近，存檔比較快。</li>
+  </ul>
+  <p>按 <span class="btn">Create new project</span>。</p>
+</div></div>
+<div class="step"><div class="num">4</div><div class="body"><p>等 1～2 分鐘，畫面會從「Setting up project」變成專案首頁。</p></div></div>
+<div class="note see"><b>✅ 完成的樣子</b>左邊有一排小圖示的選單（Table Editor、SQL Editor、Authentication…）。</div>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5"><span class="part-head">5. 建立資料表 <span class="tag">約 3 分鐘</span></span></h2>
+<p>這一步是告訴資料庫「要怎麼存看板」，以及「每個人只能看自己的資料」。你只要複製、貼上、按執行。</p>
+<div class="step"><div class="num">1</div><div class="body"><p>在 Supabase 左邊選單點 <span class="btn">SQL Editor</span>（一個 <code>&gt;_</code> 的圖示），按 <span class="btn">+ New query</span>（或 <span class="btn">New SQL snippet</span>）。</p></div></div>
+<div class="step"><div class="num">2</div><div class="body">
+  <p>按下面的 <b>複製</b>，把整段貼進 Supabase 的大輸入框（先把裡面原本的字刪掉）：</p>
+  <div class="copy sql"><code id="sql-schema">讀取中…</code><button type="button" data-copy-from="prev">複製</button></div>
+  <p><small>這段來自你倉庫裡的 <code>supabase/schema.sql</code>。</small></p>
+</div></div>
+<div class="step"><div class="num">3</div><div class="body"><p>按右下角的 <span class="btn">Run</span>（或鍵盤 <code>Ctrl</code>＋<code>Enter</code>，Mac 是 <code>⌘</code>＋<code>Enter</code>）。</p>
+  <div class="note tip"><b>跳出「Potential issue detected」或「destructive operation」的警告？</b>這是正常的，因為這段會先清掉舊的設定再建立。按 <span class="btn">Run this query</span> 繼續。</div>
+</div></div>
+<div class="note see"><b>✅ 完成的樣子</b>下方結果顯示 <b>Success. No rows returned</b>。</div>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6"><span class="part-head">6. 設定登入 <span class="tag">約 2 分鐘</span></span></h2>
+<div class="step"><div class="num">1</div><div class="body">
+  <p>左邊選單點 <span class="btn">Authentication</span>，再點 <span class="btn">URL Configuration</span>。</p>
+  <ol class="do">
+    <li><b>Site URL</b> 改成你的網址，按 <span class="btn">Save</span>：
+      <div class="copy"><code data-tpl="https://{u}.github.io/program_manager/">https://你的使用者名稱.github.io/program_manager/</code><button type="button" data-copy-from="prev">複製</button></div></li>
+    <li><b>Redirect URLs</b> 按 <span class="btn">Add URL</span>，貼上<b>同一個網址</b>，按 <span class="btn">Save URLs</span>。</li>
+  </ol>
+  <p><small>之後點確認信、或用「Email 連結」登入時，才會回到你的網站。</small></p>
+</div></div>
+<div class="step"><div class="num">2</div><div class="body">
+  <p><b>建議做</b>：關掉「註冊要收確認信」，註冊完就能直接登入。</p>
+  <ol class="do">
+    <li>一樣在 <span class="btn">Authentication</span> 裡，點 <span class="btn">Sign In / Providers</span>（舊介面叫 Providers）。</li>
+    <li>點 <b>Email</b>，把 <b>Confirm email</b> 的開關關掉，按 <span class="btn">Save</span>。</li>
+  </ol>
+  <div class="note tip"><b>為什麼建議關掉？</b>Supabase 免費版內建的寄信功能每小時只能寄幾封，常常收不到確認信。只有你自己（或少數朋友）用的話，關掉比較省事。</div>
+</div></div>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7"><span class="part-head">7. 把資料庫接到你的網站 <span class="tag">約 5 分鐘</span></span></h2>
+<div class="note stop"><b>⚠️ 這一步最重要，一定要做</b>你複製來的程式裡，預設接的是<b>原作者的</b>資料庫。沒做這一步的話，你的網站會把資料存到別人那裡。</div>
+<h3>7-1 從 Supabase 複製兩個值</h3>
+<div class="step"><div class="num">1</div><div class="body"><p>在 Supabase 專案頁面最上方按 <span class="btn">Connect</span>；或左下角齒輪 <span class="btn">Project Settings</span> › <span class="btn">Data API</span> 和 <span class="btn">API Keys</span>。</p></div></div>
+<div class="step"><div class="num">2</div><div class="body">
+  <p>找到這兩個值，先複製到記事本：</p>
+  <ul>
+    <li><b>Project URL</b>：長得像 <code>https://abcdefghijkl.supabase.co</code></li>
+    <li><b>Publishable key</b>（<code>sb_publishable_</code> 開頭）；如果只看到 <b>anon public</b>（<code>eyJ</code> 開頭的一長串），用它也可以。</li>
+  </ul>
+  <div class="note warn"><b>只複製「公開」的那把</b>這兩個值本來就會放進網站裡，給別人看到沒關係。但<b>不要</b>複製 <code>secret</code> 或 <code>service_role</code> 那把，那把等於資料庫的萬能鑰匙。</div>
+</div></div>
+<h3>7-2 填進 GitHub</h3>
+<div class="step"><div class="num">1</div><div class="body"><p>回到你的 GitHub 倉庫，點 <span class="btn">Settings</span> › 左邊 <span class="btn">Secrets and variables</span> › <span class="btn">Actions</span>。或直接打開：<br><a data-href="https://github.com/{u}/program_manager/settings/variables/actions" target="_blank" rel="noopener"><code>github.com/<span data-u>你的使用者名稱</span>/program_manager/settings/variables/actions</code></a></p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>確認上方選的是 <span class="btn">Variables</span> 分頁（<b>不是</b> Secrets），按綠色的 <span class="btn">New repository variable</span>。</p></div></div>
+<div class="step"><div class="num">3</div><div class="body">
+  <p>第一個：<b>Name</b> 完全照抄（大小寫、底線都要一樣），<b>Value</b> 貼上 Project URL，按 <span class="btn">Add variable</span>。</p>
+  <div class="copy"><code>VITE_SUPABASE_URL</code><button type="button" data-copy="VITE_SUPABASE_URL">複製</button></div>
+</div></div>
+<div class="step"><div class="num">4</div><div class="body">
+  <p>再按一次 <span class="btn">New repository variable</span>。第二個：<b>Name</b> 照抄，<b>Value</b> 貼上 Publishable key（或 anon key），按 <span class="btn">Add variable</span>。</p>
+  <div class="copy"><code>VITE_SUPABASE_ANON_KEY</code><button type="button" data-copy="VITE_SUPABASE_ANON_KEY">複製</button></div>
+</div></div>
+<div class="note see"><b>✅ 完成的樣子</b>Variables 分頁裡有兩行：<code>VITE_SUPABASE_URL</code> 和 <code>VITE_SUPABASE_ANON_KEY</code>。</div>
+<div class="note tip"><b>為什麼不直接改程式碼？</b>填在 Variables 裡，之後更新到原作者的新版時（第 11 步）不會被蓋掉，也不會跟新版衝突。</div>
+
+<!-- ============ 8 ============ -->
+<h2 id="s8"><span class="part-head">8. 網站上線、註冊帳號 <span class="tag">約 5 分鐘</span></span></h2>
+<div class="step"><div class="num">1</div><div class="body"><p>點倉庫上方的 <span class="btn">Actions</span>，左邊點 <b>Deploy to GitHub Pages</b>。</p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>右邊會有一個 <span class="btn">Run workflow</span> 按鈕，按下去，再按跳出來的綠色 <span class="btn">Run workflow</span>。</p></div></div>
+<div class="step"><div class="num">3</div><div class="body"><p>等 1～3 分鐘（可以重新整理頁面看進度），出現<b>綠色勾勾 ✅</b> 就部署好了。</p></div></div>
+<div class="step"><div class="num">4</div><div class="body">
+  <p>打開你的網址：</p>
+  <div class="copy"><code data-tpl="https://{u}.github.io/program_manager/">https://你的使用者名稱.github.io/program_manager/</code><button type="button" data-copy-from="prev">複製</button></div>
+  <p>切到 <span class="btn">註冊</span> 分頁，輸入 Email 和密碼（至少 6 個字），建立帳號。</p>
+</div></div>
+<div class="step"><div class="num">5</div><div class="body">
+  <p><b>檢查有沒有接對資料庫</b>：回到 Supabase，左邊點 <span class="btn">Authentication</span> › <span class="btn">Users</span>。</p>
+  <div class="note see"><b>✅ 接對了</b>這裡看得到你剛剛註冊的 Email。</div>
+  <div class="note stop"><b>❌ 看不到你的 Email？</b>代表網站還接在原作者的資料庫。回到第 7 步，檢查兩個 Variable 的名稱有沒有打錯、是不是放在 Variables（不是 Secrets），改好後再做一次這一步的 1～3。</div>
+</div></div>
+
+<!-- ============ 9 ============ -->
+<h2 id="s9"><span class="part-head">9. 裝到手機、iPad、電腦 <span class="tag">每台約 1 分鐘</span></span></h2>
+<h3>iPhone／iPad</h3>
+<div class="step"><div class="num">1</div><div class="body"><p>用 <b>Safari</b> 打開你的網址，用同一組 Email／密碼在 <span class="btn">登入</span> 分頁登入。</p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>按<b>分享按鈕</b>（方框加一個向上箭頭），往下滑選 <span class="btn">加入主畫面</span>，再按 <span class="btn">新增</span>。之後從主畫面的圖示打開，就像一般 App。</p></div></div>
+<h3>Android</h3>
+<p>用 Chrome 打開網址並登入，按右上角 <span class="btn">⋮</span> › <span class="btn">加到主畫面</span>（或「安裝應用程式」）。</p>
+<h3>電腦</h3>
+<p>用 Chrome、Edge 或 Safari 打開網址並登入。想要獨立視窗：Chrome／Edge 網址列右邊有一個「安裝」小圖示。</p>
+<div class="note see"><b>✅ 完成的樣子</b>在手機新增一張卡片，幾秒內電腦上也會出現。</div>
+<div class="note tip"><b>忘記密碼？</b>在登入畫面選「Email 連結」，收信點連結就能登入（第 6 步的網址要設定正確）。</div>
+
+<!-- ============ 10 ============ -->
+<h2 id="s10"><span class="part-head">10. 連接 Beamup <span class="tag opt">選用</span></span></h2>
+<p><b>Beamup</b> 是一個快速記事的小 App：在手機上隨手打一句待辦或行程，就會直接變成 Mothership 的卡片。Beamup 的資料存在你自己的手機裡，所以<b>直接用原作者的 Beamup 網址就好，不用另外架</b>。</p>
+<div class="step"><div class="num">1</div><div class="body">
+  <p>回到 Supabase 的 <span class="btn">SQL Editor</span> › <span class="btn">+ New query</span>，把下面這段貼上、按 <span class="btn">Run</span>（一樣可能跳警告，按 <span class="btn">Run this query</span>）：</p>
+  <div class="copy sql"><code id="sql-inbox">讀取中…</code><button type="button" data-copy-from="prev">複製</button></div>
+</div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>打開你的 Mothership › 右上角 <span class="btn">設定</span> › <span class="btn">Beamup</span> › <span class="btn">產生連接碼</span> › <span class="btn">複製連接碼</span>。</p></div></div>
+<div class="step"><div class="num">3</div><div class="body">
+  <p>手機打開 Beamup（一樣可以加入主畫面）：</p>
+  <div class="copy"><code>https://thought-task-entry.antony910912.workers.dev</code><button type="button" data-copy="https://thought-task-entry.antony910912.workers.dev">複製</button></div>
+  <p>右上角齒輪 <span class="btn">設定</span> › 「待辦事項 → 專案管理工具」，把連接碼貼進第一格，按 <span class="btn">測試連線</span>。</p>
+</div></div>
+<div class="note see"><b>✅ 完成的樣子</b>在 Beamup 打一個待辦送出，幾秒內出現在 Mothership 雙層模式上方的「待辦」清單，卡片上有綠色的 Beamup 標記。</div>
+<div class="note stop"><b>🔑 連接碼不要給別人</b>拿到連接碼的人可以送東西進你的看板。不小心外流就到 Mothership 的 設定 › Beamup 按「換一組」。</div>
+<div class="note tip"><b>行事曆同步（Google／Outlook／iCloud）</b>這個比較進階，需要額外設定 GitHub 和 Supabase 的金鑰。想要的話，照倉庫裡的 <code>DEPLOY.md</code>「連接行事曆」做，或請 Claude 帶你做（第 12 步）。</div>
+
+<!-- ============ 11 ============ -->
+<h2 id="s11"><span class="part-head">11. 之後怎麼更新到新版 <span class="tag">約 2 分鐘</span></span></h2>
+<p>原作者之後加了新功能，你的 Mothership <b>不會自動跟著更新</b>（因為是你自己的一份）。想更新的時候：</p>
+<div class="step"><div class="num">1</div><div class="body"><p>登入 GitHub，打開你自己的倉庫 <a data-href="https://github.com/{u}/program_manager" target="_blank" rel="noopener"><code>github.com/<span data-u>你的使用者名稱</span>/program_manager</code></a>。</p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>如果有新版，會看到一行「This branch is X commits behind…」。按旁邊的 <span class="btn">Sync fork</span>，再按綠色的 <span class="btn">Update branch</span>。</p></div></div>
+<div class="step"><div class="num">3</div><div class="body"><p>GitHub 會在 1～3 分鐘內自動重新部署（Actions 分頁會出現新的一筆，等它變綠色勾勾）。之後把手機上的 Mothership 完全關掉再打開，就是新版了。右上角 設定 › 最下面會顯示版本時間。</p></div></div>
+<div class="step"><div class="num">4</div><div class="body"><p>保險起見，每次更新後把第 5 步的 SQL <b>再跑一次</b>（用了 Beamup 的話，第 10 步的也跑一次）。這些 SQL 可以重複執行，不會動到你的資料；新版如果改了資料庫規則，這樣就會補上。</p></div></div>
+<div class="note tip"><b>你的資料不會受影響</b>更新的只是 App 本身，看板資料存在你的 Supabase 裡，不會被覆蓋。</div>
+<div class="note warn"><b>Supabase 免費專案太久沒用會暫停</b>如果大約一週都沒有人打開你的 Mothership，Supabase 會把專案暫停並寄信通知你。到 Supabase 後台按 <span class="btn">Restore</span> 就會恢復，資料都還在。平常有在用就不會發生。</div>
+
+<!-- ============ 12 ============ -->
+<h2 id="s12"><span class="part-head">12. 請 Claude 幫你改功能 <span class="tag opt">進階・選用</span></span></h2>
+<p>想多一個功能、換個顏色？直接用中文跟 Claude 說，它會幫你改好<b>你自己的那一份</b>：</p>
+<div class="step"><div class="num">1</div><div class="body"><p>打開 <a href="https://claude.ai/code" target="_blank" rel="noopener">claude.ai/code</a>，登入 Claude 帳號（需要付費方案）。</p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>照畫面指示連接 GitHub，選你自己的 <code><span data-u>你的使用者名稱</span>/program_manager</code> 倉庫。</p></div></div>
+<div class="step"><div class="num">3</div><div class="body">
+  <p>用平常說話的方式描述你要什麼，例如：</p>
+  <div class="copy"><code class="prompt">我想在 Mothership 的卡片上多一個「地點」欄位，打開卡片可以填，卡片上會顯示一個小地標圖示。改好之後幫我推上去，讓網站自動部署。</code><button type="button" data-copy-from="prev">複製</button></div>
+</div></div>
+<div class="step"><div class="num">4</div><div class="body"><p>Claude 改好、推上 GitHub 後，網站會自動部署。重開 Mothership 就能看到。</p></div></div>
+<div class="note warn"><b>改之前先備份</b>在 Mothership 的 設定 › 備份與搬家，匯出一份備份檔。萬一改壞了，資料還在。<br>注意：改過程式之後，第 11 步的「Sync fork」可能會出現衝突。這時可以請 Claude 幫你更新。</div>
+
+<!-- ============ help ============ -->
+<h2 id="help">卡住了怎麼辦</h2>
+<details>
+  <summary>打開網址出現「404 There isn't a GitHub Pages site here」</summary>
+  <div><p>網站還沒部署成功。檢查：第 3-2 步的 Source 是不是 <b>GitHub Actions</b>；第 8 步的 Actions 有沒有出現綠色勾勾。剛部署完也可能要再等一兩分鐘。網址最後的 <code>/program_manager/</code> 也要打對。</p></div>
+</details>
+<details>
+  <summary>Actions 裡看不到「Deploy to GitHub Pages」或沒有 Run workflow 按鈕</summary>
+  <div><p>第 3-1 步還沒做：到 <span class="btn">Actions</span> 分頁按 <span class="btn long">I understand my workflows, go ahead and enable them</span>。</p></div>
+</details>
+<details>
+  <summary>Actions 出現紅色叉叉 ❌</summary>
+  <div><p>點進那一筆看哪一步失敗。如果是 <b>deploy</b> 那步、訊息提到 Pages，通常是第 3-2 步的 Source 沒選 <b>GitHub Actions</b>，選好後按右上角 <span class="btn">Re-run jobs</span>。其他情況可以截圖問 Claude（見最下面）。</p>
+  <p>另一個叫 <b>Deploy calendar function</b> 的項目是行事曆同步用的，沒設定時會自動略過，不用管它。</p></div>
+</details>
+<details>
+  <summary>註冊或登入時說「Email not confirmed」，或一直收不到確認信</summary>
+  <div><p>照第 6 步的 2 把 <b>Confirm email</b> 關掉，再登入一次。已經註冊過的帳號也可以直接登入。</p></div>
+</details>
+<details>
+  <summary>登入後顯示「暫時無法連線到雲端」或資料存不起來</summary>
+  <div><p>多半是第 5 步的 SQL 沒有成功執行。回到 SQL Editor 再跑一次，看到 <b>Success</b> 為止。也確認第 7 步填的是<b>你自己</b>專案的網址和 key。</p></div>
+</details>
+<details>
+  <summary>Supabase 的 Users 裡看不到我註冊的帳號</summary>
+  <div><p>網站還接在原作者的資料庫：回到第 7 步檢查兩個 Variable（名稱完全一樣、放在 <b>Variables</b> 分頁），然後重做第 8 步的 1～3，重新部署一次。</p></div>
+</details>
+<details>
+  <summary>點 Email 連結後跑到奇怪的網址，或顯示錯誤</summary>
+  <div><p>第 6 步的 Site URL 和 Redirect URLs 要填你自己的網址，結尾的 <code>/program_manager/</code> 也要有。</p></div>
+</details>
+<details>
+  <summary>手機上看不到新功能</summary>
+  <div><p>把 Mothership 從背景完全關掉（從螢幕下方往上滑，把它滑掉），再打開一兩次。右上角 設定 › 最下面會顯示版本時間。</p></div>
+</details>
+
+<h3>把問題丟給 Claude</h3>
+<p>還是卡住的話，把下面這段複製到 <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> 的對話框，把<b>【】</b>換成你的狀況，最好再附一張截圖：</p>
+<div class="copy"><code class="prompt">我是完全不會寫程式的新手，正在照一份教學架設 Mothership 看板 App（從 GitHub 的 antony910911/program_manager Fork 一份，用 GitHub Pages 放網站、Supabase 當資料庫和登入，Supabase 的網址和 key 填在 GitHub 的 Actions Variables：VITE_SUPABASE_URL、VITE_SUPABASE_ANON_KEY）。
+我做到【第幾步、在做什麼】，畫面顯示【貼上畫面上的文字或附截圖】。
+請用簡單的中文，一步一步告訴我下一步要按哪裡。</code><button type="button" data-copy-from="prev">複製</button></div>
+
+<hr>
+<div class="card">
+  <b>最後檢查一下 ✔</b>
+  <ul class="check">
+    <li>GitHub 上有 <code><span data-u>你的使用者名稱</span>/program_manager</code>，Actions 有綠色勾勾</li>
+    <li>Supabase 專案的 SQL 跑過，看到 Success</li>
+    <li>GitHub 的 Variables 裡有 <code>VITE_SUPABASE_URL</code> 和 <code>VITE_SUPABASE_ANON_KEY</code></li>
+    <li>Supabase 的 Authentication › Users 看得到你的 Email</li>
+    <li>手機主畫面有 Mothership 圖示，登入後新增的卡片在電腦上也看得到</li>
+    <li>Supabase 資料庫密碼、Mothership 登入密碼都記在安全的地方</li>
+  </ul>
+</div>
+
+<footer>Mothership · 這份教學也在 Mothership 的程式碼裡（<code>public/setup.html</code>），Fork 之後你的網址也會有一份。<br><a href="./">回到 Mothership</a></footer>
+</div>
+<script>
+// 你的 GitHub 使用者名稱：填了之後，頁面上的網址和連結都換成你的。從自己的 github.io 網址打開時自動帶入。
+const input = document.getElementById('gh-user');
+const fromHost = /^([a-z0-9-]+)\.github\.io$/i.exec(location.hostname);
+let saved = '';
+try { saved = localStorage.getItem('mothership.setup.user') || ''; } catch { /* 隱私模式 */ }
+input.value = saved || (fromHost && fromHost[1].toLowerCase() !== 'antony910911' ? fromHost[1] : '');
+const clean = (v) => v.trim().replace(/^@/, '').replace(/[^A-Za-z0-9-]/g, '');
+function apply() {
+  const u = clean(input.value);
+  const name = u || '你的使用者名稱';
+  for (const el of document.querySelectorAll('[data-u]')) el.textContent = name;
+  for (const el of document.querySelectorAll('[data-tpl]')) el.textContent = el.dataset.tpl.replaceAll('{u}', name);
+  for (const a of document.querySelectorAll('a[data-href]')) {
+    if (u) a.href = a.dataset.href.replaceAll('{u}', u);
+    else a.removeAttribute('href');
+  }
+  try { localStorage.setItem('mothership.setup.user', u); } catch { /* 隱私模式 */ }
+}
+input.addEventListener('input', apply);
+apply();
+
+// SQL：從倉庫讀最新的版本（從自己的 github.io 打開時，讀自己的倉庫）。
+const repo = fromHost ? `${fromHost[1]}/${location.pathname.split('/')[1] || 'program_manager'}` : 'antony910911/program_manager';
+async function loadSql(id, path) {
+  const el = document.getElementById(id);
+  for (const r of [repo, 'antony910911/program_manager']) {
+    try {
+      const res = await fetch(`https://raw.githubusercontent.com/${r}/HEAD/${path}`);
+      if (res.ok) { el.textContent = (await res.text()).trim(); return; }
+    } catch { /* 試下一個 */ }
+  }
+  el.textContent = `讀不到 SQL。請到你的 GitHub 倉庫打開 ${path}，按右上角的複製按鈕（Copy raw file）。`;
+}
+loadSql('sql-schema', 'supabase/schema.sql');
+loadSql('sql-inbox', 'supabase/inbox.sql');
+
+// 複製按鈕
+for (const b of document.querySelectorAll('.copy button')) {
+  b.addEventListener('click', async () => {
+    const text = b.dataset.copy ?? b.previousElementSibling.textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const t = document.createElement('textarea');
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      try { document.execCommand('copy'); } catch { /* 至少選起來了，可以手動複製 */ }
+      t.remove();
+    }
+    const old = b.textContent;
+    b.textContent = '已複製';
+    b.classList.add('done');
+    setTimeout(() => { b.textContent = old; b.classList.remove('done'); }, 1600);
+  });
+}
+</script>
+</body>
+</html>

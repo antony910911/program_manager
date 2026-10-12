@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  GraduationCap,
   HardDriveDownload,
   LayoutGrid,
   Monitor,
@@ -145,6 +146,7 @@ export function AppearancePanel({ state, dispatch, onClose, userId, calendar }: 
                 <Row icon={<HardDriveDownload size={16} />} color="#8e8e93" label="備份與搬家" onClick={() => setPage('backup')} />
                 <Row icon={<Braces size={16} />} color="#636366" label="主題檔案" value="匯出／匯入" onClick={() => setPage('json')} />
                 <Row icon={<ScrollText size={16} />} color="#48484a" label="同步紀錄" onClick={() => setPage('synclog')} />
+                <Row icon={<GraduationCap size={16} />} color="#5856d6" label="教朋友架一份" value="教學" onClick={() => window.open(window.claude ? 'https://antony910911.github.io/program_manager/setup.html' : './setup.html', '_blank', 'noopener')} />
               </SettingsGroup>
             </div>
           )}
