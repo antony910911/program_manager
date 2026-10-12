@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Copy, Upload } from 'lucide-react'
+import { Copy, RotateCcw, Upload } from 'lucide-react'
 import type { AppState } from '../types'
 import type { Action } from '../store'
 import { ConfirmButton } from './controls'
@@ -66,6 +66,23 @@ export function DataTransfer({ state, dispatch }: { state: AppState; dispatch: (
         </ConfirmButton>
       )}
       {note && <p className={note.kind === 'ok' ? 'ok-text' : 'error-text'}>{note.text}</p>}
+
+      <div className="danger-zone">
+        <h4>重新開始</h4>
+        <p className="muted small">
+          清除所有看板和清單，換回一開始的範例資料。外觀設定和外星人會保留；原本的卡片會先放進垃圾桶，30 天內可以救回來。保險起見，先用上面的「複製」存一份備份。
+        </p>
+        <ConfirmButton
+          className="btn danger wide"
+          confirmText="再按一次：清除所有看板、換回範例資料"
+          onConfirm={() => {
+            dispatch({ type: 'reset' })
+            setNote({ kind: 'ok', text: '已換回範例資料。原本的卡片在首頁最下面的「垃圾桶」。' })
+          }}
+        >
+          <RotateCcw size={14} /> 重設成範例資料
+        </ConfirmButton>
+      </div>
     </section>
   )
 }

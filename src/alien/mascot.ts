@@ -127,6 +127,9 @@ const S = {
 }
 let pokes = readPokes()
 
+/** How many times the alien has been poked (shown in its house). */
+export const pokeCount = () => pokes
+
 function readPokes() {
   try {
     return Number(localStorage.getItem('beamup.pokes')) || 0

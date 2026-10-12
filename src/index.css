@@ -2440,7 +2440,7 @@ input.full {
 }
 .alien-card small,
 .acc-card small {
-  font-size: 0.78em;
+  font-size: max(12px, 0.78em);
   color: var(--muted);
   line-height: 1.3;
 }
@@ -2460,15 +2460,255 @@ input.full {
   justify-content: center;
   color: var(--muted);
 }
-.acc-card.locked {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 .acc-card.locked canvas {
   filter: grayscale(1);
 }
-.alien-picker h4 {
-  margin: 0 0 8px;
+/* ---------- the alien's house (as in Beamup) ---------- */
+.alien-house h4 {
+  margin: 20px 0 8px;
+}
+.house-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.alien-house .house-head h3 {
+  margin: 0;
+  min-width: 0;
+}
+.pixel-name {
+  font-family: var(--pixel-font);
+}
+.house-head .close-btn {
+  flex-shrink: 0;
+}
+.house-hero {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.house-hero canvas {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+}
+.house-meters {
+  display: grid;
+  gap: 6px;
+}
+.meter-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.meter-row small {
+  color: var(--muted);
+  font-size: max(12px, 0.85em);
+}
+.meter {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--todo);
+  transition: width 0.4s;
+}
+.meter.xp i {
+  background: var(--accent);
+}
+.meter.hungry i {
+  background: var(--warn);
+}
+.meter.starving i {
+  background: var(--danger);
+}
+.meter.mini {
+  width: 100%;
+  height: 5px;
+  margin-top: 2px;
+}
+.house-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.streak-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.streak-top small {
+  color: var(--muted);
+  text-align: right;
+  line-height: 1.5;
+}
+.streak-num {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: color-mix(in srgb, var(--note) 62%, var(--text));
+}
+.streak-num svg {
+  align-self: center;
+}
+.streak-num b {
+  font-size: 2em;
+  line-height: 1;
+  color: var(--text);
+}
+.dots-head,
+.dots {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  justify-items: center;
+}
+.dots-head span {
+  font-size: max(12px, 0.75em);
+  color: var(--muted);
+}
+.dots {
+  margin-top: 6px;
+}
+.dots i {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: var(--border);
+}
+.dots i.on {
+  background: var(--accent);
+}
+.dots i.today {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.dots i.future {
+  opacity: 0.35;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.stat-grid div {
+  display: grid;
+  justify-items: center;
+  padding: 10px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.stat-grid b {
+  font-size: 1.4em;
+}
+.stat-grid small {
+  color: var(--muted);
+  font-size: max(12px, 0.8em);
+}
+.acc-card b {
+  font-size: 0.9em;
+}
+.acc-card .acc-progress {
+  font-variant-numeric: tabular-nums;
+}
+/* Locked: greyed picture and a dashed edge, but the name, condition and progress stay fully readable. */
+.acc-card.locked {
+  cursor: default;
+  background: transparent;
+  outline: 1.5px dashed var(--border);
+  outline-offset: -1.5px;
+}
+.alien-card,
+.acc-card {
+  position: relative;
+}
+.pick-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 7px 1px 5px;
+  border-radius: 999px;
+  /* A touch darker than the accent so its white text clears 4.5:1 on every theme colour. */
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.dots-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin: 0 0 10px;
+}
+.dots-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: max(12px, 0.82em);
+}
+.dots-legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--border);
+}
+.dots-legend i.on {
+  background: var(--accent);
+}
+.dots-legend i.today {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  margin-left: 6px;
+}
+.dots i {
+  display: grid;
+  place-items: center;
+  color: var(--on-accent, #fff);
+}
+.acc-card.locked:hover {
+  transform: none;
+}
+.feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.feed-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+}
+.feed-list li + li {
+  border-top: 1px solid var(--border);
+}
+.feed-list small {
+  color: var(--muted);
+  white-space: nowrap;
+  font-size: max(12px, 0.85em);
 }
 @media (max-width: 720px) {
   .alien-hero {
@@ -3493,4 +3733,15 @@ input.full {
     position: absolute;
     inset: -9px -2px;
   }
+}
+
+/* 設定 › 備份與搬家: the destructive reset, set apart at the bottom. */
+.danger-zone {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.danger-zone h4 {
+  margin: 0 0 6px;
+  color: var(--danger);
 }

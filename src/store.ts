@@ -478,8 +478,17 @@ function baseReducer(s: AppState, a: Action): AppState {
         },
       }
     }
-    case 'reset':
-      return { ...seed(), theme: s.theme, pet: s.pet }
+    case 'reset': {
+      // Every card goes to the trash first, so a reset by mistake can be undone for TRASH_DAYS.
+      const trashed: TrashItem[] = []
+      for (const board of Object.values(s.boards))
+        for (const lid of board.listIds)
+          for (const cid of s.lists[lid]?.cardIds ?? []) {
+            const card = s.cards[cid]
+            if (card) trashed.push(trashItem(card, s.lists[lid].title, board.title))
+          }
+      return { ...seed(), theme: s.theme, pet: s.pet, trash: [...trashed, ...s.trash] }
+    }
     case 'petVisit': {
       const pet = structuredClone(s.pet)
       const r = petVisit(pet)

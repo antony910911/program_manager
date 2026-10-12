@@ -6,19 +6,20 @@
 // 經驗值：做事情就會增加，升到下一級需要的經驗越來越多。
 // 連續天數：每天第一次打開 App 算一天；中間斷一天就重新算。
 
+// Same kinds as Beamup's, in Mothership's words: a todo is a card, a note a comment, an event a due date.
 export const GAINS = {
-  visit: { xp: 2, energy: 5, label: '每天打開 App' },
-  'todo.add': { xp: 1, energy: 4, label: '新增待辦' },
-  'todo.done': { xp: 3, energy: 12, label: '完成待辦' },
-  'note.add': { xp: 3, energy: 10, label: '寫一篇筆記' },
-  'event.add': { xp: 2, energy: 6, label: '加入行程' },
+  visit: { xp: 2, energy: 5, label: '每天打開 Mothership' },
+  'todo.add': { xp: 1, energy: 4, label: '新增卡片' },
+  'todo.done': { xp: 3, energy: 12, label: '完成卡片／待辦項目' },
+  'note.add': { xp: 3, energy: 10, label: '寫一則留言' },
+  'event.add': { xp: 2, energy: 6, label: '幫卡片設到期日' },
 }
 
 export const ACCESSORIES = [
-  { id: 'party', name: '派對帽', hint: '完成第 1 件待辦', goal: 1, stat: (p) => p.stats.todosDone },
+  { id: 'party', name: '派對帽', hint: '完成第 1 張卡片', goal: 1, stat: (p) => p.stats.todosDone },
   { id: 'flower', name: '小花', hint: '連續使用 3 天', goal: 3, stat: (p) => p.best },
-  { id: 'shades', name: '太陽眼鏡', hint: '寫 5 篇筆記', goal: 5, stat: (p) => p.stats.notes },
-  { id: 'bow', name: '蝴蝶結', hint: '完成 20 件待辦', goal: 20, stat: (p) => p.stats.todosDone },
+  { id: 'shades', name: '太陽眼鏡', hint: '寫 5 則留言', goal: 5, stat: (p) => p.stats.notes },
+  { id: 'bow', name: '蝴蝶結', hint: '完成 20 張卡片', goal: 20, stat: (p) => p.stats.todosDone },
   { id: 'crown', name: '皇冠', hint: '連續使用 7 天', goal: 7, stat: (p) => p.best },
 ]
 

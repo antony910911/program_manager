@@ -1,7 +1,7 @@
 // Typed entry point for the Beamup alien engine (the ported modules are plain JS under ts-nocheck).
 import { ALIENS as RAW_ALIENS, character as rawCharacter } from './aliens'
-import { drawAccessory as rawDrawAccessory, drawAlienPreview as rawDrawAlienPreview, mountMascot as rawMount, queueCheer } from './mascot'
-import { ACCESSORIES as RAW_ACCESSORIES, MOOD_TEXT as RAW_MOOD_TEXT, energyNow, levelInfo, mood } from './pet'
+import { drawAccessory as rawDrawAccessory, drawAlienPreview as rawDrawAlienPreview, mountMascot as rawMount, pokeCount as rawPokeCount, queueCheer } from './mascot'
+import { ACCESSORIES as RAW_ACCESSORIES, GAINS as RAW_GAINS, MOOD_TEXT as RAW_MOOD_TEXT, energyNow, levelInfo, mood } from './pet'
 import type { PetState } from '../types'
 
 export interface Mascot {
@@ -28,6 +28,8 @@ export const character = rawCharacter as (id: string) => { name: string; desc: s
 export const ALIENS = RAW_ALIENS as { id: string; name: string; desc: string }[]
 export const ACCESSORIES = RAW_ACCESSORIES as { id: string; name: string; hint: string; goal: number; stat: (p: PetState) => number }[]
 export const MOOD_TEXT = RAW_MOOD_TEXT as Record<string, string>
+export const GAINS = RAW_GAINS as Record<string, { xp: number; energy: number; label: string }>
+export const pokeCount = rawPokeCount as () => number
 export const petEnergy = energyNow as (pet: PetState) => number
 export const petLevel = levelInfo as (xp: number) => { level: number; into: number; need: number; toNext: number }
 export const petMood = mood as (energy: number) => 'happy' | 'ok' | 'hungry' | 'starving'

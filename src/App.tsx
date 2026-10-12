@@ -453,14 +453,6 @@ function Home({
       </div>
       <p className="muted small home-foot">
         {synced ? '資料會同步到你的帳號，登入同一個帳號的手機、電腦、iPad 都看得到。' : '資料只存在這個瀏覽器裡。'}
-        <ConfirmButton
-          className="link-btn"
-          confirmText="再按一次：清除所有資料並還原範例（外觀會保留）"
-          onConfirm={() => dispatch({ type: 'reset' })}
-        >
-          重設範例資料
-        </ConfirmButton>
-        {' · '}
         <button className="link-btn" onClick={onTrash}>
           垃圾桶{state.trash.length ? `（${state.trash.length}）` : ''}
         </button>
