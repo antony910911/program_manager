@@ -2,7 +2,7 @@
 -- (after schema.sql). Safe to run again.
 --
 -- Beamup has no Mothership login. It sends each todo with a private "connection code" that
--- Mothership generates for you (外觀 → 連接 Beamup). inbox_push() looks the code up, files the
+-- Mothership generates for you (設定 › Beamup). inbox_push() looks the code up, files the
 -- todo under its owner, and Mothership picks it up, turns it into a card in the top 待辦 list
 -- and deletes the row. Regenerating the code in Mothership cuts off the old one.
 -- beamup_pull() lets Beamup see what was done to those cards in Mothership, so it can follow along.

@@ -100,6 +100,10 @@ details > div { padding: 0 16px 12px; }
 .shots figure, figure.wide { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
 figure.wide { margin: 14px 0; }
 .shots img, figure.wide img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--line); background: var(--code); }
+.shots.phones { max-width: 600px; }
+@media (max-width: 560px) { .shots.phones { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .shots.phones figcaption { font-size: 13px; padding: 8px 10px 10px; } }
+figure.phone-shot { max-width: 300px; margin: 10px 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+figure.phone-shot img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--line); }
 figcaption { padding: 10px 14px 12px; font-size: 14.5px; color: var(--muted); line-height: 1.6; }
 figcaption b { color: var(--fg); display: block; font-size: 15px; }
 .me input { flex: 1; min-width: 180px; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--code); color: var(--fg); }
@@ -335,15 +339,27 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
 <!-- ============ 10 ============ -->
 <h2 id="s10"><span class="part-head">10. 連接 Beamup <span class="tag opt">選用</span></span></h2>
 <p><b>Beamup</b> 是一個快速記事的小 App：在手機上隨手打一句待辦或行程，就會直接變成 Mothership 的卡片。Beamup 的資料存在你自己的手機裡，所以<b>直接用原作者的 Beamup 網址就好，不用另外架</b>。</p>
+<div class="shots phones">
+  <figure><a href="setup/beamup-3-capture.webp" target="_blank" rel="noopener"><img src="setup/beamup-3-capture.webp" alt="Beamup：在輸入框打「週五前交期末報告 #學校」，選待辦" width="540" height="846" loading="lazy"></a>
+    <figcaption><b>① 在 Beamup 打一句話</b>「週五前交期末報告 #學校」，它會自己認出截止日和標籤。</figcaption></figure>
+  <figure><a href="setup/beamup-4-card.webp" target="_blank" rel="noopener"><img src="setup/beamup-4-card.webp" alt="Mothership 雙層模式的待辦清單出現一張有 Beamup 標記的卡片，到期日 10月16日" width="540" height="570" loading="lazy"></a>
+    <figcaption><b>② 幾秒後出現在 Mothership</b>上方「待辦」多一張卡片，綠色 Beamup 標記、日期都帶過來了。</figcaption></figure>
+</div>
+<p>反過來也會同步：在 Mothership 刪除、完成、改標題或日期，Beamup 也會跟著改。</p>
 <div class="step"><div class="num">1</div><div class="body">
   <p>回到 Supabase 的 <span class="btn">SQL Editor</span> › <span class="btn">+ New query</span>，把下面這段貼上、按 <span class="btn">Run</span>（一樣可能跳警告，按 <span class="btn">Run this query</span>）：</p>
   <div class="copy sql"><code id="sql-inbox">讀取中…</code><button type="button" data-copy-from="prev">複製</button></div>
 </div></div>
-<div class="step"><div class="num">2</div><div class="body"><p>打開你的 Mothership › 右上角 <span class="btn">設定</span> › <span class="btn">Beamup</span> › <span class="btn">產生連接碼</span> › <span class="btn">複製連接碼</span>。</p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>打開你的 Mothership › 右上角 <span class="btn">設定</span> › <span class="btn">Beamup</span> › <span class="btn">產生連接碼</span> › <span class="btn">複製連接碼</span>。</p>
+  <figure class="phone-shot"><a href="setup/beamup-1-code.webp" target="_blank" rel="noopener"><img src="setup/beamup-1-code.webp" alt="Mothership 設定裡的 Beamup 頁面：一串 pm1. 開頭的連接碼和「複製連接碼」按鈕" width="540" height="505" loading="lazy"></a>
+    <figcaption>連接碼是一長串 <code>pm1.</code> 開頭的字。</figcaption></figure>
+</div></div>
 <div class="step"><div class="num">3</div><div class="body">
   <p>手機打開 Beamup（一樣可以加入主畫面）：</p>
   <div class="copy"><code>https://thought-task-entry.antony910912.workers.dev</code><button type="button" data-copy="https://thought-task-entry.antony910912.workers.dev">複製</button></div>
-  <p>右上角齒輪 <span class="btn">設定</span> › 「待辦事項 → 專案管理工具」，把連接碼貼進第一格，按 <span class="btn">測試連線</span>。</p>
+  <p>右上角齒輪 <span class="btn">設定</span> › <span class="btn">待辦</span>，把連接碼貼進「連接碼」那格，按 <span class="btn">測試連線</span>。</p>
+  <figure class="phone-shot"><a href="setup/beamup-2-paste.webp" target="_blank" rel="noopener"><img src="setup/beamup-2-paste.webp" alt="Beamup 設定的待辦頁：連接碼欄位貼好了，上方顯示「連線成功」" width="540" height="570" loading="lazy"></a>
+    <figcaption>看到「連線成功」就好了。</figcaption></figure>
 </div></div>
 <div class="note see"><b>✅ 完成的樣子</b>在 Beamup 打一個待辦送出，幾秒內出現在 Mothership 雙層模式上方的「待辦」清單，卡片上有綠色的 Beamup 標記。</div>
 <div class="note stop"><b>🔑 連接碼不要給別人</b>拿到連接碼的人可以送東西進你的看板。不小心外流就到 Mothership 的 設定 › Beamup 按「換一組」。</div>
