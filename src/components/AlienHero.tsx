@@ -264,8 +264,8 @@ function AlienPicker({
             <small>新增過的卡片</small>
           </div>
           <div>
-            <b>{pet.stats.notes}</b>
-            <small>寫過的留言</small>
+            <b>{pet.stats.lists ?? 0}</b>
+            <small>建立過的清單</small>
           </div>
           <div>
             <b>{pokes}</b>

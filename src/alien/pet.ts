@@ -13,14 +13,16 @@ export const GAINS = {
   'todo.done': { xp: 3, energy: 12, label: '完成卡片／待辦項目' },
   'note.add': { xp: 3, energy: 10, label: '寫一則留言' },
   'event.add': { xp: 2, energy: 6, label: '幫卡片設到期日' },
+  'list.add': { xp: 2, energy: 6, label: '新增清單' },
 }
 
 export const ACCESSORIES = [
   { id: 'party', name: '派對帽', hint: '完成第 1 張卡片', goal: 1, stat: (p) => p.stats.todosDone },
   { id: 'flower', name: '小花', hint: '連續使用 3 天', goal: 3, stat: (p) => p.best },
-  { id: 'shades', name: '太陽眼鏡', hint: '寫 5 則留言', goal: 5, stat: (p) => p.stats.notes },
+  { id: 'shades', name: '太陽眼鏡', hint: '建立 5 個清單', goal: 5, stat: (p) => p.stats.lists ?? 0 },
   { id: 'bow', name: '蝴蝶結', hint: '勾掉 20 張卡片或項目', goal: 20, stat: (p) => p.stats.todosDone },
   { id: 'crown', name: '皇冠', hint: '連續使用 7 天', goal: 7, stat: (p) => p.best },
+  { id: 'halo', name: '天使光環', hint: '升到 Lv.10', goal: 10, stat: (p) => levelInfo(p.xp).level },
 ]
 
 const DECAY_PER_HOUR = 1
@@ -61,7 +63,7 @@ export function mood(energy) {
 
 export const MOOD_TEXT = { happy: '吃飽飽', ok: '還可以', hungry: '肚子餓了', starving: '快餓扁了' }
 
-function checkUnlocks(pet) {
+export function checkUnlocks(pet) {
   const found = []
   for (const a of ACCESSORIES) {
     if (!pet.unlocked.includes(a.id) && a.stat(pet) >= a.goal) {
@@ -101,5 +103,6 @@ export function gain(pet, kind, now = new Date()) {
   if (kind === 'todo.done') pet.stats.todosDone += 1
   if (kind === 'note.add') pet.stats.notes += 1
   if (kind === 'event.add') pet.stats.events += 1
+  if (kind === 'list.add') pet.stats.lists = (pet.stats.lists ?? 0) + 1
   return apply(pet, kind, now)
 }

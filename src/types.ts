@@ -130,7 +130,8 @@ export interface PetState {
   best: number
   lastDay: string | null
   days: string[]
-  stats: { todosAdded: number; todosDone: number; notes: number; events: number }
+  /** `lists` was added later; migrate fills it in from the lists already there. */
+  stats: { todosAdded: number; todosDone: number; notes: number; events: number; lists: number }
   unlocked: string[]
   equipped: string | null
   /** Most recent reward, so the alien can celebrate it when the home screen is shown. */

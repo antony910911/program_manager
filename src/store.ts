@@ -1,6 +1,6 @@
 import { useEffect, useReducer } from 'react'
 import type { AppState, Board, BoardBackground, Card, Filter, ID, List, Member, PetState, Theme, TrashItem } from './types'
-import { gain as petGain, visit as petVisit } from './alien/pet'
+import { checkUnlocks, gain as petGain, visit as petVisit } from './alien/pet'
 import { BACKGROUND_PRESETS, COVER_COLORS, defaultBackground, defaultTheme } from './theme'
 
 const STORAGE_KEY = 'program-manager:v1'
@@ -187,7 +187,7 @@ export function newPet(): PetState {
     best: 0,
     lastDay: null,
     days: [],
-    stats: { todosAdded: 0, todosDone: 0, notes: 0, events: 0 },
+    stats: { todosAdded: 0, todosDone: 0, notes: 0, events: 0, lists: 0 },
     unlocked: [],
     equipped: null,
     lastEvent: null,
@@ -714,7 +714,7 @@ function ingestTodo(s: AppState, t: InboxTodo): AppState {
 }
 
 /** Fill in fields added after data was first saved. */
-type PetKind = 'todo.add' | 'todo.done' | 'note.add' | 'event.add'
+type PetKind = 'todo.add' | 'todo.done' | 'note.add' | 'event.add' | 'list.add'
 
 /** Which care reward (if any) an action earns the alien, and what it says about it. */
 function rewardFor(prev: AppState, next: AppState, a: Action): { kind: PetKind; text: string; count?: number } | null {
@@ -723,6 +723,8 @@ function rewardFor(prev: AppState, next: AppState, a: Action): { kind: PetKind; 
       return { kind: 'todo.add', text: `收到新卡片「${a.title}」` }
     case 'addComment':
       return { kind: 'note.add', text: '謝謝你的留言～' }
+    case 'addList':
+      return { kind: 'list.add', text: `新清單「${a.title}」！` }
     case 'ingestInbox': {
       const n = a.items.filter((t) => t?.type === 'todo.created').length
       if (n) return { kind: 'todo.add', text: n > 1 ? `Beamup 送來 ${n} 件待辦！` : '收到 Beamup 的待辦！', count: n }
@@ -803,7 +805,14 @@ export function migrate(s: AppState): AppState {
   // Deleted cards stay in the trash for TRASH_DAYS.
   const cutoff = Date.now() - TRASH_DAYS * 86400000
   const trash = (s.trash ?? []).filter((t) => Date.parse(t.deletedAt) > cutoff)
-  return { ...s, focusBoardId, boards, lists, cards, theme, trash, pet: { ...newPet(), ...s.pet } }
+  const pet = { ...newPet(), ...s.pet }
+  // Counting new lists started later: give credit for the ones already made.
+  if (pet.stats.lists == null) {
+    pet.stats = { ...pet.stats, lists: Object.keys(lists).length }
+    pet.unlocked = [...pet.unlocked]
+    checkUnlocks(pet) // an accessory whose goal changed may already be earned
+  }
+  return { ...s, focusBoardId, boards, lists, cards, theme, trash, pet }
 }
 
 function load(key: string): AppState {

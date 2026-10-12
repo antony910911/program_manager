@@ -29,6 +29,7 @@ export const ACCESSORY_SPRITES = {
   shades: { place: 'eyes', rows: ['kwkkk..kwkkk', 'kkkkkkkkkkkk', '.kkk....kkk.'] },
   bow: { place: 'side', rows: ['pp.pp', 'ppxpp', 'pp.pp'] },
   flower: { place: 'left', rows: ['.f.f.', 'ffoff', '.fff.', '..g..'] },
+  halo: { place: 'halo', rows: ['.hhqqqqq.', 'q.......q', '.qqqqqqq.'] },
 }
 // Mumu 的小寵物蝙蝠「小蝠」：拍翅膀繞著頭飛，主人睡著時就收起翅膀窩在頭頂。
 const BAT = {
@@ -50,6 +51,7 @@ const ACCESSORY_COLORS = {
   f: '#ff9ec7',
   o: '#ffcc00',
   g: '#34c759',
+  h: '#fff3b0',
 }
 
 function accessoryPos(def, id, ax, ay) {
@@ -59,6 +61,8 @@ function accessoryPos(def, id, ax, ay) {
   const h = spr.rows.length
   const top = def.anchor ? def.anchor.top : 3
   const eye = def.anchor ? def.anchor.eye : 6
+  // 光環飄在天線上方
+  if (spr.place === 'halo') return { x: ax + 8 - Math.ceil(w / 2), y: ay - h }
   if (spr.place === 'hat') return { x: ax + 8 - Math.ceil(w / 2), y: ay + top - h + 1 }
   if (spr.place === 'eyes') return { x: ax + 2, y: ay + eye }
   if (spr.place === 'side') return { x: ax + 10, y: ay + top - 1 }
@@ -86,9 +90,9 @@ const SPRITES = {
 
 const LINES = {
   poke: ['嗶！', '嘿！', '我在～', '幹嘛戳我', '!?', '嗶嗶？'],
-  hungry: ['肚子好餓…', '完成一件待辦餵我好嗎？', '寫篇筆記給我吃～', '咕嚕嚕…（肚子叫）'],
+  hungry: ['肚子好餓…', '完成一張卡片餵我好嗎？', '開個新清單給我吃～', '咕嚕嚕…（肚子叫）'],
   happy: ['今天好有精神！', '吃飽飽，想跳舞', '你今天好棒'],
-  random: ['嗶嗶嗶～', '地球的咖啡好好喝', '想到什麼就丟給我', '我的飛碟停哪了…', '（偷看你的筆記）', '今天也要加油喔', '我會幫你記著的'],
+  random: ['嗶嗶嗶～', '地球的咖啡好好喝', '想到什麼就丟給我', '我的飛碟停哪了…', '（偷看你的看板）', '今天也要加油喔', '我會幫你記著的'],
 }
 
 const STATUS = {
