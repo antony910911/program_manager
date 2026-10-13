@@ -78,12 +78,21 @@ export default function App({ account }: { account: Account | null }) {
   const settled = sync.status !== 'connecting'
   useEffect(() => {
     if (!settled) return
-    dispatch({ type: 'petVisit' })
+    // Also moves project cards whose start date has come to 進行中 (store.ts autoStart).
+    const daily = () => {
+      dispatch({ type: 'petVisit' })
+      dispatch({ type: 'autoStart' })
+    }
+    daily()
     const onShow = () => {
-      if (document.visibilityState === 'visible') dispatch({ type: 'petVisit' })
+      if (document.visibilityState === 'visible') daily()
     }
     document.addEventListener('visibilitychange', onShow)
-    return () => document.removeEventListener('visibilitychange', onShow)
+    const timer = setInterval(() => dispatch({ type: 'autoStart' }), 10 * 60_000)
+    return () => {
+      document.removeEventListener('visibilitychange', onShow)
+      clearInterval(timer)
+    }
   }, [dispatch, settled])
   const lastEvent = state.pet.lastEvent
   useEffect(() => {

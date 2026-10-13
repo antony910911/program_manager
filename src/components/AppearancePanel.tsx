@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Clock,
   GraduationCap,
   HardDriveDownload,
   LayoutGrid,
@@ -41,7 +42,7 @@ interface Props {
   calendar?: { accounts: CalendarAccount[] | null; error: string; syncNow: () => void }
 }
 
-type Page = 'theme' | 'text' | 'layout' | 'card' | 'calendar' | 'beamup' | 'members' | 'backup' | 'json' | 'synclog'
+type Page = 'theme' | 'text' | 'layout' | 'card' | 'calendar' | 'beamup' | 'members' | 'backup' | 'json' | 'synclog' | 'auto'
 
 const PAGE_TITLES: Record<Page, string> = {
   theme: '主題與顏色',
@@ -54,6 +55,7 @@ const PAGE_TITLES: Record<Page, string> = {
   backup: '備份與搬家',
   json: '主題檔案',
   synclog: '同步紀錄',
+  auto: '自動整理',
 }
 const MODE_NAMES: Record<Theme['mode'], string> = { light: '淺色', dark: '深色', system: '跟隨系統' }
 const CARD_STYLE_NAMES: Record<Theme['cardStyle'], string> = { shadow: '陰影', flat: '平面', outline: '線框', glass: '玻璃' }
@@ -141,6 +143,15 @@ export function AppearancePanel({ state, dispatch, onClose, userId, calendar }: 
                   <Row icon={<Sparkles size={16} />} color="#30b0c7" label="Beamup" value="連接碼" onClick={() => setPage('beamup')} />
                 </SettingsGroup>
               )}
+              <SettingsGroup title="自動">
+                <Row
+                  icon={<Clock size={16} />}
+                  color="#0a84ff"
+                  label="開始日自動移到進行中"
+                  value={state.automation?.startToDoing ? '開' : '關'}
+                  onClick={() => setPage('auto')}
+                />
+              </SettingsGroup>
               <SettingsGroup title="資料">
                 <Row icon={<Users size={16} />} color="#007aff" label="成員" value={`${state.members.length} 人`} onClick={() => setPage('members')} />
                 <Row icon={<HardDriveDownload size={16} />} color="#8e8e93" label="備份與搬家" onClick={() => setPage('backup')} />
@@ -366,6 +377,22 @@ export function AppearancePanel({ state, dispatch, onClose, userId, calendar }: 
           )}
           {page === 'backup' && <DataTransfer state={state} dispatch={dispatch} />}
           {page === 'synclog' && <SyncLogPanel />}
+          {page === 'auto' && (
+            <section>
+              <Toggle
+                label="開始日自動移到「進行中」"
+                checked={!!state.automation?.startToDoing}
+                onChange={(startToDoing) => dispatch({ type: 'setAutomation', startToDoing })}
+              />
+              <p className="muted small">
+                專案裡設了開始日的卡片，到了開始那天會自己移到雙層模式上面的「進行中」清單，卡片還是記得它屬於哪個專案。已完成或封存的卡片不會動。
+              </p>
+              <p className="muted small">
+                移上去之後你再把它拖回專案，它就不會再被拉上去，除非你把開始日改到更後面的日子。打開這個開關之前就已經開始的卡片不會一次全部湧上來。
+              </p>
+              <p className="muted small">打開 App 時、切回 App 時，以及開著的時候每 10 分鐘檢查一次。</p>
+            </section>
+          )}
           {page === 'json' && (
             <>
             <section>

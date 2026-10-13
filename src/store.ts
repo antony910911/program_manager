@@ -174,6 +174,7 @@ function seed(): AppState {
     activity: [],
     trash: [],
     pet: newPet(),
+    automation: { startToDoing: true, since: t },
   }
 }
 
@@ -221,6 +222,8 @@ export type Action =
   | { type: 'deleteCustomField'; boardId: ID; fieldId: ID }
   | { type: 'reset' }
   | { type: 'petVisit' }
+  | { type: 'autoStart' }
+  | { type: 'setAutomation'; startToDoing: boolean }
   | { type: 'setAlien'; alien: string }
   | { type: 'equip'; accessory: string | null }
   | { type: 'restoreTrash'; cardId: ID }
@@ -478,6 +481,29 @@ function baseReducer(s: AppState, a: Action): AppState {
         },
       }
     }
+    case 'autoStart': {
+      // Project cards whose start date has come move to the top 進行中 list, once per start date.
+      const auto = s.automation
+      if (!auto?.startToDoing) return s
+      const t = today()
+      const doing = s.boards[s.focusBoardId]?.listIds.find((id) => s.lists[id]?.title.trim() === '進行中')
+      if (!doing) return s
+      let next = s
+      for (const board of Object.values(s.boards)) {
+        if (board.id === s.focusBoardId) continue
+        for (const lid of board.listIds)
+          for (const cid of s.lists[lid]?.cardIds ?? []) {
+            const c = s.cards[cid]
+            if (!c || c.completed || c.archived || !c.startDate || c.startDate > t || c.startDate < auto.since || c.autoStarted === c.startDate) continue
+            next = baseReducer(next, { type: 'moveCard', cardId: cid, toListId: doing, toIndex: Infinity })
+            next = { ...next, cards: { ...next.cards, [cid]: { ...next.cards[cid], autoStarted: c.startDate } } }
+          }
+      }
+      return next
+    }
+    case 'setAutomation':
+      // Turning it on counts start dates from today, so it doesn't pull up every card that started long ago.
+      return { ...s, automation: { startToDoing: a.startToDoing, since: a.startToDoing ? today() : (s.automation?.since ?? today()) } }
     case 'reset': {
       // Every card goes to the trash first, so a reset by mistake can be undone for TRASH_DAYS.
       const trashed: TrashItem[] = []
@@ -487,7 +513,7 @@ function baseReducer(s: AppState, a: Action): AppState {
             const card = s.cards[cid]
             if (card) trashed.push(trashItem(card, s.lists[lid].title, board.title))
           }
-      return { ...seed(), theme: s.theme, pet: s.pet, trash: [...trashed, ...s.trash] }
+      return { ...seed(), theme: s.theme, pet: s.pet, automation: s.automation, trash: [...trashed, ...s.trash] }
     }
     case 'petVisit': {
       const pet = structuredClone(s.pet)
@@ -812,7 +838,9 @@ export function migrate(s: AppState): AppState {
     pet.unlocked = [...pet.unlocked]
     checkUnlocks(pet) // an accessory whose goal changed may already be earned
   }
-  return { ...s, focusBoardId, boards, lists, cards, theme, trash, pet }
+  // On by default, counting start dates from the first day this version runs.
+  const automation = s.automation ?? { startToDoing: true, since: today() }
+  return { ...s, focusBoardId, boards, lists, cards, theme, trash, pet, automation }
 }
 
 function load(key: string): AppState {

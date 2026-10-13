@@ -53,6 +53,8 @@ export interface Card {
   calHash?: string | null
   /** Time of day from a timed calendar event ("14:00–15:30"); display only. */
   time?: string | null
+  /** Start date for which the card was already moved to 進行中 automatically (it isn't pulled again for it). */
+  autoStarted?: string | null
   /** Id of the todo this card came from in Beamup (thought-task-entry), so later edits update it. */
   sourceId?: string
 }
@@ -160,6 +162,8 @@ export interface AppState {
   currentMemberId: ID
   activity: ActivityEntry[]
   trash: TrashItem[]
+  /** Project cards move to the top 進行中 list on their start date (start dates from `since` on). */
+  automation?: { startToDoing: boolean; since: string }
 }
 
 export type ViewKind = 'board' | 'table' | 'calendar' | 'timeline' | 'dashboard' | 'review'

@@ -40,6 +40,7 @@ export function toDocs(s: AppState): Record<string, Body> {
       currentMemberId: s.currentMemberId,
       activity: s.activity.slice(0, 100),
       pet: s.pet,
+      automation: s.automation,
     },
   }
   // Its own document so a full trash never pushes `meta` past the size cap.
