@@ -437,6 +437,10 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
   </ul></div>
 </details>
 <details>
+  <summary>出現「permission denied for table …」（例如 Beamup 頁面的「讀不到連接設定」）</summary>
+  <div><p>新的 Supabase 專案不會自動開放資料表給登入的使用者。把第 5 步的 SQL 再跑一次（用了 Beamup 的話，第 10 步的也再跑一次），新版的 SQL 已經包含開放權限的設定。跑完後重新整理 Mothership。</p></div>
+</details>
+<details>
   <summary>Supabase 的 Users 裡看不到我註冊的帳號</summary>
   <div><p>網站還接在原作者的資料庫：回到第 7 步檢查兩個 Variable（名稱完全一樣、放在 <b>Variables</b> 分頁），然後重做第 8 步的 1～3，重新部署一次。</p></div>
 </details>
