@@ -21,6 +21,11 @@ create table if not exists public.inbox (
 );
 create index if not exists inbox_user_idx on public.inbox (user_id, id);
 
+-- Newer Supabase projects no longer grant table access to signed-in users by default
+-- ("permission denied for table inbox_keys"); row level security below still limits each user to their own rows.
+grant select, insert, update, delete on public.inbox_keys to authenticated;
+grant select, delete on public.inbox to authenticated;
+
 alter table public.inbox_keys enable row level security;
 alter table public.inbox enable row level security;
 

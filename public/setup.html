@@ -326,15 +326,19 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
 
 <!-- ============ 9 ============ -->
 <h2 id="s9"><span class="part-head">9. 裝到手機、iPad、電腦 <span class="tag">每台約 1 分鐘</span></span></h2>
+<div class="note warn"><b>每台裝置都用同一組帳號</b>用第 8 步註冊的那組 Email／密碼，在 <span class="btn">登入</span> 分頁登入。<b>不要在別台裝置再按一次「註冊」</b>：換一個 Email 註冊會變成另一個帳號，兩邊的看板就不會同步。網址也要是<b>你自己的</b>（<code data-tpl="https://{u}.github.io/program_manager/">https://你的使用者名稱.github.io/program_manager/</code>），不是原作者的。</div>
 <h3>iPhone／iPad</h3>
-<div class="step"><div class="num">1</div><div class="body"><p>用 <b>Safari</b> 打開你的網址，用同一組 Email／密碼在 <span class="btn">登入</span> 分頁登入。</p></div></div>
-<div class="step"><div class="num">2</div><div class="body"><p>按<b>分享按鈕</b>（方框加一個向上箭頭），往下滑選 <span class="btn">加入主畫面</span>，再按 <span class="btn">新增</span>。之後從主畫面的圖示打開，就像一般 App。</p></div></div>
+<div class="step"><div class="num">1</div><div class="body"><p>用 <b>Safari</b> 打開你的網址。<small>從 LINE、Messenger 等 App 裡點開的話，要先按右下角或「⋯」選「用 Safari 開啟」；在那些 App 裡面登入的，不會帶到主畫面的圖示。</small></p></div></div>
+<div class="step"><div class="num">2</div><div class="body"><p>按<b>分享按鈕</b>（方框加一個向上箭頭），往下滑選 <span class="btn">加入主畫面</span>，再按 <span class="btn">新增</span>。</p></div></div>
+<div class="step"><div class="num">3</div><div class="body"><p>從主畫面的 Mothership 圖示打開，在 <span class="btn">登入</span> 分頁登入。之後就從這個圖示打開，就像一般 App。</p>
+  <div class="note tip"><b>在 Safari 登入過，圖示打開又要登入？</b>這是正常的。iPhone／iPad 上，主畫面的圖示和 Safari 是分開記住登入的，所以要在圖示裡再登入一次，之後就不用了。</div>
+</div></div>
 <h3>Android</h3>
-<p>用 Chrome 打開網址並登入，按右上角 <span class="btn">⋮</span> › <span class="btn">加到主畫面</span>（或「安裝應用程式」）。</p>
+<p>用 Chrome 打開網址並登入，按右上角 <span class="btn">⋮</span> › <span class="btn">加到主畫面</span>（或「安裝應用程式」）。從主畫面圖示打開時如果又看到登入畫面，再登入一次就好。</p>
 <h3>電腦</h3>
 <p>用 Chrome、Edge 或 Safari 打開網址並登入。想要獨立視窗：Chrome／Edge 網址列右邊有一個「安裝」小圖示。</p>
-<div class="note see"><b>✅ 完成的樣子</b>在手機新增一張卡片，幾秒內電腦上也會出現。</div>
-<div class="note tip"><b>忘記密碼？</b>在登入畫面選「Email 連結」，收信點連結就能登入（第 6 步的網址要設定正確）。</div>
+<div class="note see"><b>✅ 完成的樣子</b>每台裝置右上角都顯示雲朵圖示和「已同步」（手機上畫面較窄，可能只看到雲朵）。在手機新增一張卡片，幾秒內電腦上也會出現。沒有出現的話，看最下面的<a href="#help-sync">「手機和電腦的資料不一樣」</a>。</div>
+<div class="note tip"><b>忘記密碼？</b>在登入畫面選「Email 連結」，收信點連結就能登入（第 6 步的網址要設定正確）。注意：連結只會登入<b>打開那封信的瀏覽器</b>。iPhone／iPad 的信件連結會在 Safari 打開，主畫面的圖示還是登出的狀態，所以這招請在 Safari 分頁裡用。</div>
 
 <!-- ============ 10 ============ -->
 <h2 id="s10"><span class="part-head">10. 連接 Beamup <span class="tag opt">選用</span></span></h2>
@@ -409,6 +413,32 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
 <details>
   <summary>登入後顯示「暫時無法連線到雲端」或資料存不起來</summary>
   <div><p>多半是第 5 步的 SQL 沒有成功執行。回到 SQL Editor 再跑一次，看到 <b>Success</b> 為止。也確認第 7 步填的是<b>你自己</b>專案的網址和 key。</p></div>
+</details>
+<details id="help-sync">
+  <summary>手機和電腦的資料不一樣（一邊新增的卡片，另一邊看不到）</summary>
+  <div><p>照順序檢查：</p>
+  <ol>
+    <li><b>先看兩邊右上角</b>：都顯示「已同步」才算連上雲端。顯示「同步發生問題」的話，看下一題。一直停在「連線到雲端…」的話，檢查網路，或看下面第 5 點。</li>
+    <li><b>是不是同一個帳號</b>：到 Supabase 的 <span class="btn">Authentication</span> › <span class="btn">Users</span>。如果有兩個以上的 Email，代表你在不同裝置註冊了不同帳號。每台都登出（右上角 <span class="btn">登出</span>），再用同一組 Email 登入。</li>
+    <li><b>是不是同一個網址</b>：兩邊的網址都要是 <code data-tpl="https://{u}.github.io/program_manager/">https://你的使用者名稱.github.io/program_manager/</code>。打開成原作者的網址（<code>antony910911.github.io</code>）的話，你的帳號在那邊不存在，會一直說 Email 或密碼不對。</li>
+    <li><b>要切換回去才更新</b>：另一台要把 App 切到背景再切回來（或重新整理）才看到新卡片，代表「即時更新」沒有打開。回到第 5 步把 SQL 再跑一次，看到 Success 後兩邊都重新整理。</li>
+    <li><b>Supabase 專案被暫停</b>：大約一週沒用，免費專案會暫停（見第 11 步）。到 Supabase 後台按 <span class="btn">Restore</span>。</li>
+    <li><b>手機上是舊版</b>：把 App 從背景完全關掉再打開，兩邊 設定 › 最下面的版本時間要一樣。</li>
+  </ol>
+  <p>都檢查過還是不行：在兩台裝置打開 設定 › <span class="btn">同步紀錄</span>，按 <span class="btn">複製全部</span>，連同下面的範本一起丟給 Claude。</p></div>
+</details>
+<details>
+  <summary>右上角顯示「同步發生問題」</summary>
+  <div><p>在電腦上把滑鼠移到那個圖示上，會顯示原因（手機上看不到，可以到電腦上看，或打開 設定 › <span class="btn">同步紀錄</span>，最上面幾行通常會寫「存檔失敗」和原因）。常見的有三種：</p>
+  <ul>
+    <li><b>暫時無法連線到雲端，稍後會再試</b>：網路斷了、Supabase 專案被暫停，或第 5 步的 SQL 沒跑成功。App 每 5 秒會自己重試，網路恢復後就會變回「已同步」。</li>
+    <li><b>雲端同步中斷了，重新整理頁面可以重新連線</b>：重新整理頁面（主畫面 App 就完全關掉再打開）。</li>
+    <li><b>有一份資料太大，無法同步</b>：通常是看板背景用了很大的圖片，或一個清單放了非常多卡片。換一張小一點的背景圖，或把卡片分到別的清單。</li>
+  </ul></div>
+</details>
+<details>
+  <summary>出現「permission denied for table …」（例如 Beamup 頁面的「讀不到連接設定」）</summary>
+  <div><p>新的 Supabase 專案不會自動開放資料表給登入的使用者。把第 5 步的 SQL 再跑一次（用了 Beamup 的話，第 10 步的也再跑一次），新版的 SQL 已經包含開放權限的設定。跑完後重新整理 Mothership。</p></div>
 </details>
 <details>
   <summary>Supabase 的 Users 裡看不到我註冊的帳號</summary>

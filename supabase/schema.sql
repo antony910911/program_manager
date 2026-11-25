@@ -13,6 +13,10 @@ create table if not exists public.user_docs (
   primary key (user_id, doc_id)
 );
 
+-- Newer Supabase projects no longer grant table access to signed-in users by default
+-- ("permission denied for table user_docs"); row level security below still limits each user to their own rows.
+grant select, insert, update, delete on public.user_docs to authenticated;
+
 alter table public.user_docs enable row level security;
 
 drop policy if exists "read own docs" on public.user_docs;
